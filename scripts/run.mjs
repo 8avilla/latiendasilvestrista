@@ -1,6 +1,6 @@
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { spawn } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 const cmd = process.argv[2] || 'dev';
 
@@ -15,7 +15,7 @@ function getPort() {
         if (match) {
           return match[1];
         }
-      } catch (err) {
+      } catch {
         // Ignore errors reading file
       }
     }
@@ -26,9 +26,11 @@ function getPort() {
 const port = getPort();
 const args = cmd === 'dev' ? ['dev', '-p', port] : ['start', '-p', port];
 
-const child = spawn('npx', ['next', ...args], {
-  stdio: 'inherit',
-  shell: true
+const isWin = process.platform === 'win32';
+const npxCmd = isWin ? 'npx.cmd' : 'npx';
+
+const child = spawn(npxCmd, ['next', ...args], {
+  stdio: 'inherit'
 });
 
 child.on('close', (code) => {

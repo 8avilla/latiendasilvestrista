@@ -24,41 +24,48 @@ export default function ProductGrid({ products }: ProductGridProps) {
     active === 'todos' ? products : products.filter((p) => p.category === active);
 
   return (
-    <section className="flex flex-col gap-6">
-      {/* Category tabs */}
-      <div className="flex flex-wrap gap-2">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat.value}
-            onClick={() => setActive(cat.value)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-              active === cat.value
-                ? 'bg-red-600 text-white border-red-600'
-                : 'bg-white text-gray-600 border-gray-300 hover:border-red-400 hover:text-red-700'
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
+    <section className="flex flex-col gap-10">
+
+      {/* Editorial category tabs */}
+      <div className="relative border-b border-gray-200">
+        <div className="flex gap-6 overflow-x-auto pb-0 scrollbar-none">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.value}
+              onClick={() => setActive(cat.value)}
+              className={`relative pb-3 text-xs font-medium uppercase tracking-[0.15em] whitespace-nowrap transition-colors duration-200 ${
+                active === cat.value
+                  ? 'text-red-600'
+                  : 'text-gray-400 hover:text-black'
+              }`}
+            >
+              {cat.label}
+              {active === cat.value && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600" />
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Product count */}
-      <p className="text-sm text-gray-400">
-        {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
+      <p className="text-xs text-red-600 uppercase tracking-widest -mt-6">
+        {filtered.length} {filtered.length !== 1 ? 'productos' : 'producto'}
       </p>
 
       {/* Grid */}
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-10">
           {filtered.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
       ) : (
-        <div className="py-16 text-center text-gray-400">
-          No hay productos en esta categoría aún.
+        <div className="py-24 text-center text-gray-300 text-sm tracking-widest uppercase">
+          Sin productos en esta categoría
         </div>
       )}
+
     </section>
   );
 }
