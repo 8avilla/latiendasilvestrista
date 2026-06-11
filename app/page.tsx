@@ -5,6 +5,10 @@ import ProductGrid from "@/components/ProductGrid";
 
 export default function Home() {
   const products = productsData as Product[];
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573002493031';
+  const formattedNumber = whatsappNumber === '573002493031'
+    ? '+57 300 249 3031'
+    : `+${whatsappNumber}`;
 
   return (
     <main className="flex-1 w-full">
@@ -38,12 +42,12 @@ export default function Home() {
           <p className="text-xs text-gray-400 text-center sm:text-right">
             Pedidos y consultas por WhatsApp&nbsp;
             <a
-              href="https://wa.me/573002493031"
+              href={`https://wa.me/${whatsappNumber}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-red-600 font-medium hover:underline"
             >
-              +57 300 249 3031
+              {formattedNumber}
             </a>
           </p>
         </div>

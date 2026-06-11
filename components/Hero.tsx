@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 
-const WHATSAPP_NUMBER = '573002493031';
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573002493031';
 
 const CHIPS = [
   'Movimiento Silvestrista',
