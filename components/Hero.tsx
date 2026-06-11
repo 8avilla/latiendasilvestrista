@@ -21,7 +21,7 @@ export default function Hero() {
   }
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
 
       {/* ── Columna texto ── */}
       <div className="flex flex-col gap-6 order-2 lg:order-1">
@@ -86,19 +86,16 @@ export default function Hero() {
       </div>
 
       {/* ── Columna imagen ── */}
-      <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gray-100 order-1 lg:order-2 w-full max-w-md mx-auto lg:max-w-none">
+      <div className="relative order-1 lg:order-2 w-full">
         <Image
-          src="/images/camiseta_100_anos.jpg"
-          alt="Camiseta 100 Años — Edición Especial"
-          fill
-          className="object-cover"
-          priority
+          src="/images/hero_colombia.jpg"
+          alt="Colección Especial Colombia — La Tienda Silvestrista"
+          width={0}
+          height={0}
           sizes="(max-width: 1024px) 90vw, 50vw"
+          className="w-full h-auto rounded-2xl"
+          priority
         />
-        {/* Badge sobre la imagen */}
-        <div className="absolute top-4 left-4 bg-red-600 text-white text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full">
-          Edición especial
-        </div>
       </div>
 
     </section>

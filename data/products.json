@@ -14,7 +14,13 @@
     "price": 75000,
     "description": "Edición especial inspirada en Colombia: tierra del realismo mágico, con estampado dorado en el pecho y un espectacular diseño de monumentos nacionales en la espalda.",
     "image": "/images/camiseta_realismo_magico.jpg",
-    "variants": ["S", "M", "L", "XL", "XXL"]
+    "variants": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "cam-100",
@@ -23,7 +29,13 @@
     "price": 75000,
     "description": "Edición especial conmemorativa de los 100 años. Presenta la franja tricolor al frente y un espectacular diseño de monumentos colombianos en la espalda.",
     "image": "/images/camiseta_100_anos.jpg",
-    "variants": ["S", "M", "L", "XL", "XXL"]
+    "variants": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "cam-001",
@@ -32,7 +44,13 @@
     "price": 55000,
     "description": "Camiseta 100% algodón con la firma de Silvestre Dangond estampada al frente.",
     "image": "/images/placeholder.svg",
-    "variants": ["S", "M", "L", "XL", "XXL"]
+    "variants": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "cam-002",
@@ -41,7 +59,13 @@
     "price": 58000,
     "description": "Diseño exclusivo del movimiento silvestrista con logo oficial en el pecho.",
     "image": "/images/placeholder.svg",
-    "variants": ["S", "M", "L", "XL", "XXL"]
+    "variants": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "cam-003",
@@ -50,13 +74,18 @@
     "price": 62000,
     "description": "Edición especial con ilustración artística de Silvestre sobre fondo negro.",
     "image": "/images/placeholder.svg",
-    "variants": ["S", "M", "L", "XL"]
+    "variants": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ]
   },
   {
     "id": "som-001",
     "name": "Sombrero Vueltiao Silvestrista",
     "category": "sombreros",
-    "price": 85000,
+    "price": 185000,
     "description": "Sombrero vueltiao artesanal con logo del movimiento silvestrista bordado.",
     "image": "/images/placeholder.svg"
   },
@@ -64,7 +93,7 @@
     "id": "som-002",
     "name": "Sombrero Pintado Dangond",
     "category": "sombreros",
-    "price": 90000,
+    "price": 185000,
     "description": "Sombrero pintado a mano con los colores rojo, blanco y negro de Silvestre.",
     "image": "/images/placeholder.svg"
   },
@@ -75,7 +104,9 @@
     "price": 38000,
     "description": "Gorra snapback negra con el logo del movimiento silvestrista bordado en rojo.",
     "image": "/images/placeholder.svg",
-    "variants": ["Talla única"]
+    "variants": [
+      "Talla única"
+    ]
   },
   {
     "id": "gor-002",
@@ -84,7 +115,9 @@
     "price": 40000,
     "description": "Gorra trucker roja con malla negra y parche bordado de Silvestre Dangond.",
     "image": "/images/placeholder.svg",
-    "variants": ["Talla única"]
+    "variants": [
+      "Talla única"
+    ]
   },
   {
     "id": "gor-003",
@@ -93,7 +126,9 @@
     "price": 35000,
     "description": "Gorra blanca con las iniciales SD bordadas en negro y rojo.",
     "image": "/images/placeholder.svg",
-    "variants": ["Talla única"]
+    "variants": [
+      "Talla única"
+    ]
   },
   {
     "id": "man-001",
@@ -110,7 +145,10 @@
     "price": 20000,
     "description": "Manilla tejida artesanalmente en rojo, blanco y negro, colores del movimiento.",
     "image": "/images/placeholder.svg",
-    "variants": ["Angosta", "Ancha"]
+    "variants": [
+      "Angosta",
+      "Ancha"
+    ]
   },
   {
     "id": "man-003",
