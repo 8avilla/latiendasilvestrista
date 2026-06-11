@@ -1,5 +1,31 @@
 [
   {
+    "id": "som-100",
+    "name": "Sombrero edición Colombia mundial",
+    "category": "sombreros",
+    "price": 75000,
+    "description": "Sombrero edición especial Colombia Mundial, tejido y decorado a mano con franjas tricolores representativas de la bandera nacional.",
+    "image": "/images/sombrero_colombia_mundial.jpg"
+  },
+  {
+    "id": "cam-101",
+    "name": "Camiseta edición Colombia tierra del realismo mágico",
+    "category": "camisetas",
+    "price": 75000,
+    "description": "Edición especial inspirada en Colombia: tierra del realismo mágico, con estampado dorado en el pecho y un espectacular diseño de monumentos nacionales en la espalda.",
+    "image": "/images/camiseta_realismo_magico.jpg",
+    "variants": ["S", "M", "L", "XL", "XXL"]
+  },
+  {
+    "id": "cam-100",
+    "name": "Camisetas 100 años Edición Especial",
+    "category": "camisetas",
+    "price": 75000,
+    "description": "Edición especial conmemorativa de los 100 años. Presenta la franja tricolor al frente y un espectacular diseño de monumentos colombianos en la espalda.",
+    "image": "/images/camiseta_100_anos.jpg",
+    "variants": ["S", "M", "L", "XL", "XXL"]
+  },
+  {
     "id": "cam-001",
     "name": "Camiseta Silvestre Dangond Clásica",
     "category": "camisetas",

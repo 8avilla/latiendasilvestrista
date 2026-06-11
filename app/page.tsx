@@ -1,5 +1,6 @@
 import productsData from "@/data/products.json";
 import { Product } from "@/types";
+import Hero from "@/components/Hero";
 import ProductGrid from "@/components/ProductGrid";
 
 export default function Home() {
@@ -7,47 +8,46 @@ export default function Home() {
 
   return (
     <main className="flex-1 w-full">
+      <Hero />
 
-      {/* Hero editorial */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-12 sm:pt-24 sm:pb-16">
-        <p className="text-xs uppercase tracking-[0.25em] text-red-600 font-semibold mb-4">
-          Colección oficial &nbsp;·&nbsp; Movimiento Silvestrista
-        </p>
-
-        <h1
-          className="text-6xl sm:text-8xl lg:text-[108px] text-black leading-none tracking-tight"
-          style={{ fontFamily: 'var(--font-dm-serif)' }}
-        >
-          <span className="italic text-red-600 block text-4xl sm:text-5xl lg:text-6xl mb-1">
-            La Tienda
-          </span>
-          Silvestrista
-        </h1>
-
-        <div className="mt-6 mb-6 flex items-center gap-4">
-          <div className="h-0.5 w-16 bg-red-600" />
-          <p
-            className="text-xl sm:text-2xl text-black italic"
-            style={{ fontFamily: 'var(--font-dm-serif)' }}
-          >
-            Silvestre Dangond
-          </p>
-        </div>
-
-        <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
-          Viste los colores del rey del vallenato. Elige tu producto y coordina
-          tu pedido directo por WhatsApp.
-        </p>
-      </section>
-
-      {/* Divider */}
       <div className="border-t border-gray-100" />
 
-      {/* Catalog */}
-      <section className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-12">
+      <section id="catalogo" className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-12">
         <ProductGrid products={products} />
       </section>
 
+      {/* Anchor de contacto — sección footer simple */}
+      <section id="contacto" className="border-t border-gray-100 py-10 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full border-2 border-black flex items-center justify-center shrink-0">
+              <span className="text-[10px] font-black tracking-tighter text-black">SD</span>
+            </div>
+            <div>
+              <p
+                className="text-sm text-black italic"
+                style={{ fontFamily: 'var(--font-dm-serif)' }}
+              >
+                La Tienda Silvestrista
+              </p>
+              <p className="text-[10px] uppercase tracking-widest text-red-600 font-semibold">
+                Silvestre Dangond
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 text-center sm:text-right">
+            Pedidos y consultas por WhatsApp&nbsp;
+            <a
+              href="https://wa.me/573002493031"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-600 font-medium hover:underline"
+            >
+              +57 300 249 3031
+            </a>
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
