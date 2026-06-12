@@ -14,10 +14,23 @@ export async function PUT(request: Request, { params }: Context) {
       $set: {
         ...data,
         price: Number(data.price),
-        variants: data.variants ?? [],
+        variantGroups: data.variantGroups ?? [],
         updatedAt: new Date(),
       },
     }
+  );
+
+  return Response.json({ ok: true });
+}
+
+export async function PATCH(request: Request, { params }: Context) {
+  const { id } = await params;
+  const db = await getDb();
+  const { active } = await request.json();
+
+  await db.collection('products').updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { active: Boolean(active), updatedAt: new Date() } }
   );
 
   return Response.json({ ok: true });

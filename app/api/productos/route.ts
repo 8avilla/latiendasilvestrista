@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   const result = await db.collection('products').insertOne({
     ...data,
     price: Number(data.price),
-    variants: data.variants ?? [],
+    variantGroups: data.variantGroups ?? [],
     createdAt: now,
     updatedAt: now,
   });

@@ -20,7 +20,8 @@ async function getProduct(id: string): Promise<AdminProduct | null> {
       price: doc.price as number,
       description: doc.description as string,
       images: (doc.images as string[] | undefined) ?? [],
-      variants: doc.variants as string[] | undefined,
+      variantGroups: (doc.variantGroups as Product['variantGroups']) ?? [],
+      active: doc.active !== false,
     };
   } catch {
     return null;

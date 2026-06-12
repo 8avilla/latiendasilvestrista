@@ -4,6 +4,11 @@ export interface CategoryDoc {
   slug: string;
 }
 
+export interface VariantGroup {
+  name: string;
+  options: string[];
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -11,11 +16,12 @@ export interface Product {
   price: number;
   description: string;
   images: string[];
-  variants?: string[];
+  variantGroups?: VariantGroup[];
+  active?: boolean;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
-  variant?: string;
+  selections?: Record<string, string>;
 }

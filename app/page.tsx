@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 async function getProducts(): Promise<Product[]> {
   try {
     const db = await getDb();
-    const docs = await db.collection('products').find({}).sort({ createdAt: -1 }).toArray();
+    const docs = await db.collection('products').find({ active: { $ne: false } }).sort({ createdAt: -1 }).toArray();
     return docs.map(doc => ({
       id: doc._id.toString(),
       name: doc.name as string,
@@ -16,7 +16,7 @@ async function getProducts(): Promise<Product[]> {
       price: doc.price as number,
       description: doc.description as string,
       images: (doc.images as string[] | undefined) ?? [],
-      variants: doc.variants as string[] | undefined,
+      variantGroups: (doc.variantGroups as Product['variantGroups']) ?? [],
     }));
   } catch {
     return [];

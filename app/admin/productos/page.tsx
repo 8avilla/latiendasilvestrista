@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { getDb } from '@/lib/mongodb';
 import { Product } from '@/types';
 import DeleteButton from './DeleteButton';
+import ToggleActiveButton from './ToggleActiveButton';
 
 type AdminProduct = Product & { id: string };
 
@@ -16,7 +17,8 @@ async function getProducts(): Promise<AdminProduct[]> {
     price: doc.price as number,
     description: doc.description as string,
     images: (doc.images as string[] | undefined) ?? [],
-    variants: doc.variants as string[] | undefined,
+    variantGroups: (doc.variantGroups as Product['variantGroups']) ?? [],
+    active: doc.active !== false,
   }));
 }
 
@@ -45,7 +47,9 @@ export default async function ProductosPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {products.map((p) => (
-            <div key={p.id} className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-4">
+            <div key={p.id} className={`bg-white rounded-xl border px-4 py-3 flex items-center gap-4 transition-opacity ${
+              p.active ? 'border-gray-100' : 'border-gray-100 opacity-50'
+            }`}>
               <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                 {p.images[0] ? (
                   <Image src={p.images[0]} alt={p.name} fill className="object-cover" />
@@ -55,7 +59,14 @@ export default async function ProductosPage() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-black truncate">{p.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-black truncate">{p.name}</p>
+                  {!p.active && (
+                    <span className="text-[10px] uppercase tracking-wider text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded shrink-0">
+                      Oculto
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-400 capitalize">{p.category}</p>
               </div>
 
@@ -63,7 +74,8 @@ export default async function ProductosPage() {
                 ${p.price.toLocaleString('es-CO')}
               </p>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
+                <ToggleActiveButton id={p.id} active={p.active ?? true} />
                 <Link
                   href={`/admin/productos/${p.id}`}
                   className="text-xs border border-gray-200 hover:border-black text-gray-600 px-3 py-1.5 rounded-full transition-colors"

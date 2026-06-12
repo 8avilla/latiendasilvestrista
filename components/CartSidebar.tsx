@@ -1,16 +1,21 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useCart } from '@/components/CartProvider';
+import { useCart, buildSelectionsKey } from '@/components/CartProvider';
 import { CartItem } from '@/types';
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573004340482';
 
+function formatSelections(selections?: Record<string, string>): string {
+  if (!selections || Object.keys(selections).length === 0) return '';
+  return Object.entries(selections).map(([k, v]) => `${k}: ${v}`).join(', ');
+}
+
 function buildWhatsAppURL(items: CartItem[], total: number): string {
-  const lines = items.map((item) => {
-    const variant = item.variant ? ` (${item.variant})` : '';
+  const lines = items.map(item => {
+    const sel = formatSelections(item.selections);
     const subtotal = item.product.price * item.quantity;
-    return `• ${item.quantity}x ${item.product.name}${variant} — $${subtotal.toLocaleString('es-CO')}`;
+    return `• ${item.quantity}x ${item.product.name}${sel ? ` — ${sel}` : ''} — $${subtotal.toLocaleString('es-CO')}`;
   });
   const text = [
     '*Pedido — La Tienda Silvestrista*',
@@ -49,7 +54,6 @@ export default function CartSidebar() {
 
   return (
     <>
-      {/* Backdrop with blur */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/25 backdrop-blur-sm z-40 transition-opacity"
@@ -58,7 +62,6 @@ export default function CartSidebar() {
         />
       )}
 
-      {/* Panel */}
       <aside
         className={`fixed top-0 right-0 h-full w-full max-w-sm bg-white z-50 flex flex-col border-l-4 border-red-600 transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
@@ -68,10 +71,7 @@ export default function CartSidebar() {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <div>
-            <h2
-              className="text-lg text-black italic"
-              style={{ fontFamily: 'var(--font-dm-serif)' }}
-            >
+            <h2 className="text-lg text-black italic" style={{ fontFamily: 'var(--font-dm-serif)' }}>
               Tu carrito
             </h2>
             {totalItems > 0 && (
@@ -80,11 +80,7 @@ export default function CartSidebar() {
               </p>
             )}
           </div>
-          <button
-            onClick={closeSidebar}
-            className="text-gray-400 hover:text-black transition-colors p-1"
-            aria-label="Cerrar carrito"
-          >
+          <button onClick={closeSidebar} className="text-gray-400 hover:text-black transition-colors p-1" aria-label="Cerrar carrito">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -102,8 +98,9 @@ export default function CartSidebar() {
             </div>
           ) : (
             <ul className="flex flex-col divide-y divide-gray-100">
-              {items.map((item) => {
-                const itemKey = `${item.product.id}-${item.variant ?? ''}`;
+              {items.map(item => {
+                const itemKey = `${item.product.id}-${buildSelectionsKey(item.selections)}`;
+                const selText = formatSelections(item.selections);
                 return (
                   <li key={itemKey} className="py-4 flex gap-4 items-start">
                     <div className="flex-1 min-w-0">
@@ -113,41 +110,30 @@ export default function CartSidebar() {
                       <p className="text-sm font-medium text-black leading-snug truncate">
                         {item.product.name}
                       </p>
-                      {item.variant && (
-                        <p className="text-xs text-gray-400 mt-0.5">{item.variant}</p>
+                      {selText && (
+                        <p className="text-xs text-gray-400 mt-0.5">{selText}</p>
                       )}
-                      <p
-                        className="text-sm text-red-600 font-semibold mt-1"
-                        style={{ fontFamily: 'var(--font-dm-serif)' }}
-                      >
+                      <p className="text-sm text-red-600 font-semibold mt-1" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                         ${(item.product.price * item.quantity).toLocaleString('es-CO')}
                       </p>
                     </div>
 
                     <div className="flex flex-col items-end gap-2 shrink-0">
-                      {/* Quantity */}
                       <div className="flex items-center border border-gray-200">
                         <button
-                          onClick={() => updateQty(item.product.id, item.variant, item.quantity - 1)}
+                          onClick={() => updateQty(item.product.id, buildSelectionsKey(item.selections), item.quantity - 1)}
                           className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-sm"
                           aria-label="Reducir"
-                        >
-                          −
-                        </button>
-                        <span className="w-6 text-center text-xs font-medium text-black">
-                          {item.quantity}
-                        </span>
+                        >−</button>
+                        <span className="w-6 text-center text-xs font-medium text-black">{item.quantity}</span>
                         <button
-                          onClick={() => updateQty(item.product.id, item.variant, item.quantity + 1)}
+                          onClick={() => updateQty(item.product.id, buildSelectionsKey(item.selections), item.quantity + 1)}
                           className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-sm"
                           aria-label="Aumentar"
-                        >
-                          +
-                        </button>
+                        >+</button>
                       </div>
-                      {/* Remove */}
                       <button
-                        onClick={() => removeItem(item.product.id, item.variant)}
+                        onClick={() => removeItem(item.product.id, buildSelectionsKey(item.selections))}
                         className="text-[10px] uppercase tracking-widest text-gray-300 hover:text-red-500 transition-colors"
                         aria-label="Eliminar"
                       >
@@ -164,18 +150,12 @@ export default function CartSidebar() {
         {/* Footer */}
         {items.length > 0 && (
           <div className="px-6 py-5 border-t border-gray-100 flex flex-col gap-4">
-            {/* Total */}
             <div className="flex justify-between items-baseline">
               <span className="text-xs uppercase tracking-widest text-gray-400">Total</span>
-              <span
-                className="text-2xl text-red-600"
-                style={{ fontFamily: 'var(--font-dm-serif)' }}
-              >
+              <span className="text-2xl text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                 ${totalPrice.toLocaleString('es-CO')}
               </span>
             </div>
-
-            {/* WhatsApp CTA */}
             <button
               onClick={handleCheckout}
               className="w-full bg-red-600 hover:bg-red-700 text-white py-4 flex items-center justify-center gap-3 transition-colors active:scale-[0.99] text-sm font-medium uppercase tracking-[0.1em]"
@@ -186,7 +166,6 @@ export default function CartSidebar() {
               </svg>
               Pedir por WhatsApp
             </button>
-
             <button
               onClick={clearCart}
               className="text-[10px] uppercase tracking-widest text-gray-300 hover:text-black transition-colors text-center"
