@@ -3,6 +3,8 @@ import { Product, CategoryDoc } from '@/types';
 import Hero from '@/components/Hero';
 import ProductGrid from '@/components/ProductGrid';
 
+export const dynamic = 'force-dynamic';
+
 async function getProducts(): Promise<Product[]> {
   try {
     const db = await getDb();
