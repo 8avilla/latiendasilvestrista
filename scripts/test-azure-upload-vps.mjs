@@ -3,19 +3,20 @@ import crypto from 'node:crypto';
 import fs from 'fs';
 import path from 'path';
 
-// Polyfill crypto for Node 18 environments (if any)
 if (typeof globalThis.crypto === 'undefined') {
   // @ts-ignore
   globalThis.crypto = crypto.webcrypto;
 }
 
-// Manual .env.local loader
+// Manual loader with CRLF (\r) cleaning
 try {
   const envPath = path.resolve(process.cwd(), '.env.local');
   if (fs.existsSync(envPath)) {
     const content = fs.readFileSync(envPath, 'utf8');
     content.split('\n').forEach(line => {
-      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      // Clean carriage returns
+      const cleanLine = line.replace(/\r/g, '').trim();
+      const match = cleanLine.match(/^([\w.-]+)\s*=\s*(.*)?$/);
       if (match) {
         const key = match[1];
         let value = match[2] || '';
@@ -36,6 +37,9 @@ const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const containerName = process.env.AZURE_STORAGE_DEFAULT_CONTAINER || 'uploads';
 
 console.log('Connection string exists:', !!connectionString);
+if (connectionString) {
+  console.log('Connection string starts with:', JSON.stringify(connectionString.substring(0, 40)));
+}
 console.log('Container name:', containerName);
 
 async function test() {
