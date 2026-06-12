@@ -1,12 +1,16 @@
-export type Category = 'todos' | 'camisetas' | 'sombreros' | 'gorras' | 'manillas' | 'vasos';
+export interface CategoryDoc {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 export interface Product {
   id: string;
   name: string;
-  category: Exclude<Category, 'todos'>;
+  category: string;
   price: number;
   description: string;
-  image: string;
+  images: string[];
   variants?: string[];
 }
 

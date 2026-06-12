@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useCart } from '@/components/CartProvider';
 import { CartItem } from '@/types';
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573002493031';
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573004340482';
 
 function buildWhatsAppURL(items: CartItem[], total: number): string {
   const lines = items.map((item) => {
