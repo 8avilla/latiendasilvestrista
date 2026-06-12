@@ -184,9 +184,17 @@ export default function ProductForm({ initial }: ProductFormProps) {
         const fd = new FormData();
         fd.append('file', file);
         const res = await fetch('/api/upload', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-        urls.push(data.url);
+        
+        let data: { url?: string; error?: string } = {};
+        if (res.ok) {
+          data = await res.json();
+          if (data.url) urls.push(data.url);
+        } else {
+          try {
+            data = await res.json();
+          } catch {}
+          throw new Error(data.error || 'Error subiendo imagen (servidor respondió con error)');
+        }
       }
       setField('images', [...form.images, ...urls]);
       touch('images');

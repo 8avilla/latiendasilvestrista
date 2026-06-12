@@ -7,6 +7,7 @@ import { useCart } from '@/components/CartProvider';
 
 interface ProductCardProps {
   product: Product;
+  priority?: boolean;
 }
 
 function initSelections(product: Product): Record<string, string> {
@@ -17,7 +18,7 @@ function initSelections(product: Product): Record<string, string> {
   return result;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, priority = false }: ProductCardProps) {
   const { addItem, openSidebar } = useCart();
   const [selections, setSelections] = useState<Record<string, string>>(() => initSelections(product));
   const [added, setAdded] = useState(false);
@@ -75,6 +76,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             fill
             className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            priority={priority}
           />
         ) : (
           <div className="w-full h-full bg-gray-100" />

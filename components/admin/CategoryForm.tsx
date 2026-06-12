@@ -50,8 +50,16 @@ export default function CategoryForm({ initial }: CategoryFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, slug, order }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Error guardando categoría');
+      
+      let data: { error?: string } = {};
+      if (res.ok) {
+        data = await res.json();
+      } else {
+        try {
+          data = await res.json();
+        } catch {}
+        throw new Error(data.error ?? 'Error guardando categoría (servidor respondió con error)');
+      }
       router.push('/admin/categorias');
       router.refresh();
     } catch (err: unknown) {

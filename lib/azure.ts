@@ -1,3 +1,11 @@
+import crypto from 'node:crypto';
+
+// Polyfill globalThis.crypto for Node 18 environments where it's not defined globally
+if (typeof globalThis.crypto === 'undefined') {
+  // @ts-ignore
+  globalThis.crypto = crypto.webcrypto;
+}
+
 import { BlobServiceClient } from '@azure/storage-blob';
 
 const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING!;
