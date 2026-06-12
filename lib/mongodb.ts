@@ -1,29 +1,30 @@
 import { MongoClient, Db } from 'mongodb';
 
-const uri = process.env.DATABASE_URL!;
-
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
 declare global {
   // eslint-disable-next-line no-var
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-if (process.env.NODE_ENV === 'development') {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri);
-    global._mongoClientPromise = client.connect();
+let _clientPromise: Promise<MongoClient> | null = null;
+
+function getClientPromise(): Promise<MongoClient> {
+  const uri = process.env.DATABASE_URL;
+  if (!uri) throw new Error('DATABASE_URL is not defined');
+
+  if (process.env.NODE_ENV === 'development') {
+    if (!global._mongoClientPromise) {
+      global._mongoClientPromise = new MongoClient(uri).connect();
+    }
+    return global._mongoClientPromise;
   }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri);
-  clientPromise = client.connect();
+
+  if (!_clientPromise) {
+    _clientPromise = new MongoClient(uri).connect();
+  }
+  return _clientPromise;
 }
 
-export default clientPromise;
-
 export async function getDb(): Promise<Db> {
-  const c = await clientPromise;
-  return c.db();
+  const client = await getClientPromise();
+  return client.db();
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Product } from '@/types';
 import { useCart } from '@/components/CartProvider';
 
@@ -20,6 +20,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const images = product.images ?? [];
   const hasMultiple = images.length > 1;
   const currentImage = images[imgIdx] ?? '';
+  const touchStartX = useRef<number | null>(null);
 
   function prev(e: React.MouseEvent) {
     e.stopPropagation();
@@ -29,6 +30,22 @@ export default function ProductCard({ product }: ProductCardProps) {
   function next(e: React.MouseEvent) {
     e.stopPropagation();
     setImgIdx(i => (i + 1) % images.length);
+  }
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null || !hasMultiple) return;
+    const delta = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(delta) < 40) return;
+    if (delta > 0) {
+      setImgIdx(i => (i + 1) % images.length);
+    } else {
+      setImgIdx(i => (i - 1 + images.length) % images.length);
+    }
+    touchStartX.current = null;
   }
 
   function handleAdd() {
@@ -42,7 +59,11 @@ export default function ProductCard({ product }: ProductCardProps) {
     <article className="group flex flex-col h-full">
 
       {/* Image */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100 shrink-0">
+      <div
+        className="relative aspect-[3/4] overflow-hidden bg-gray-100 shrink-0"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {currentImage ? (
           <Image
             src={currentImage}
@@ -56,19 +77,19 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
-        {/* Prev / Next arrows — only shown when hovered and multiple images */}
+        {/* Prev / Next arrows — siempre visibles en mobile, solo en hover en desktop */}
         {hasMultiple && (
           <>
             <button
               onClick={prev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 hover:bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm text-xs"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shadow-sm text-base font-medium"
               aria-label="Imagen anterior"
             >
               ‹
             </button>
             <button
               onClick={next}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 hover:bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm text-xs"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shadow-sm text-base font-medium"
               aria-label="Imagen siguiente"
             >
               ›
@@ -78,13 +99,13 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Dot indicators */}
         {hasMultiple && (
-          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
             {images.map((_, i) => (
               <button
                 key={i}
                 onClick={e => { e.stopPropagation(); setImgIdx(i); }}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                  i === imgIdx ? 'bg-white' : 'bg-white/40'
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  i === imgIdx ? 'bg-white' : 'bg-white/50'
                 }`}
                 aria-label={`Ver imagen ${i + 1}`}
               />

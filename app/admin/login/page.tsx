@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,7 +17,7 @@ export default function LoginPage() {
       body: JSON.stringify({ password }),
     });
     if (res.ok) {
-      router.push('/admin/productos');
+      window.location.href = '/admin/productos';
     } else {
       setError('Contraseña incorrecta');
       setLoading(false);

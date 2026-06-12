@@ -64,17 +64,25 @@ export default async function Home() {
               </p>
             </div>
           </div>
-          <p className="text-xs text-gray-400 text-center sm:text-right">
-            Pedidos y consultas por WhatsApp&nbsp;
+          <div className="flex flex-col items-center sm:items-end gap-2">
+            <p className="text-xs text-gray-400 text-center sm:text-right">
+              Pedidos y consultas por WhatsApp&nbsp;
+              <a
+                href={`https://wa.me/${whatsappNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-red-600 font-medium hover:underline"
+              >
+                +57 300 434 0482
+              </a>
+            </p>
             <a
-              href={`https://wa.me/${whatsappNumber}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-red-600 font-medium hover:underline"
+              href="/admin"
+              className="text-[10px] uppercase tracking-widest text-gray-400 hover:text-black transition-colors"
             >
-              +57 300 434 0482
+              Administración
             </a>
-          </p>
+          </div>
         </div>
       </section>
     </main>
