@@ -2,6 +2,8 @@ import { getDb } from '@/lib/mongodb';
 import { Product, CategoryDoc } from '@/types';
 import Hero from '@/components/Hero';
 import ProductGrid from '@/components/ProductGrid';
+import FAQ from '@/components/FAQ';
+import SizeGuide from '@/components/SizeGuide';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +52,10 @@ export default async function Home() {
       <section id="catalogo" className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-12">
         <ProductGrid products={products} categories={categories} />
       </section>
+
+      <SizeGuide />
+
+      <FAQ />
 
       <section id="contacto" className="border-t border-gray-100 py-10 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">

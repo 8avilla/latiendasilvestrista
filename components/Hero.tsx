@@ -21,7 +21,7 @@ export default function Hero() {
   }
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
 
       {/* ── Columna texto ── */}
       <div className="flex flex-col gap-6 order-2 lg:order-1">
@@ -86,14 +86,14 @@ export default function Hero() {
       </div>
 
       {/* ── Columna imagen ── */}
-      <div className="relative order-1 lg:order-2 w-full">
+      <div className="relative order-1 lg:order-2 w-full overflow-hidden rounded-2xl">
         <Image
           src="/images/hero_colombia.jpg"
           alt="Colección Especial Colombia — La Tienda Silvestrista"
           width={0}
           height={0}
           sizes="(max-width: 1024px) 90vw, 50vw"
-          className="w-full h-auto rounded-2xl"
+          className="w-full h-auto max-h-[340px] sm:max-h-[440px] lg:max-h-[520px] object-cover object-center"
           priority
         />
       </div>

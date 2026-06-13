@@ -136,11 +136,14 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
 
       <button
         onClick={handleAdd}
-        className={`mt-3 w-full py-2.5 text-xs font-semibold uppercase tracking-[0.15em] transition-colors shrink-0 ${
-          added ? 'bg-black text-white' : 'bg-red-600 text-white hover:bg-red-700'
-        }`}
+        style={{
+          background: added
+            ? 'linear-gradient(135deg, #111827 0%, #000000 100%)'
+            : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+        }}
+        className={`mt-3 w-full py-2.5 text-xs font-semibold uppercase tracking-[0.15em] transition-[transform,box-shadow] duration-200 shrink-0 active:scale-[0.97] text-white select-none${added ? ' btn-cart-added' : ''}`}
       >
-        {added ? '¡Añadido!' : '+ Añadir al carrito'}
+        {added ? '✓ ¡Añadido!' : '+ Añadir al carrito'}
       </button>
 
     </article>
