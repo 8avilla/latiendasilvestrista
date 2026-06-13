@@ -58,11 +58,14 @@ export default function SizeGuide() {
         {/* Cómo medirse */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {STEPS.map(step => (
-            <div key={step.num} className="bg-white border border-gray-100 rounded-xl p-6 flex flex-col gap-3">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-red-600 font-semibold">
+            <div 
+              key={step.num} 
+              className="bg-white border border-gray-100 hover:border-red-100 hover:shadow-lg hover:-translate-y-1 rounded-xl p-6 flex flex-col gap-3 transition-all duration-350 ease-out group/step"
+            >
+              <span className="text-[10px] uppercase tracking-[0.2em] text-red-600 font-semibold group-hover/step:tracking-[0.25em] transition-all duration-300">
                 {step.num}
               </span>
-              <p className="text-base font-medium text-black" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+              <p className="text-base font-medium text-black transition-colors duration-300 group-hover/step:text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                 {step.title}
               </p>
               <p className="text-xs text-gray-500 font-light leading-relaxed">
@@ -73,10 +76,10 @@ export default function SizeGuide() {
         </div>
 
         {/* Tabla de tallas */}
-        <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-xs">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-gray-100 bg-gray-50/30">
                 <th className="text-left px-5 py-3.5 text-[10px] uppercase tracking-[0.18em] text-gray-400 font-semibold">
                   Talla
                 </th>
@@ -95,14 +98,16 @@ export default function SizeGuide() {
               {SIZES.map((row, i) => (
                 <tr
                   key={row.talla}
-                  className={`border-b border-gray-50 last:border-0 ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}
+                  className={`border-b border-gray-50 last:border-0 transition-colors duration-200 hover:bg-red-50/20 group/row ${
+                    i % 2 === 0 ? '' : 'bg-gray-50/25'
+                  }`}
                 >
-                  <td className="px-5 py-3.5 font-semibold text-black tracking-wide">
+                  <td className="px-5 py-3.5 font-semibold text-black group-hover/row:text-red-600 transition-colors tracking-wide">
                     {row.talla}
                   </td>
-                  <td className="px-5 py-3.5 text-gray-600 font-light">{row.pecho}</td>
-                  <td className="px-5 py-3.5 text-gray-600 font-light">{row.largo}</td>
-                  <td className="px-5 py-3.5 text-gray-600 font-light">{row.hombros}</td>
+                  <td className="px-5 py-3.5 text-gray-600 group-hover/row:text-gray-900 transition-colors font-light">{row.pecho}</td>
+                  <td className="px-5 py-3.5 text-gray-600 group-hover/row:text-gray-900 transition-colors font-light">{row.largo}</td>
+                  <td className="px-5 py-3.5 text-gray-600 group-hover/row:text-gray-900 transition-colors font-light">{row.hombros}</td>
                 </tr>
               ))}
             </tbody>
@@ -118,7 +123,7 @@ export default function SizeGuide() {
           </p>
           <button
             onClick={openWhatsApp}
-            className="shrink-0 border-2 border-black text-black hover:bg-black hover:text-white px-6 py-3 rounded-full text-xs font-semibold uppercase tracking-[0.15em] transition-colors duration-200"
+            className="shrink-0 border-2 border-black text-black hover:bg-black hover:text-white px-6 py-3 rounded-full text-xs font-semibold uppercase tracking-[0.15em] transition-all duration-350 cursor-pointer active:scale-95 hover:shadow-md"
           >
             Consultar mi talla →
           </button>

@@ -45,22 +45,31 @@ export default function FAQ() {
           </h2>
         </div>
 
-        <div className="divide-y divide-gray-100">
+        <div className="flex flex-col gap-3">
           {FAQS.map((faq, i) => (
-            <div key={i} className="py-5">
+            <div 
+              key={i} 
+              className={`border rounded-xl px-5 py-4 transition-all duration-300 ${
+                open === i 
+                  ? 'bg-red-50/10 border-red-100 shadow-sm' 
+                  : 'border-gray-100/80 bg-white hover:bg-gray-50/50 hover:border-gray-200'
+              }`}
+            >
               <button
                 onClick={() => setOpen(open === i ? null : i)}
-                className="w-full flex items-center justify-between text-left gap-4 group"
+                className="w-full flex items-center justify-between text-left gap-4 group cursor-pointer"
                 aria-expanded={open === i}
               >
-                <span className="text-sm font-medium text-black group-hover:text-red-600 transition-colors duration-200 leading-snug">
+                <span className={`text-sm font-medium transition-colors duration-300 leading-snug ${
+                  open === i ? 'text-red-600' : 'text-black group-hover:text-red-600'
+                }`}>
                   {faq.q}
                 </span>
                 <span
-                  className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-full border transition-all duration-300 text-sm font-light leading-none ${
+                  className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-full border transition-all duration-300 text-xs font-medium leading-none ${
                     open === i
-                      ? 'rotate-45 border-red-600 text-red-600'
-                      : 'border-gray-300 text-gray-400'
+                      ? 'rotate-[135deg] border-red-600 bg-red-600 text-white'
+                      : 'border-gray-300 text-gray-400 group-hover:border-red-600 group-hover:text-red-600'
                   }`}
                 >
                   +
@@ -71,7 +80,7 @@ export default function FAQ() {
                   open === i ? 'max-h-48 opacity-100 mt-3' : 'max-h-0 opacity-0'
                 }`}
               >
-                <p className="text-sm text-gray-500 leading-relaxed font-light">
+                <p className="text-sm text-gray-500 leading-relaxed font-light pt-1">
                   {faq.a}
                 </p>
               </div>

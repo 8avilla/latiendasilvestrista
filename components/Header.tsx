@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '@/components/CartProvider';
 
 const NAV_LINKS = [
@@ -13,19 +13,38 @@ const NAV_LINKS = [
 export default function Header() {
   const { totalItems, openSidebar } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    function handleScroll() {
+      setScrolled(window.scrollY > 20);
+    }
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b-2 border-red-600">
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <header className={`sticky top-0 z-30 transition-all duration-300 ${
+      scrolled 
+        ? 'bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-150' 
+        : 'bg-white border-b-2 border-red-600'
+    }`}>
+      <div className={`relative max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between transition-all duration-300 ${
+        scrolled ? 'h-14' : 'h-16'
+      }`}>
 
         {/* Logo */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center shrink-0">
-            <span className="text-[11px] font-black tracking-tighter text-black select-none">SD</span>
+        <div 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="flex items-center gap-2.5 shrink-0 group/logo cursor-pointer select-none"
+        >
+          <div className="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center shrink-0 group-hover/logo:rotate-[15deg] group-hover/logo:border-red-600 transition-all duration-300">
+            <span className="text-[11px] font-black tracking-tighter text-black group-hover/logo:text-red-600 transition-colors">SD</span>
           </div>
           <div className="flex flex-col leading-tight">
             <span
-              className="text-sm sm:text-base text-black leading-none whitespace-nowrap"
+              className="text-sm sm:text-base text-black leading-none whitespace-nowrap group-hover/logo:text-red-600 transition-colors duration-300"
               style={{ fontFamily: 'var(--font-dm-serif)', fontStyle: 'italic' }}
             >
               La Tienda Silvestrista
@@ -42,9 +61,10 @@ export default function Header() {
             <a
               key={link.href}
               href={link.href}
-              className="text-xs uppercase tracking-widest text-gray-500 hover:text-black transition-colors whitespace-nowrap"
+              className="relative text-xs uppercase tracking-widest text-gray-500 hover:text-black transition-colors whitespace-nowrap py-1 group"
             >
               {link.label}
+              <span className="absolute bottom-0 left-0 w-full h-[1px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
             </a>
           ))}
         </nav>
