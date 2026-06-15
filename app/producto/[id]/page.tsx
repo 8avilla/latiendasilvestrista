@@ -184,7 +184,7 @@ export default async function ProductoPage({ params }: { params: Promise<{ id: s
       <StickyAddToCart
         productName={product.name}
         price={product.price}
-        soldOut={product.soldOut}
+        soldOut={product.soldOut ?? false}
       />
     </>
   );
