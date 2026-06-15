@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: Request) {
   try {
     const db = await getDb();
-    const { orderId, status, salesChannel, notes } = await request.json();
+    const { orderId, status, salesChannel, notes, deleted } = await request.json();
 
     if (!orderId) {
       return Response.json({ error: 'Falta el ID del pedido' }, { status: 400 });
@@ -125,16 +125,15 @@ export async function PUT(request: Request) {
       return Response.json({ error: 'Pedido no encontrado' }, { status: 404 });
     }
 
-    const updateFields: {
-      updatedAt: Date;
-      status?: string;
-      salesChannel?: string;
-      notes?: string;
-    } = { updatedAt: new Date() };
+    const updateFields: Record<string, unknown> = { updatedAt: new Date() };
 
     if (status !== undefined) updateFields.status = status;
     if (salesChannel !== undefined) updateFields.salesChannel = salesChannel;
     if (notes !== undefined) updateFields.notes = notes;
+    if (deleted !== undefined) {
+      updateFields.deleted = deleted;
+      if (!deleted) updateFields.deletedAt = null;
+    }
 
     await db.collection('orders').updateOne({ orderId }, { $set: updateFields });
 
@@ -162,13 +161,16 @@ export async function DELETE(request: Request) {
       return Response.json({ error: 'Falta el ID del pedido' }, { status: 400 });
     }
 
-    const result = await db.collection('orders').deleteOne({ orderId });
+    const result = await db.collection('orders').updateOne(
+      { orderId },
+      { $set: { deleted: true, deletedAt: new Date(), updatedAt: new Date() } }
+    );
 
-    if (result.deletedCount === 0) {
+    if (result.matchedCount === 0) {
       return Response.json({ error: 'Pedido no encontrado' }, { status: 404 });
     }
 
-    return Response.json({ success: true, message: 'Pedido eliminado correctamente' });
+    return Response.json({ success: true, message: 'Pedido movido a la papelera' });
   } catch (error) {
     console.error('Error al eliminar pedido:', error);
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 });

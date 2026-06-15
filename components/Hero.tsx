@@ -1,22 +1,15 @@
 'use client';
 
-
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573002493031';
-
 const CHIPS = [
   'Movimiento Silvestrista',
   'Colección oficial',
   'Envíos a Colombia',
-  'Pedido por WhatsApp',
+  'Pago seguro en línea',
 ];
 
 export default function Hero() {
   function scrollToCatalog() {
     document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' });
-  }
-
-  function openWhatsApp() {
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}`, '_blank', 'noopener,noreferrer');
   }
 
   return (
@@ -46,19 +39,13 @@ export default function Hero() {
           manillas y vasos con el sello inconfundible del movimiento silvestrista.
         </p>
 
-        {/* Botones */}
+        {/* Botón */}
         <div className="flex flex-wrap gap-3">
           <button
             onClick={scrollToCatalog}
             className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full text-sm font-semibold transition-colors"
           >
             Ver colección →
-          </button>
-          <button
-            onClick={openWhatsApp}
-            className="border-2 border-black text-black hover:bg-black hover:text-white px-6 py-3 rounded-full text-sm font-semibold transition-colors"
-          >
-            Pedir por WhatsApp
           </button>
         </div>
 
@@ -67,7 +54,7 @@ export default function Hero() {
           className="text-xs text-gray-400"
           style={{ fontFamily: 'var(--font-dm-serif)', fontStyle: 'italic' }}
         >
-          Pedidos coordinados por WhatsApp · Envíos a toda Colombia
+          Pago seguro en línea · Envíos a toda Colombia
         </p>
 
         {/* Feature chips */}

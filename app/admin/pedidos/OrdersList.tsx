@@ -36,6 +36,9 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [quickDeleteId, setQuickDeleteId] = useState<string | null>(null);
   const [quickDeleting, setQuickDeleting] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [takingId, setTakingId] = useState<string | null>(null);
 
   // Estados para creación manual de un nuevo pedido (Drawer 2)
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
@@ -144,21 +147,29 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     return newOrderItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   }, [newOrderItems]);
 
-  // Calcular conteos de cada estado (sobre el total original local)
+  const trashCount = useMemo(() => localOrders.filter(o => o.deleted).length, [localOrders]);
+
+  // Calcular conteos de cada estado (solo pedidos activos)
   const counts = useMemo(() => {
+    const active = localOrders.filter(o => !o.deleted);
     return {
-      ALL: localOrders.length,
-      'PEDIDO SIN CONFIRMAR': localOrders.filter((o) => o.status === 'PEDIDO SIN CONFIRMAR').length,
-      PAGADO: localOrders.filter((o) => o.status === 'PAGADO').length,
-      CANCELADO: localOrders.filter((o) => o.status === 'CANCELADO').length,
-      ENVIADO: localOrders.filter((o) => o.status === 'ENVIADO').length,
-      'PAGO SIN CONFIRMAR': localOrders.filter((o) => o.status === 'PAGO SIN CONFIRMAR').length,
+      ALL: active.length,
+      'PEDIDO SIN CONFIRMAR': active.filter((o) => o.status === 'PEDIDO SIN CONFIRMAR').length,
+      PAGADO: active.filter((o) => o.status === 'PAGADO').length,
+      'PEDIDO TOMADO': active.filter((o) => o.status === 'PEDIDO TOMADO').length,
+      CANCELADO: active.filter((o) => o.status === 'CANCELADO').length,
+      ENVIADO: active.filter((o) => o.status === 'ENVIADO').length,
+      'PAGO SIN CONFIRMAR': active.filter((o) => o.status === 'PAGO SIN CONFIRMAR').length,
     };
   }, [localOrders]);
 
   // Filtrado y ordenamiento de pedidos
   const filteredOrders = useMemo(() => {
-    return localOrders
+    const source = showTrash
+      ? localOrders.filter(o => o.deleted)
+      : localOrders.filter(o => !o.deleted);
+
+    return source
       .filter((order) => {
         // Filtro por Estado
         if (statusFilter !== 'ALL' && order.status !== statusFilter) {
@@ -204,7 +215,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         }
         return 0;
       });
-  }, [localOrders, search, statusFilter, channelFilter, sortBy]);
+  }, [localOrders, showTrash, search, statusFilter, channelFilter, sortBy]);
 
   // Abrir y precargar Drawer de Edición
   function openDrawer(order: Order) {
@@ -290,16 +301,16 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     try {
       const res = await fetch(`/api/orders?orderId=${orderId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
-      setLocalOrders(prev => prev.filter(o => o.orderId !== orderId));
+      setLocalOrders(prev => prev.map(o => o.orderId === orderId ? { ...o, deleted: true } : o));
     } catch {
-      alert('Error al eliminar el pedido.');
+      alert('Error al mover el pedido a la papelera.');
     } finally {
       setQuickDeleting(false);
       setQuickDeleteId(null);
     }
   }
 
-  // Eliminar Pedido
+  // Mover pedido a la papelera
   async function handleDelete() {
     if (!editingOrder) return;
     setIsDeleting(true);
@@ -309,16 +320,54 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Error al eliminar el pedido');
+        throw new Error('Error al mover el pedido a la papelera');
       }
 
-      setLocalOrders((prev) => prev.filter((o) => o.orderId !== editingOrder.orderId));
+      setLocalOrders((prev) => prev.map((o) =>
+        o.orderId === editingOrder.orderId ? { ...o, deleted: true } : o
+      ));
       closeDrawer();
     } catch (err) {
-      alert('Error al eliminar el pedido. Intente de nuevo.');
+      alert('Error al mover el pedido a la papelera. Intente de nuevo.');
       console.error(err);
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  async function handleQuickTaken(orderId: string) {
+    setTakingId(orderId);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status: 'PEDIDO TOMADO' }),
+      });
+      if (!res.ok) throw new Error();
+      setLocalOrders(prev => prev.map(o =>
+        o.orderId === orderId ? { ...o, status: 'PEDIDO TOMADO' as const } : o
+      ));
+    } catch {
+      alert('Error al actualizar el pedido.');
+    } finally {
+      setTakingId(null);
+    }
+  }
+
+  async function handleRestore(orderId: string) {
+    setRestoringId(orderId);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, deleted: false }),
+      });
+      if (!res.ok) throw new Error();
+      setLocalOrders(prev => prev.map(o => o.orderId === orderId ? { ...o, deleted: false } : o));
+    } catch {
+      alert('Error al restaurar el pedido.');
+    } finally {
+      setRestoringId(null);
     }
   }
 
@@ -397,8 +446,38 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
 
   return (
     <div>
+      {/* Toggle Activos / Papelera */}
+      <div className="flex items-center gap-2 mb-5">
+        <button
+          onClick={() => setShowTrash(false)}
+          className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+            !showTrash ? 'bg-black text-white border-black' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+          }`}
+        >
+          Pedidos activos
+        </button>
+        <button
+          onClick={() => setShowTrash(true)}
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+            showTrash ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+          }`}
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Papelera
+          {trashCount > 0 && (
+            <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold ${
+              showTrash ? 'bg-white/20 text-white' : 'bg-red-100 text-red-600'
+            }`}>
+              {trashCount}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Contenedor de Filtros Premium */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-6 flex flex-col gap-4">
+      {!showTrash && <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-6 flex flex-col gap-4">
         {/* Fila superior: Búsqueda y Filtros de Selección */}
         <div className="grid md:grid-cols-3 gap-4">
           <div className="relative md:col-span-2">
@@ -444,11 +523,12 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         {/* Fila inferior: Filtros de Estado */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
           <div className="flex flex-wrap gap-2">
-            {(['ALL', 'PEDIDO SIN CONFIRMAR', 'PAGADO', 'CANCELADO', 'ENVIADO', 'PAGO SIN CONFIRMAR'] as const).map((st) => {
+            {(['ALL', 'PEDIDO SIN CONFIRMAR', 'PAGADO', 'PEDIDO TOMADO', 'CANCELADO', 'ENVIADO', 'PAGO SIN CONFIRMAR'] as const).map((st) => {
               const label = {
                 ALL: 'Todos',
                 'PEDIDO SIN CONFIRMAR': 'Ped. sin confirmar',
                 PAGADO: 'Pagados',
+                'PEDIDO TOMADO': 'Pedido tomado',
                 CANCELADO: 'Cancelados',
                 ENVIADO: 'Enviados',
                 'PAGO SIN CONFIRMAR': 'Pago sin confirmar',
@@ -458,6 +538,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 ALL: 'bg-black text-white border-black',
                 'PEDIDO SIN CONFIRMAR': 'bg-blue-600 text-white border-blue-600',
                 PAGADO: 'bg-green-600 text-white border-green-600',
+                'PEDIDO TOMADO': 'bg-orange-500 text-white border-orange-500',
                 CANCELADO: 'bg-gray-600 text-white border-gray-600',
                 ENVIADO: 'bg-purple-600 text-white border-purple-600',
                 'PAGO SIN CONFIRMAR': 'bg-yellow-500 text-white border-yellow-500',
@@ -467,6 +548,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 ALL: 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200',
                 'PEDIDO SIN CONFIRMAR': 'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-100',
                 PAGADO: 'bg-green-50 text-green-700 hover:bg-green-100 border-green-100',
+                'PEDIDO TOMADO': 'bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-100',
                 CANCELADO: 'bg-red-50 text-red-700 hover:bg-red-100 border-red-100',
                 ENVIADO: 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-100',
                 'PAGO SIN CONFIRMAR': 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-100',
@@ -512,7 +594,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
             </button>
           )}
         </div>
-      </div>
+      </div>}
 
       {/* Resultados de Pedidos y Botón de Creación */}
       <div className="flex items-center justify-between mb-6 px-1">
@@ -543,6 +625,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           {filteredOrders.map((order) => {
             const isUnconfirmed = order.status === 'PEDIDO SIN CONFIRMAR';
             const isPaid = order.status === 'PAGADO';
+            const isTaken = order.status === 'PEDIDO TOMADO';
             const isCancelled = order.status === 'CANCELADO';
             const isShipped = order.status === 'ENVIADO';
             const isPendingPayment = order.status === 'PAGO SIN CONFIRMAR';
@@ -555,7 +638,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                     <span className="text-xs font-mono bg-white border border-gray-200 px-2.5 py-1 text-black font-semibold rounded">
                       {order.orderId}
                     </span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400" suppressHydrationWarning>
                       {new Date(order.createdAt).toLocaleDateString('es-CO', {
                         day: '2-digit',
                         month: 'short',
@@ -570,6 +653,11 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {order.deleted && (
+                      <span className="text-[11px] uppercase tracking-wider font-semibold bg-red-50 text-red-500 border border-red-200 px-3 py-1 rounded-full line-through opacity-70">
+                        Eliminado
+                      </span>
+                    )}
                     {isUnconfirmed && (
                       <span className="text-[11px] uppercase tracking-wider font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full">
                         Pedido sin confirmar
@@ -578,6 +666,11 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                     {isPaid && (
                       <span className="text-[11px] uppercase tracking-wider font-semibold bg-green-50 text-green-700 border border-green-200 px-3 py-1 rounded-full">
                         Pagado
+                      </span>
+                    )}
+                    {isTaken && (
+                      <span className="text-[11px] uppercase tracking-wider font-semibold bg-orange-50 text-orange-700 border border-orange-200 px-3 py-1 rounded-full">
+                        Pedido tomado
                       </span>
                     )}
                     {isCancelled && (
@@ -595,7 +688,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                         Pago sin confirmar
                       </span>
                     )}
-                    {!isUnconfirmed && !isPaid && !isCancelled && !isShipped && !isPendingPayment && (
+                    {!isUnconfirmed && !isPaid && !isTaken && !isCancelled && !isShipped && !isPendingPayment && (
                       <span className="text-[11px] uppercase tracking-wider font-semibold bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full">
                         Fallido
                       </span>
@@ -670,11 +763,27 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       </ul>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                      <span className="text-xs uppercase tracking-wider text-gray-400 font-bold">Total Facturado:</span>
-                      <span className="text-lg font-bold text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
-                        ${order.totalPrice.toLocaleString('es-CO')}
-                      </span>
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between text-xs text-gray-400">
+                        <span>Subtotal productos</span>
+                        <span className="font-medium text-gray-600">
+                          ${order.items.reduce((s, i) => s + i.product.price * i.quantity, 0).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-400">
+                        <span>Domicilio</span>
+                        <span className="font-medium text-gray-600">
+                          {(order.shippingPrice ?? 0) === 0
+                            ? <span className="text-green-600 font-semibold">Gratis</span>
+                            : `$${(order.shippingPrice ?? 0).toLocaleString('es-CO')}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between pt-1.5 border-t border-gray-100 mt-0.5">
+                        <span className="text-xs uppercase tracking-wider text-gray-400 font-bold">Total</span>
+                        <span className="text-lg font-bold text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+                          ${order.totalPrice.toLocaleString('es-CO')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -710,46 +819,74 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
 
                 {/* Acciones del Administrador */}
                 <div className="bg-gray-50/30 border-t border-gray-100 px-6 py-3.5 flex items-center justify-between gap-3">
-                  {/* Eliminar con confirmación inline */}
-                  <div className="flex items-center gap-2">
-                    {quickDeleteId === order.orderId ? (
-                      <>
-                        <span className="text-xs text-red-600 font-medium">¿Eliminar definitivamente?</span>
-                        <button
-                          onClick={() => handleQuickDelete(order.orderId)}
-                          disabled={quickDeleting}
-                          className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-                        >
-                          {quickDeleting ? 'Eliminando...' : 'Sí, eliminar'}
-                        </button>
-                        <button
-                          onClick={() => setQuickDeleteId(null)}
-                          disabled={quickDeleting}
-                          className="border border-gray-200 hover:border-black text-gray-500 hover:text-black px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                        >
-                          Cancelar
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => setQuickDeleteId(order.orderId)}
-                        className="flex items-center gap-1.5 text-gray-400 hover:text-red-600 transition-colors text-xs font-medium"
-                        title="Eliminar pedido"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                        </svg>
-                        Eliminar
-                      </button>
-                    )}
-                  </div>
+                  {showTrash ? (
+                    /* Vista papelera: solo restaurar */
+                    <button
+                      onClick={() => handleRestore(order.orderId)}
+                      disabled={restoringId === order.orderId}
+                      className="flex items-center gap-1.5 text-green-600 hover:text-green-700 disabled:opacity-50 transition-colors text-xs font-semibold"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      {restoringId === order.orderId ? 'Restaurando...' : 'Restaurar pedido'}
+                    </button>
+                  ) : (
+                    /* Vista activos: eliminar (soft) + gestionar */
+                    <>
+                      <div className="flex items-center gap-2">
+                        {isPaid && (
+                          <button
+                            onClick={() => handleQuickTaken(order.orderId)}
+                            disabled={takingId === order.orderId}
+                            className="flex items-center gap-1.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 disabled:opacity-50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                            {takingId === order.orderId ? 'Actualizando...' : 'Pedido tomado'}
+                          </button>
+                        )}
+                        {quickDeleteId === order.orderId ? (
+                          <>
+                            <span className="text-xs text-red-600 font-medium">¿Mover a papelera?</span>
+                            <button
+                              onClick={() => handleQuickDelete(order.orderId)}
+                              disabled={quickDeleting}
+                              className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                            >
+                              {quickDeleting ? 'Eliminando...' : 'Sí, eliminar'}
+                            </button>
+                            <button
+                              onClick={() => setQuickDeleteId(null)}
+                              disabled={quickDeleting}
+                              className="border border-gray-200 hover:border-black text-gray-500 hover:text-black px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                            >
+                              Cancelar
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => setQuickDeleteId(order.orderId)}
+                            className="flex items-center gap-1.5 text-gray-400 hover:text-red-600 transition-colors text-xs font-medium"
+                            title="Mover a papelera"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                            Eliminar
+                          </button>
+                        )}
+                      </div>
 
-                  <button
-                    onClick={() => openDrawer(order)}
-                    className="border border-gray-300 hover:border-black text-black hover:bg-black hover:text-white px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer"
-                  >
-                    Gestionar Pedido
-                  </button>
+                      <button
+                        onClick={() => openDrawer(order)}
+                        className="border border-gray-300 hover:border-black text-black hover:bg-black hover:text-white px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer"
+                      >
+                        Gestionar Pedido
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );
@@ -824,6 +961,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 >
                   <option value="PEDIDO SIN CONFIRMAR">Pedido sin confirmar</option>
                   <option value="PAGADO">Pagado</option>
+                  <option value="PEDIDO TOMADO">Pedido tomado</option>
                   <option value="CANCELADO">Cancelado</option>
                   <option value="ENVIADO">Enviado</option>
                   <option value="PAGO SIN CONFIRMAR">Pago sin confirmar</option>
@@ -888,6 +1026,30 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                     );
                   })}
                 </ul>
+
+                {/* Resumen de precios */}
+                <div className="mt-3 border border-gray-100 rounded-xl overflow-hidden">
+                  <div className="flex justify-between items-center px-4 py-2.5 text-xs text-gray-500">
+                    <span>Subtotal productos</span>
+                    <span className="font-medium text-black">
+                      ${editingOrder.items.reduce((s, i) => s + i.product.price * i.quantity, 0).toLocaleString('es-CO')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center px-4 py-2.5 text-xs text-gray-500 border-t border-gray-100">
+                    <span>Domicilio</span>
+                    <span className="font-medium text-black">
+                      {(editingOrder.shippingPrice ?? 0) === 0
+                        ? <span className="text-green-600 font-semibold">Gratis</span>
+                        : `$${(editingOrder.shippingPrice ?? 0).toLocaleString('es-CO')}`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t border-gray-200">
+                    <span className="text-xs font-bold uppercase tracking-wider text-black">Total</span>
+                    <span className="text-base font-bold text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+                      ${editingOrder.totalPrice.toLocaleString('es-CO')}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -927,7 +1089,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 {confirmDelete ? (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
                     <p className="text-[11px] text-red-800 font-medium leading-relaxed">
-                      ⚠️ ¡Atención! Esta acción eliminará definitivamente el pedido de la base de datos y no se podrá deshacer.
+                      ⚠️ El pedido se moverá a la papelera. Podrás restaurarlo desde la vista de Papelera.
                     </p>
                     <div className="flex gap-2">
                       <button
@@ -935,7 +1097,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                         disabled={isDeleting || isSaving}
                         className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer"
                       >
-                        {isDeleting ? 'Eliminando...' : 'Sí, eliminar'}
+                        {isDeleting ? 'Moviendo...' : 'Sí, a la papelera'}
                       </button>
                       <button
                         onClick={() => setConfirmDelete(false)}
@@ -1302,6 +1464,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                     >
                       <option value="PEDIDO SIN CONFIRMAR">Pedido sin confirmar</option>
                       <option value="PAGADO">Pagado</option>
+                      <option value="PEDIDO TOMADO">Pedido tomado</option>
                       <option value="CANCELADO">Cancelado</option>
                       <option value="ENVIADO">Enviado</option>
                       <option value="PAGO SIN CONFIRMAR">Pago sin confirmar</option>

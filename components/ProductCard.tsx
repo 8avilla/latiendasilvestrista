@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { useCart } from '@/components/CartProvider';
-import ProductPopupModal from '@/components/ProductPopupModal';
+import { usePopup } from '@/components/PopupProvider';
 
 interface ProductCardProps {
   product: Product;
@@ -23,9 +23,9 @@ function initSelections(product: Product): Record<string, string> {
 
 export default function ProductCard({ product, priority = false, delay = 0 }: ProductCardProps) {
   const { addItem, openSidebar } = useCart();
+  const { openPopup } = usePopup();
   const [selections, setSelections] = useState<Record<string, string>>(() => initSelections(product));
   const [added, setAdded] = useState(false);
-  const [popupOpen, setPopupOpen] = useState(false);
   const [imgIdx, setImgIdx] = useState(0);
   const [visible, setVisible] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
@@ -68,16 +68,15 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
     touchStartX.current = null;
   }
 
-  function doAdd() {
-    addItem(product, Object.keys(selections).length > 0 ? selections : undefined);
-    openSidebar();
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
-  }
-
   function handleAdd() {
-    if (product.popup?.enabled && product.popup?.image) {
-      setPopupOpen(true);
+    const doAdd = () => {
+      addItem(product, Object.keys(selections).length > 0 ? selections : undefined);
+      openSidebar();
+      setAdded(true);
+      setTimeout(() => setAdded(false), 1500);
+    };
+    if (product.showPopup && product.popupImage) {
+      openPopup(doAdd, product.popupImage);
     } else {
       doAdd();
     }
@@ -222,14 +221,6 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
         </button>
       </div>
 
-      {popupOpen && product.popup?.image && (
-        <ProductPopupModal
-          image={product.popup.image}
-          productName={product.name}
-          onAccept={() => { setPopupOpen(false); doAdd(); }}
-          onClose={() => setPopupOpen(false)}
-        />
-      )}
     </article>
   );
 }

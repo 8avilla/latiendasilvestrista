@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
+import { PopupProvider } from "@/components/PopupProvider";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import Header from "@/components/Header";
 import CartSidebar from "@/components/CartSidebar";
@@ -100,10 +101,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-white">
         <CartProvider>
-          <AnnouncementBar />
-          <Header />
-          <CartSidebar />
-          {children}
+          <PopupProvider>
+            <AnnouncementBar />
+            <Header />
+            <CartSidebar />
+            {children}
+          </PopupProvider>
         </CartProvider>
         <Script
           src="https://checkout.bold.co/library/boldPaymentButton.js"

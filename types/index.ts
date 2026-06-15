@@ -9,11 +9,6 @@ export interface VariantGroup {
   options: string[];
 }
 
-export interface ProductPopup {
-  enabled: boolean;
-  image: string;
-}
-
 export interface Product {
   id: string;
   name: string;
@@ -25,7 +20,8 @@ export interface Product {
   active?: boolean;
   freeShipping?: boolean;
   soldOut?: boolean;
-  popup?: ProductPopup;
+  showPopup?: boolean;
+  popupImage?: string;
 }
 
 export interface CartItem {
@@ -46,7 +42,7 @@ export interface OrderItem {
   selections?: Record<string, string>;
 }
 
-export type OrderStatus = 'PEDIDO SIN CONFIRMAR' | 'PAGADO' | 'CANCELADO' | 'ENVIADO' | 'PAGO SIN CONFIRMAR';
+export type OrderStatus = 'PEDIDO SIN CONFIRMAR' | 'PAGADO' | 'PEDIDO TOMADO' | 'CANCELADO' | 'ENVIADO' | 'PAGO SIN CONFIRMAR';
 export type SalesChannel = 'Whatsapp' | 'Tienda Online' | 'Redes sociales' | 'Otros';
 
 export interface Order {
@@ -67,9 +63,8 @@ export interface Order {
   paymentMethod?: string;
   salesChannel?: SalesChannel;
   notes?: string;
+  deleted?: boolean;
   createdAt: string; // Serialized date
-
-
   updatedAt: string; // Serialized date
   transactionDetails?: {
     paymentId: string;

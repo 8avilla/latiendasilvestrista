@@ -19,6 +19,8 @@ async function getOrders(): Promise<Order[]> {
       mappedStatus = 'CANCELADO';
     } else if (rawStatus === 'SHIPPED' || rawStatus === 'ENVIADO') {
       mappedStatus = 'ENVIADO';
+    } else if (rawStatus === 'PEDIDO TOMADO') {
+      mappedStatus = 'PEDIDO TOMADO';
     }
 
     // Mapear canal de venta (con fallback para históricos)
@@ -50,6 +52,7 @@ async function getOrders(): Promise<Order[]> {
       paymentMethod: (doc.paymentMethod as string) ?? 'BOLD',
       salesChannel: mappedChannel,
       notes: (doc.notes as string) ?? '',
+      deleted: doc.deleted === true,
       createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : new Date(doc.createdAt).toISOString(),
       updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : new Date(doc.updatedAt).toISOString(),
       transactionDetails: doc.transactionDetails as Order['transactionDetails'],

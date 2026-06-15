@@ -26,7 +26,8 @@ async function getProduct(id: string): Promise<Product | null> {
       active: doc.active !== false,
       freeShipping: doc.freeShipping === true,
       soldOut: doc.soldOut === true,
-      popup: doc.popup ?? undefined,
+      showPopup: doc.showPopup === true,
+      popupImage: (doc.popupImage as string) ?? '',
     };
   } catch {
     return null;

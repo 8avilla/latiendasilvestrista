@@ -131,7 +131,6 @@ export default function ProductForm({ initial }: ProductFormProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const popupFileRef = useRef<HTMLInputElement>(null);
   const [categories, setCategories] = useState<CategoryDoc[]>([]);
-  const [uploadingPopup, setUploadingPopup] = useState(false);
 
   useEffect(() => {
     fetch('/api/categorias').then(r => r.json()).then(setCategories).catch(() => {});
@@ -147,7 +146,8 @@ export default function ProductForm({ initial }: ProductFormProps) {
     active: initial?.active !== false,
     freeShipping: initial?.freeShipping ?? false,
     soldOut: initial?.soldOut ?? false,
-    popup: initial?.popup ?? { enabled: false, image: '' },
+    showPopup: initial?.showPopup ?? false,
+    popupImage: initial?.popupImage ?? '',
   });
 
   const [groupInputs, setGroupInputs] = useState<{ name: string; optionsStr: string }[]>(
@@ -157,6 +157,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingPopup, setUploadingPopup] = useState(false);
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
 
@@ -216,31 +217,30 @@ export default function ProductForm({ initial }: ProductFormProps) {
     touch('images');
   }
 
-  async function handlePopupFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingPopup(true);
-    setApiError('');
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error subiendo imagen del popup');
-      setForm(prev => ({ ...prev, popup: { ...(prev.popup ?? { enabled: false, image: '' }), image: data.url } }));
-    } catch (err: unknown) {
-      setApiError(err instanceof Error ? err.message : 'Error subiendo imagen del popup');
-    } finally {
-      setUploadingPopup(false);
-      if (popupFileRef.current) popupFileRef.current.value = '';
-    }
-  }
-
   function moveImage(from: number, to: number) {
     const imgs = [...form.images];
     const [item] = imgs.splice(from, 1);
     imgs.splice(to, 0, item);
     setField('images', imgs);
+  }
+
+  async function handlePopupFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPopup(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || 'Error subiendo imagen');
+      setField('popupImage', data.url);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'Error subiendo imagen del popup');
+    } finally {
+      setUploadingPopup(false);
+      if (popupFileRef.current) popupFileRef.current.value = '';
+    }
   }
 
   // ── Grupos de variantes ───────────────────────────────────────────────────
@@ -601,54 +601,58 @@ export default function ProductForm({ initial }: ProductFormProps) {
           </button>
         </div>
 
-        {/* Popup al agregar al carrito */}
         <div className={`border rounded-xl overflow-hidden transition-colors ${
-          form.popup?.enabled ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200'
+          form.showPopup ? 'border-amber-200 bg-amber-50/30' : 'border-gray-200'
         }`}>
           <div className="flex items-center justify-between px-4 py-3">
             <div>
-              <p className="text-sm font-medium text-black">Popup al agregar al carrito</p>
+              <p className="text-sm font-medium text-black">Mostrar aviso al agregar al carrito</p>
               <p className="text-xs text-gray-400 mt-0.5">
-                {form.popup?.enabled
-                  ? 'Se mostrará un aviso con imagen antes de confirmar'
-                  : 'No se muestra ningún aviso al añadir este producto'}
+                {form.showPopup
+                  ? 'Se mostrará un popup con imagen antes de confirmar'
+                  : 'El producto se agrega al carrito sin aviso previo'}
               </p>
             </div>
             <button
               type="button"
-              onClick={() => setForm(prev => ({ ...prev, popup: { ...(prev.popup ?? { enabled: false, image: '' }), enabled: !prev.popup?.enabled } }))}
+              onClick={() => setField('showPopup', !form.showPopup)}
               className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                form.popup?.enabled ? 'bg-amber-500' : 'bg-gray-200'
+                form.showPopup ? 'bg-amber-500' : 'bg-gray-200'
               }`}
               aria-label="Toggle popup"
             >
               <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                form.popup?.enabled ? 'translate-x-6' : 'translate-x-1'
+                form.showPopup ? 'translate-x-6' : 'translate-x-1'
               }`} />
             </button>
           </div>
 
-          {form.popup?.enabled && (
-            <div className="px-4 pb-4 flex flex-col gap-3 border-t border-amber-200">
-              <p className="text-xs text-amber-700 font-medium pt-3">Imagen del popup</p>
+          {form.showPopup && (
+            <div className="px-4 pb-4 border-t border-amber-100 pt-3 flex flex-col gap-3">
+              <p className="text-xs text-amber-700 font-medium">Imagen del popup</p>
 
-              {form.popup.image ? (
-                <div className="relative w-full max-w-xs aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
-                  <Image
-                    src={form.popup.image}
-                    alt="Imagen del popup"
-                    fill
-                    sizes="320px"
-                    className="object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setForm(prev => ({ ...prev, popup: { ...(prev.popup ?? { enabled: true, image: '' }), image: '' } }))}
-                    className="absolute top-2 right-2 w-7 h-7 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white transition-colors"
-                    title="Eliminar imagen"
-                  >
-                    ×
-                  </button>
+              {form.popupImage ? (
+                <div className="flex flex-col gap-2">
+                  <div className="relative w-full max-w-xs aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+                    <Image src={form.popupImage} alt="Imagen del popup" fill sizes="320px" className="object-cover" />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => popupFileRef.current?.click()}
+                      disabled={uploadingPopup}
+                      className="text-xs border border-gray-200 hover:border-black text-gray-600 hover:text-black px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {uploadingPopup ? 'Subiendo...' : 'Cambiar imagen'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setField('popupImage', '')}
+                      className="text-xs text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <button

@@ -34,7 +34,8 @@ async function getProducts(): Promise<Product[]> {
       variantGroups: (doc.variantGroups as Product['variantGroups']) ?? [],
       freeShipping: doc.freeShipping === true,
       soldOut: doc.soldOut === true,
-      popup: doc.popup ?? undefined,
+      showPopup: doc.showPopup === true,
+      popupImage: (doc.popupImage as string) ?? '',
     }));
   } catch {
     return [];
