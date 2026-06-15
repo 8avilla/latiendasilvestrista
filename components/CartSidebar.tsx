@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCart, buildSelectionsKey } from '@/components/CartProvider';
 import { CartItem } from '@/types';
+import Image from 'next/image';
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573004340482';
 
@@ -33,6 +35,7 @@ function buildWhatsAppURL(items: CartItem[], total: number): string {
 export default function CartSidebar() {
   const { items, isOpen, closeSidebar, removeItem, updateQty, clearCart, totalItems, totalPrice } =
     useCart();
+  const router = useRouter();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -47,9 +50,14 @@ export default function CartSidebar() {
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
-  function handleCheckout() {
+  function handleWhatsAppCheckout() {
     const url = buildWhatsAppURL(items, totalPrice);
     window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  function handleGoToCart() {
+    closeSidebar();
+    router.push('/carrito');
   }
 
   return (
@@ -71,7 +79,7 @@ export default function CartSidebar() {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <div>
-            <h2 className="text-lg text-black italic" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+            <h2 className="text-lg text-black italic font-semibold" style={{ fontFamily: 'var(--font-dm-serif)' }}>
               Tu carrito
             </h2>
             {totalItems > 0 && (
@@ -102,7 +110,23 @@ export default function CartSidebar() {
                 const itemKey = `${item.product.id}-${buildSelectionsKey(item.selections)}`;
                 const selText = formatSelections(item.selections);
                 return (
-                  <li key={itemKey} className="py-4 flex gap-4 items-start">
+                  <li key={itemKey} className="py-4 flex gap-4 items-center">
+                    {/* Imagen del Producto */}
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
+                      {item.product.images && item.product.images[0] ? (
+                        <Image 
+                          src={item.product.images[0]} 
+                          alt={item.product.name} 
+                          fill 
+                          className="object-cover" 
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-[8px] text-gray-400">
+                          Sin foto
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex-1 min-w-0">
                       <p className="text-xs uppercase tracking-widest text-gray-400 mb-0.5">
                         {item.product.category}
@@ -149,26 +173,37 @@ export default function CartSidebar() {
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="px-6 py-5 border-t border-gray-100 flex flex-col gap-4">
+          <div className="px-6 py-5 border-t border-gray-100 flex flex-col gap-3">
             <div className="flex justify-between items-baseline">
               <span className="text-xs uppercase tracking-widest text-gray-400">Total</span>
               <span className="text-2xl text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                 ${totalPrice.toLocaleString('es-CO')}
               </span>
             </div>
-            <button
-              onClick={handleCheckout}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-4 flex items-center justify-center gap-3 transition-colors active:scale-[0.99] text-sm font-medium uppercase tracking-[0.1em]"
-            >
-              <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.557 4.122 1.529 5.855L0 24l6.335-1.652A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.37l-.36-.214-3.727.972.994-3.627-.234-.373A9.818 9.818 0 1112 21.818z"/>
-              </svg>
-              Pedir por WhatsApp
-            </button>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleGoToCart}
+                className="w-full bg-black hover:bg-neutral-900 text-white py-4 flex items-center justify-center gap-3 transition-colors active:scale-[0.99] text-sm font-medium uppercase tracking-[0.1em]"
+              >
+                Pagar con Tarjeta / PSE
+              </button>
+              
+              <button
+                onClick={handleWhatsAppCheckout}
+                className="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 py-3 flex items-center justify-center gap-2 transition-colors active:scale-[0.99] text-xs uppercase tracking-wider"
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.557 4.122 1.529 5.855L0 24l6.335-1.652A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.37l-.36-.214-3.727.972.994-3.627-.234-.373A9.818 9.818 0 1112 21.818z"/>
+                </svg>
+                Pedir por WhatsApp
+              </button>
+            </div>
+
             <button
               onClick={clearCart}
-              className="text-[10px] uppercase tracking-widest text-gray-300 hover:text-black transition-colors text-center"
+              className="text-[10px] uppercase tracking-widest text-gray-300 hover:text-black transition-colors text-center mt-1"
             >
               Vaciar carrito
             </button>

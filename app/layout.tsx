@@ -3,8 +3,10 @@ import { Geist } from "next/font/google";
 import { DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
+import AnnouncementBar from "@/components/AnnouncementBar";
 import Header from "@/components/Header";
 import CartSidebar from "@/components/CartSidebar";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,10 +38,15 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-white">
         <CartProvider>
+          <AnnouncementBar />
           <Header />
           <CartSidebar />
           {children}
         </CartProvider>
+        <Script
+          src="https://checkout.bold.co/library/boldPaymentButton.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

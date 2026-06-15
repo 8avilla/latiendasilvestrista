@@ -1,13 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { useCart } from '@/components/CartProvider';
 
 interface ProductCardProps {
   product: Product;
   priority?: boolean;
+  delay?: number;
 }
 
 function initSelections(product: Product): Record<string, string> {
@@ -18,16 +19,29 @@ function initSelections(product: Product): Record<string, string> {
   return result;
 }
 
-export default function ProductCard({ product, priority = false }: ProductCardProps) {
+export default function ProductCard({ product, priority = false, delay = 0 }: ProductCardProps) {
   const { addItem, openSidebar } = useCart();
   const [selections, setSelections] = useState<Record<string, string>>(() => initSelections(product));
   const [added, setAdded] = useState(false);
   const [imgIdx, setImgIdx] = useState(0);
+  const [visible, setVisible] = useState(false);
+  const cardRef = useRef<HTMLElement>(null);
+  const touchStartX = useRef<number | null>(null);
 
   const images = product.images ?? [];
   const hasMultiple = images.length > 1;
   const currentImage = images[imgIdx] ?? '';
-  const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.08 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   function prev(e: React.MouseEvent) {
     e.stopPropagation();
@@ -61,9 +75,14 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const groups = product.variantGroups ?? [];
 
   return (
-    <article className="group flex flex-col h-full">
-
-      {/* Image */}
+    <article
+      ref={cardRef}
+      style={{ animationDelay: `${delay}ms` }}
+      className={`group flex flex-col h-full rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-2xl transition-all duration-500 ${
+        visible ? 'animate-fade-up' : 'opacity-0'
+      }`}
+    >
+      {/* Imagen */}
       <div
         className="relative aspect-[3/4] overflow-hidden bg-gray-100 shrink-0"
         onTouchStart={handleTouchStart}
@@ -74,22 +93,53 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             src={currentImage}
             alt={product.name}
             fill
-            className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.07]"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             priority={priority}
           />
         ) : (
           <div className="w-full h-full bg-gray-100" />
         )}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+
+        {/* Overlay hover — sólo desktop */}
+        <div className="absolute inset-0 bg-black/0 lg:group-hover:bg-black/15 transition-colors duration-500" />
+
+        {/* Badge de precio */}
+        <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
+          <span
+            className="text-sm font-bold text-black leading-none"
+            style={{ fontFamily: 'var(--font-dm-serif)' }}
+          >
+            ${product.price.toLocaleString('es-CO')}
+          </span>
+        </div>
 
         {hasMultiple && (
           <>
-            <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shadow-sm text-base font-medium" aria-label="Imagen anterior">‹</button>
-            <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shadow-sm text-base font-medium" aria-label="Imagen siguiente">›</button>
-            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+            <button
+              onClick={prev}
+              aria-label="Imagen anterior"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/85 hover:bg-white flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shadow-sm text-base font-medium"
+            >
+              ‹
+            </button>
+            <button
+              onClick={next}
+              aria-label="Imagen siguiente"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/85 hover:bg-white flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shadow-sm text-base font-medium"
+            >
+              ›
+            </button>
+            <div className="absolute bottom-3 right-3 flex gap-1.5">
               {images.map((_, i) => (
-                <button key={i} onClick={e => { e.stopPropagation(); setImgIdx(i); }} className={`w-2 h-2 rounded-full transition-colors ${i === imgIdx ? 'bg-white' : 'bg-white/50'}`} aria-label={`Ver imagen ${i + 1}`} />
+                <button
+                  key={i}
+                  onClick={e => { e.stopPropagation(); setImgIdx(i); }}
+                  aria-label={`Ver imagen ${i + 1}`}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+                    i === imgIdx ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'
+                  }`}
+                />
               ))}
             </div>
           </>
@@ -97,7 +147,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       </div>
 
       {/* Info */}
-      <div className="flex-1 flex flex-col pt-3 gap-1">
+      <div className="flex-1 flex flex-col p-4 gap-2">
         <p className="text-[10px] uppercase tracking-[0.18em] text-red-600 font-semibold leading-none">
           {product.category}
         </p>
@@ -105,20 +155,20 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           {product.name}
         </h3>
 
-        {/* Grupos de variantes */}
+        {/* Variantes */}
         <div className="flex flex-col gap-2 mt-1 min-h-[2rem]">
           {groups.map(group => (
-            <div key={group.name} className="flex flex-col gap-1">
+            <div key={group.name} className="flex flex-col gap-1.5">
               <p className="text-[10px] uppercase tracking-wider text-gray-400">{group.name}</p>
               <div className="flex flex-wrap gap-1">
                 {group.options.map(opt => (
                   <button
                     key={opt}
                     onClick={() => setSelections(prev => ({ ...prev, [group.name]: opt }))}
-                    className={`px-2 py-0.5 text-[10px] uppercase tracking-wide border transition-colors shrink-0 ${
+                    className={`px-2.5 py-0.5 text-[10px] uppercase tracking-wide rounded-full border transition-all duration-150 shrink-0 ${
                       selections[group.name] === opt
-                        ? 'border-red-600 bg-red-600 text-white'
-                        : 'border-gray-300 text-gray-500 hover:border-red-600 hover:text-red-600'
+                        ? 'border-black bg-black text-white'
+                        : 'border-gray-200 text-gray-500 hover:border-black hover:text-black'
                     }`}
                   >
                     {opt}
@@ -128,24 +178,21 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             </div>
           ))}
         </div>
-
-        <p className="mt-auto pt-2 text-base text-red-600 font-semibold" style={{ fontFamily: 'var(--font-dm-serif)' }}>
-          ${product.price.toLocaleString('es-CO')}
-        </p>
       </div>
 
-      <button
-        onClick={handleAdd}
-        style={{
-          background: added
-            ? 'linear-gradient(135deg, #111827 0%, #000000 100%)'
-            : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
-        }}
-        className={`mt-3 w-full py-2.5 text-xs font-semibold uppercase tracking-[0.15em] transition-[transform,box-shadow] duration-200 shrink-0 active:scale-[0.97] text-white select-none${added ? ' btn-cart-added' : ''}`}
-      >
-        {added ? '✓ ¡Añadido!' : '+ Añadir al carrito'}
-      </button>
-
+      {/* CTA */}
+      <div className="px-4 pb-4">
+        <button
+          onClick={handleAdd}
+          className={`w-full py-3 text-xs font-semibold uppercase tracking-[0.15em] rounded-xl transition-all duration-200 active:scale-[0.97] select-none ${
+            added
+              ? 'bg-black text-white btn-cart-added'
+              : 'bg-red-600 hover:bg-red-700 text-white'
+          }`}
+        >
+          {added ? '✓ ¡Añadido!' : '+ Añadir al carrito'}
+        </button>
+      </div>
     </article>
   );
 }
