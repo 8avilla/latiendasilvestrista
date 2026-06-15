@@ -23,7 +23,6 @@ interface BoldWindow extends Window {
   }) => BoldCheckoutInstance;
 }
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573004340482';
 
 function formatSelections(selections?: Record<string, string>): string {
   if (!selections || Object.keys(selections).length === 0) return '';
@@ -64,46 +63,6 @@ export default function CarritoPage() {
   })();
   const grandTotal = shippingPrice !== null ? totalPrice + shippingPrice : totalPrice;
 
-  // Generar la URL de WhatsApp con los artículos y los datos de envío
-  function getWhatsAppURL(): string {
-    const lines = items.map(item => {
-      const sel = formatSelections(item.selections);
-      const subtotal = item.product.price * item.quantity;
-      return `• ${item.quantity}x ${item.product.name}${sel ? ` — ${sel}` : ''} — $${subtotal.toLocaleString('es-CO')}`;
-    });
-
-    const shippingInfo = [
-      `*Datos de Envío:*`,
-      `Nombre: ${shippingDetails.name || 'No especificado'}`,
-      `Dirección: ${shippingDetails.address || 'No especificado'}`,
-      `Departamento: ${shippingDetails.department || 'No especificado'}`,
-      `Ciudad: ${shippingDetails.city || 'No especificado'}`,
-      `Celular: ${shippingDetails.phone || 'No especificado'}`,
-      `Email: ${shippingDetails.email || 'No especificado'}`,
-    ].join('\n');
-
-    const shippingLine = shippingPrice === 0
-      ? 'Envío: *Gratis*'
-      : `Envío: $${(shippingPrice ?? 0).toLocaleString('es-CO')}`;
-
-    const text = [
-      '*Pedido — La Tienda Silvestrista*',
-      '_Silvestre Dangond_',
-      '',
-      ...lines,
-      '',
-      `Subtotal: $${totalPrice.toLocaleString('es-CO')}`,
-      shippingLine,
-      `*Total: $${grandTotal.toLocaleString('es-CO')}*`,
-      '',
-      shippingInfo,
-      '',
-      '_Enviado desde la tienda online_',
-    ].join('\n');
-
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
-  }
-
   function validateForm(): boolean {
     const form = document.getElementById('checkout-form') as HTMLFormElement;
     if (form && !form.checkValidity()) {
@@ -111,52 +70,6 @@ export default function CarritoPage() {
       return false;
     }
     return true;
-  }
-
-  async function handleWhatsAppCheckout() {
-    if (!validateForm()) {
-      return;
-    }
-
-    setSubmitError('');
-    setIsSubmitting(true);
-
-    try {
-      // 1. Registrar el pedido en la base de datos como WhatsApp
-      const orderResponse = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items,
-          totalPrice: grandTotal,
-          shippingPrice: shippingPrice ?? 0,
-          shippingDetails,
-          paymentMethod: 'WHATSAPP',
-          status: 'PEDIDO SIN CONFIRMAR',
-          salesChannel: 'Whatsapp',
-        }),
-      });
-
-      const orderData = await orderResponse.json();
-      if (!orderResponse.ok) {
-        throw new Error(orderData.error || 'Error al registrar el pedido.');
-      }
-
-      const { orderId } = orderData;
-
-      // 2. Abrir la URL de WhatsApp en una pestaña nueva
-      const url = getWhatsAppURL();
-      window.open(url, '_blank', 'noopener,noreferrer');
-
-      // 3. Redirigir la pestaña actual a la página de éxito
-      router.push(`/checkout/success?orderId=${orderId}`);
-    } catch (error) {
-      console.error('Error al procesar pedido WhatsApp:', error);
-      const message = error instanceof Error ? error.message : 'Error al registrar el pedido.';
-      setSubmitError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
   }
 
   async function handleBoldCheckout(e: React.FormEvent) {
@@ -504,18 +417,6 @@ export default function CarritoPage() {
                     )}
                   </button>
 
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={handleWhatsAppCheckout}
-                    className="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 py-3.5 flex items-center justify-center gap-2.5 transition-colors active:scale-[0.99] text-xs font-semibold uppercase tracking-wider"
-                  >
-                    <svg className="w-4 h-4 shrink-0 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.557 4.122 1.529 5.855L0 24l6.335-1.652A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.37l-.36-.214-3.727.972.994-3.627-.234-.373A9.818 9.818 0 1112 21.818z"/>
-                    </svg>
-                    Pedir por WhatsApp
-                  </button>
                 </div>
               </div>
             </div>

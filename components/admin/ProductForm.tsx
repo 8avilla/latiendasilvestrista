@@ -129,7 +129,9 @@ function inputClass(hasError: boolean) {
 export default function ProductForm({ initial }: ProductFormProps) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const popupFileRef = useRef<HTMLInputElement>(null);
   const [categories, setCategories] = useState<CategoryDoc[]>([]);
+  const [uploadingPopup, setUploadingPopup] = useState(false);
 
   useEffect(() => {
     fetch('/api/categorias').then(r => r.json()).then(setCategories).catch(() => {});
@@ -144,6 +146,8 @@ export default function ProductForm({ initial }: ProductFormProps) {
     variantGroups: initial?.variantGroups ?? [],
     active: initial?.active !== false,
     freeShipping: initial?.freeShipping ?? false,
+    soldOut: initial?.soldOut ?? false,
+    popup: initial?.popup ?? { enabled: false, image: '' },
   });
 
   const [groupInputs, setGroupInputs] = useState<{ name: string; optionsStr: string }[]>(
@@ -210,6 +214,26 @@ export default function ProductForm({ initial }: ProductFormProps) {
   function removeImage(index: number) {
     setField('images', form.images.filter((_, i) => i !== index));
     touch('images');
+  }
+
+  async function handlePopupFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPopup(true);
+    setApiError('');
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error subiendo imagen del popup');
+      setForm(prev => ({ ...prev, popup: { ...(prev.popup ?? { enabled: false, image: '' }), image: data.url } }));
+    } catch (err: unknown) {
+      setApiError(err instanceof Error ? err.message : 'Error subiendo imagen del popup');
+    } finally {
+      setUploadingPopup(false);
+      if (popupFileRef.current) popupFileRef.current.value = '';
+    }
   }
 
   function moveImage(from: number, to: number) {
@@ -552,6 +576,111 @@ export default function ProductForm({ initial }: ProductFormProps) {
               form.freeShipping ? 'translate-x-6' : 'translate-x-1'
             }`} />
           </button>
+        </div>
+
+        <div className="flex items-center justify-between border border-gray-200 rounded-xl px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-black">Producto agotado</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {form.soldOut
+                ? 'Se muestra como agotado y no se puede agregar al carrito'
+                : 'El producto está disponible para comprar'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setField('soldOut', !form.soldOut)}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+              form.soldOut ? 'bg-gray-700' : 'bg-gray-200'
+            }`}
+            aria-label="Toggle agotado"
+          >
+            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+              form.soldOut ? 'translate-x-6' : 'translate-x-1'
+            }`} />
+          </button>
+        </div>
+
+        {/* Popup al agregar al carrito */}
+        <div className={`border rounded-xl overflow-hidden transition-colors ${
+          form.popup?.enabled ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200'
+        }`}>
+          <div className="flex items-center justify-between px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-black">Popup al agregar al carrito</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {form.popup?.enabled
+                  ? 'Se mostrará un aviso con imagen antes de confirmar'
+                  : 'No se muestra ningún aviso al añadir este producto'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm(prev => ({ ...prev, popup: { ...(prev.popup ?? { enabled: false, image: '' }), enabled: !prev.popup?.enabled } }))}
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                form.popup?.enabled ? 'bg-amber-500' : 'bg-gray-200'
+              }`}
+              aria-label="Toggle popup"
+            >
+              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                form.popup?.enabled ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          {form.popup?.enabled && (
+            <div className="px-4 pb-4 flex flex-col gap-3 border-t border-amber-200">
+              <p className="text-xs text-amber-700 font-medium pt-3">Imagen del popup</p>
+
+              {form.popup.image ? (
+                <div className="relative w-full max-w-xs aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+                  <Image
+                    src={form.popup.image}
+                    alt="Imagen del popup"
+                    fill
+                    sizes="320px"
+                    className="object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, popup: { ...(prev.popup ?? { enabled: true, image: '' }), image: '' } }))}
+                    className="absolute top-2 right-2 w-7 h-7 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white transition-colors"
+                    title="Eliminar imagen"
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => popupFileRef.current?.click()}
+                  disabled={uploadingPopup}
+                  className="w-full max-w-xs aspect-[4/3] rounded-xl border-2 border-dashed border-amber-300 flex flex-col items-center justify-center gap-2 text-amber-500 hover:border-amber-500 transition-colors disabled:opacity-50"
+                >
+                  {uploadingPopup ? (
+                    <span className="text-xs">Subiendo...</span>
+                  ) : (
+                    <>
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span className="text-xs font-medium">Subir imagen del popup</span>
+                      <span className="text-[10px] text-amber-400">Recomendado: 800×600 px</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              <input
+                ref={popupFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePopupFileChange}
+                disabled={uploadingPopup}
+              />
+            </div>
+          )}
         </div>
       </div>
 

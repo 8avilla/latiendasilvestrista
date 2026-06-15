@@ -9,6 +9,11 @@ export interface VariantGroup {
   options: string[];
 }
 
+export interface ProductPopup {
+  enabled: boolean;
+  image: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -19,6 +24,8 @@ export interface Product {
   variantGroups?: VariantGroup[];
   active?: boolean;
   freeShipping?: boolean;
+  soldOut?: boolean;
+  popup?: ProductPopup;
 }
 
 export interface CartItem {

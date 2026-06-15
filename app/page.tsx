@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getDb } from '@/lib/mongodb';
 import { Product, CategoryDoc } from '@/types';
 import Hero from '@/components/Hero';
@@ -5,6 +6,17 @@ import TrustBand from '@/components/TrustBand';
 import ProductGrid from '@/components/ProductGrid';
 import FAQ from '@/components/FAQ';
 import SizeGuide from '@/components/SizeGuide';
+
+export const metadata: Metadata = {
+  title: 'La Tienda Silvestrista — Silvestre Dangond',
+  description: 'Compra camisetas, gorras, sombreros, manillas y vasos oficiales de Silvestre Dangond. El rey del vallenato. Envíos a toda Colombia.',
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'La Tienda Silvestrista — Compra productos oficiales de Silvestre Dangond',
+    description: 'Camisetas, gorras, sombreros y más del movimiento silvestrista. Envíos a toda Colombia.',
+    url: '/',
+  },
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +33,8 @@ async function getProducts(): Promise<Product[]> {
       images: (doc.images as string[] | undefined) ?? [],
       variantGroups: (doc.variantGroups as Product['variantGroups']) ?? [],
       freeShipping: doc.freeShipping === true,
+      soldOut: doc.soldOut === true,
+      popup: doc.popup ?? undefined,
     }));
   } catch {
     return [];

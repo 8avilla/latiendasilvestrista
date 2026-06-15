@@ -1,9 +1,11 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { useCart } from '@/components/CartProvider';
+import ProductPopupModal from '@/components/ProductPopupModal';
 
 interface ProductCardProps {
   product: Product;
@@ -23,6 +25,7 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
   const { addItem, openSidebar } = useCart();
   const [selections, setSelections] = useState<Record<string, string>>(() => initSelections(product));
   const [added, setAdded] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
   const [imgIdx, setImgIdx] = useState(0);
   const [visible, setVisible] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
@@ -65,11 +68,19 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
     touchStartX.current = null;
   }
 
-  function handleAdd() {
+  function doAdd() {
     addItem(product, Object.keys(selections).length > 0 ? selections : undefined);
     openSidebar();
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
+  }
+
+  function handleAdd() {
+    if (product.popup?.enabled && product.popup?.image) {
+      setPopupOpen(true);
+    } else {
+      doAdd();
+    }
   }
 
   const groups = product.variantGroups ?? [];
@@ -83,11 +94,7 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
       }`}
     >
       {/* Imagen */}
-      <div
-        className="relative aspect-[3/4] overflow-hidden bg-gray-100 shrink-0"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
+      <Link href={`/producto/${product.id}`} className="block relative aspect-[3/4] overflow-hidden bg-gray-100 shrink-0" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         {currentImage ? (
           <Image
             src={currentImage}
@@ -114,8 +121,17 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
           </span>
         </div>
 
+        {/* Badge agotado */}
+        {product.soldOut && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <span className="bg-white text-black text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow">
+              Agotado
+            </span>
+          </div>
+        )}
+
         {/* Badge envío gratis */}
-        {product.freeShipping && (
+        {product.freeShipping && !product.soldOut && (
           <div className="absolute top-3 left-3 bg-green-500 text-white text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-full shadow-sm">
             Envío gratis
           </div>
@@ -151,16 +167,18 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
             </div>
           </>
         )}
-      </div>
+      </Link>
 
       {/* Info */}
       <div className="flex-1 flex flex-col p-4 gap-2">
         <p className="text-[10px] uppercase tracking-[0.18em] text-red-600 font-semibold leading-none">
           {product.category}
         </p>
-        <h3 className="text-sm font-medium text-black leading-snug line-clamp-2 min-h-[2.5rem]">
-          {product.name}
-        </h3>
+        <Link href={`/producto/${product.id}`} className="hover:text-red-600 transition-colors">
+          <h3 className="text-sm font-medium text-black leading-snug line-clamp-2 min-h-[2.5rem]">
+            {product.name}
+          </h3>
+        </Link>
 
         {/* Variantes */}
         <div className="flex flex-col gap-2 mt-1 min-h-[2rem]">
@@ -191,15 +209,27 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
       <div className="px-4 pb-4">
         <button
           onClick={handleAdd}
-          className={`w-full py-3 text-xs font-semibold uppercase tracking-[0.15em] rounded-xl transition-all duration-200 active:scale-[0.97] select-none ${
-            added
-              ? 'bg-black text-white btn-cart-added'
-              : 'bg-red-600 hover:bg-red-700 text-white'
+          disabled={product.soldOut}
+          className={`w-full py-3 text-xs font-semibold uppercase tracking-[0.15em] rounded-xl transition-all duration-200 active:scale-[0.97] select-none disabled:cursor-not-allowed ${
+            product.soldOut
+              ? 'bg-gray-100 text-gray-400'
+              : added
+                ? 'bg-black text-white btn-cart-added'
+                : 'bg-red-600 hover:bg-red-700 text-white'
           }`}
         >
-          {added ? '✓ ¡Añadido!' : '+ Añadir al carrito'}
+          {product.soldOut ? 'Agotado' : added ? '✓ ¡Añadido!' : '+ Añadir al carrito'}
         </button>
       </div>
+
+      {popupOpen && product.popup?.image && (
+        <ProductPopupModal
+          image={product.popup.image}
+          productName={product.name}
+          onAccept={() => { setPopupOpen(false); doAdd(); }}
+          onClose={() => setPopupOpen(false)}
+        />
+      )}
     </article>
   );
 }
