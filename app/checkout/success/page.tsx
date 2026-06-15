@@ -88,8 +88,7 @@ function CheckoutSuccessContent() {
         const data = (await response.json()) as Order;
         setOrder(data);
 
-        // Si el estado es aprobado (PAGADO) o en proceso (PAGO SIN CONFIRMAR / PEDIDO SIN CONFIRMAR), vaciamos el carrito
-        if (data.status === 'PAGADO' || data.status === 'PAGO SIN CONFIRMAR' || data.status === 'PEDIDO SIN CONFIRMAR' || data.status === 'ENVIADO') {
+        if (data.status === 'CONFIRMADO' || data.status === 'PAGO PENDIENTE' || data.status === 'NUEVO PEDIDO' || data.status === 'EN PREPARACIÓN' || data.status === 'ENVIADO' || data.status === 'ENTREGADO') {
           clearCart();
         }
       } catch (err) {
