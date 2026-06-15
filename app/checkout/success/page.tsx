@@ -131,9 +131,9 @@ function CheckoutSuccessContent() {
     );
   }
 
-  const isPaid = order.status === 'PAGADO' || order.status === 'ENVIADO';
-  const isPending = order.status === 'PAGO SIN CONFIRMAR';
-  const isWhatsApp = order.status === 'PEDIDO SIN CONFIRMAR';
+  const isPaid = order.status === 'CONFIRMADO' || order.status === 'EN PREPARACIÓN' || order.status === 'ENVIADO' || order.status === 'ENTREGADO';
+  const isPending = order.status === 'PAGO PENDIENTE';
+  const isWhatsApp = order.status === 'NUEVO PEDIDO';
 
   return (
     <div className="flex-1 bg-gray-50 py-12 px-6">
