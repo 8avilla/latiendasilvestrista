@@ -1,5 +1,7 @@
 import { getDb } from '@/lib/mongodb';
 import { NextRequest } from 'next/server';
+import { sendOrderConfirmedEmail, sendOrderReceivedEmail } from '@/lib/mail';
+import { Order } from '@/types';
 
 export async function POST(request: Request) {
   try {
@@ -18,20 +20,16 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Faltan datos de envío obligatorios' }, { status: 400 });
     }
 
-    // Determinar estado por defecto si no viene
     let finalStatus = status;
     if (!finalStatus) {
       finalStatus = paymentMethod === 'WHATSAPP' ? 'PEDIDO SIN CONFIRMAR' : 'PAGO SIN CONFIRMAR';
     }
 
-    // Determinar canal de venta
     let finalChannel = salesChannel;
     if (!finalChannel) {
       finalChannel = paymentMethod === 'WHATSAPP' ? 'Whatsapp' : 'Tienda Online';
     }
 
-    // Generar un ID de orden único que cumpla con los requisitos de Bold:
-    // Alfanumérico, guiones bajos o medios, máximo 60 caracteres.
     const timestamp = Math.floor(Date.now() / 1000);
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const orderId = `LTS-${timestamp}-${randomSuffix}`;
@@ -53,6 +51,12 @@ export async function POST(request: Request) {
 
     await db.collection('orders').insertOne(orderDoc);
 
+    if (paymentMethod === 'WHATSAPP' && shippingDetails.email) {
+      sendOrderReceivedEmail(orderDoc as unknown as Order).catch(err =>
+        console.error('Error enviando email de pedido recibido:', err)
+      );
+    }
+
     return Response.json({ orderId, order: orderDoc }, { status: 201 });
   } catch (error) {
     console.error('Error al crear el pedido:', error);
@@ -68,13 +72,11 @@ export async function GET(request: NextRequest) {
     const boldTxStatus = searchParams.get('bold-tx-status');
 
     if (orderId) {
-      // Buscar una orden en particular
       const order = await db.collection('orders').findOne({ orderId });
       if (!order) {
         return Response.json({ error: 'Pedido no encontrado' }, { status: 404 });
       }
 
-      // Si la transacción fue aprobada o rechazada en la redirección y está PAGO SIN CONFIRMAR, actualizamos base de datos
       if (order.status === 'PAGO SIN CONFIRMAR') {
         let updatedStatus = '';
         if (boldTxStatus === 'approved') {
@@ -86,22 +88,21 @@ export async function GET(request: NextRequest) {
         if (updatedStatus) {
           await db.collection('orders').updateOne(
             { orderId },
-            {
-              $set: {
-                status: updatedStatus,
-                updatedAt: new Date(),
-              },
-            }
+            { $set: { status: updatedStatus, updatedAt: new Date() } }
           );
           order.status = updatedStatus;
+
+          if (updatedStatus === 'PAGADO' && order.shippingDetails?.email) {
+            sendOrderConfirmedEmail(order as unknown as Order).catch(err =>
+              console.error('Error enviando email de confirmación:', err)
+            );
+          }
         }
       }
 
       return Response.json(order);
     }
 
-    // Si no hay orderId, listar todos los pedidos (para la vista de administrador)
-    // Ordenar por fecha de creación descendente
     const orders = await db.collection('orders').find({}).sort({ createdAt: -1 }).toArray();
     return Response.json(orders);
   } catch (error) {
@@ -119,32 +120,29 @@ export async function PUT(request: Request) {
       return Response.json({ error: 'Falta el ID del pedido' }, { status: 400 });
     }
 
+    const prevOrder = await db.collection('orders').findOne({ orderId });
+    if (!prevOrder) {
+      return Response.json({ error: 'Pedido no encontrado' }, { status: 404 });
+    }
+
     const updateFields: {
       updatedAt: Date;
       status?: string;
       salesChannel?: string;
       notes?: string;
-    } = {
-      updatedAt: new Date(),
-    };
+    } = { updatedAt: new Date() };
 
-    if (status !== undefined) {
-      updateFields.status = status;
-    }
-    if (salesChannel !== undefined) {
-      updateFields.salesChannel = salesChannel;
-    }
-    if (notes !== undefined) {
-      updateFields.notes = notes;
-    }
+    if (status !== undefined) updateFields.status = status;
+    if (salesChannel !== undefined) updateFields.salesChannel = salesChannel;
+    if (notes !== undefined) updateFields.notes = notes;
 
-    const result = await db.collection('orders').updateOne(
-      { orderId },
-      { $set: updateFields }
-    );
+    await db.collection('orders').updateOne({ orderId }, { $set: updateFields });
 
-    if (result.matchedCount === 0) {
-      return Response.json({ error: 'Pedido no encontrado' }, { status: 404 });
+    if (status === 'PAGADO' && prevOrder.status !== 'PAGADO' && prevOrder.shippingDetails?.email) {
+      const updatedOrder = { ...prevOrder, ...updateFields } as unknown as Order;
+      sendOrderConfirmedEmail(updatedOrder).catch(err =>
+        console.error('Error enviando email de confirmación:', err)
+      );
     }
 
     return Response.json({ success: true, message: 'Pedido actualizado correctamente' });
@@ -176,4 +174,3 @@ export async function DELETE(request: Request) {
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
-

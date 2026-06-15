@@ -1,4 +1,6 @@
 import { getDb } from '@/lib/mongodb';
+import { sendOrderConfirmedEmail } from '@/lib/mail';
+import { Order } from '@/types';
 
 export async function POST(request: Request) {
   try {
@@ -49,9 +51,15 @@ export async function POST(request: Request) {
         }
       );
       console.log(`Pedido ${orderId} actualizado a estado: ${nextStatus}`);
+
+      if (nextStatus === 'PAGADO' && order.shippingDetails?.email) {
+        const updatedOrder = { ...order, status: nextStatus } as unknown as Order;
+        sendOrderConfirmedEmail(updatedOrder).catch(err =>
+          console.error('Error enviando email de confirmación:', err)
+        );
+      }
     }
 
-    // Responder con éxito a Bold (200 OK) para evitar reintentos
     return Response.json({ success: true });
   } catch (error) {
     console.error('Error al procesar webhook de Bold:', error);

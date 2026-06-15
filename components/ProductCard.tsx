@@ -114,6 +114,13 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
           </span>
         </div>
 
+        {/* Badge envío gratis */}
+        {product.freeShipping && (
+          <div className="absolute top-3 left-3 bg-green-500 text-white text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-full shadow-sm">
+            Envío gratis
+          </div>
+        )}
+
         {hasMultiple && (
           <>
             <button

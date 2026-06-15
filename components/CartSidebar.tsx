@@ -114,11 +114,12 @@ export default function CartSidebar() {
                     {/* Imagen del Producto */}
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
                       {item.product.images && item.product.images[0] ? (
-                        <Image 
-                          src={item.product.images[0]} 
-                          alt={item.product.name} 
-                          fill 
-                          className="object-cover" 
+                        <Image
+                          src={item.product.images[0]}
+                          alt={item.product.name}
+                          fill
+                          sizes="48px"
+                          className="object-cover"
                         />
                       ) : (
                         <div className="w-full h-full bg-gray-100 flex items-center justify-center text-[8px] text-gray-400">

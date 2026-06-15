@@ -52,7 +52,7 @@ export default async function ProductosPage() {
             }`}>
               <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                 {p.images[0] ? (
-                  <Image src={p.images[0]} alt={p.name} fill className="object-cover" />
+                  <Image src={p.images[0]} alt={p.name} fill sizes="48px" className="object-cover" />
                 ) : (
                   <div className="w-full h-full bg-gray-100" />
                 )}

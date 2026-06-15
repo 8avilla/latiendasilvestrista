@@ -143,6 +143,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
     images: initial?.images ?? [],
     variantGroups: initial?.variantGroups ?? [],
     active: initial?.active !== false,
+    freeShipping: initial?.freeShipping ?? false,
   });
 
   const [groupInputs, setGroupInputs] = useState<{ name: string; optionsStr: string }[]>(
@@ -463,7 +464,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
           {form.images.map((url, i) => (
             <div key={url + i} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
-              <Image src={url} alt={`imagen ${i + 1}`} fill className="object-cover" />
+              <Image src={url} alt={`imagen ${i + 1}`} fill sizes="25vw" className="object-cover" />
               {i === 0 && (
                 <span className="absolute top-1.5 left-1.5 bg-red-600 text-white text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-semibold">
                   Principal
@@ -507,26 +508,51 @@ export default function ProductForm({ initial }: ProductFormProps) {
           onChange={handleFileChange} disabled={uploading} />
       </div>
 
-      {/* Visibilidad */}
-      <div className="flex items-center justify-between border border-gray-200 rounded-xl px-4 py-3">
-        <div>
-          <p className="text-sm font-medium text-black">Visible en la tienda</p>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {form.active ? 'El producto aparece en el catálogo' : 'El producto está oculto para los clientes'}
-          </p>
+      {/* Visibilidad + Envío gratis */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between border border-gray-200 rounded-xl px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-black">Visible en la tienda</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {form.active ? 'El producto aparece en el catálogo' : 'El producto está oculto para los clientes'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setField('active', !form.active)}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+              form.active ? 'bg-red-600' : 'bg-gray-200'
+            }`}
+            aria-label="Toggle visibilidad"
+          >
+            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+              form.active ? 'translate-x-6' : 'translate-x-1'
+            }`} />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setField('active', !form.active)}
-          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-            form.active ? 'bg-red-600' : 'bg-gray-200'
-          }`}
-          aria-label="Toggle visibilidad"
-        >
-          <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-            form.active ? 'translate-x-6' : 'translate-x-1'
-          }`} />
-        </button>
+
+        <div className="flex items-center justify-between border border-gray-200 rounded-xl px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-black">Envío gratis</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {form.freeShipping
+                ? 'Este producto tiene envío gratis a todo Colombia'
+                : 'Se cobra el envío según el departamento del cliente'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setField('freeShipping', !form.freeShipping)}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+              form.freeShipping ? 'bg-green-500' : 'bg-gray-200'
+            }`}
+            aria-label="Toggle envío gratis"
+          >
+            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+              form.freeShipping ? 'translate-x-6' : 'translate-x-1'
+            }`} />
+          </button>
+        </div>
       </div>
 
       {/* Botones */}

@@ -20,6 +20,7 @@ async function getProducts(): Promise<Product[]> {
       description: doc.description as string,
       images: (doc.images as string[] | undefined) ?? [],
       variantGroups: (doc.variantGroups as Product['variantGroups']) ?? [],
+      freeShipping: doc.freeShipping === true,
     }));
   } catch {
     return [];

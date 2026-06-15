@@ -30,6 +30,9 @@ export default function AdminNav() {
           <Link href="/admin/pedidos" className="text-gray-400 hover:text-white transition-colors">
             Pedidos
           </Link>
+          <Link href="/admin/domicilios" className="text-gray-400 hover:text-white transition-colors">
+            Domicilios
+          </Link>
           <Link href="/" className="text-gray-400 hover:text-white transition-colors" target="_blank">
             Ver tienda ↗
           </Link>

@@ -20,7 +20,7 @@ export default function Hero() {
   }
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 lg:items-stretch">
 
       {/* ── Columna texto ── */}
       <div className="flex flex-col gap-6 order-2 lg:order-1">
@@ -85,14 +85,14 @@ export default function Hero() {
       </div>
 
       {/* ── Columna imagen ── */}
-      <div className="relative order-1 lg:order-2 w-full overflow-hidden rounded-2xl">
+      <div className="relative order-1 lg:order-2 w-full rounded-2xl overflow-hidden min-h-[280px] lg:min-h-0">
         <video
           src="/video/camiseta-colombia-tienda.mp4"
           autoPlay
           loop
           muted
           playsInline
-          className="w-full h-auto max-h-[340px] sm:max-h-[440px] lg:max-h-[520px] object-cover object-center"
+          className="absolute inset-0 w-full h-full object-cover"
         />
       </div>
 

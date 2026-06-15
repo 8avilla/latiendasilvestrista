@@ -22,6 +22,7 @@ async function getProduct(id: string): Promise<AdminProduct | null> {
       images: (doc.images as string[] | undefined) ?? [],
       variantGroups: (doc.variantGroups as Product['variantGroups']) ?? [],
       active: doc.active !== false,
+      freeShipping: doc.freeShipping === true,
     };
   } catch {
     return null;

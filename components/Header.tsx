@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useCart } from '@/components/CartProvider';
 
 const NAV_LINKS = [
@@ -12,6 +14,8 @@ const NAV_LINKS = [
 
 export default function Header() {
   const { totalItems, openSidebar } = useCart();
+  const pathname = usePathname();
+  const isHome = pathname === '/';
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -35,8 +39,9 @@ export default function Header() {
       }`}>
 
         {/* Logo */}
-        <div 
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        <Link
+          href="/"
+          onClick={e => { if (isHome) { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}
           className="flex items-center gap-2.5 shrink-0 group/logo cursor-pointer select-none"
         >
           <div className="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center shrink-0 group-hover/logo:rotate-[15deg] group-hover/logo:border-red-600 transition-all duration-300">
@@ -53,20 +58,27 @@ export default function Header() {
               Silvestre Dangond
             </span>
           </div>
-        </div>
+        </Link>
 
         {/* Nav — desktop */}
         <nav className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-8">
           {NAV_LINKS.map(link => (
             <a
               key={link.href}
-              href={link.href}
+              href={isHome ? link.href : `/${link.href}`}
               className="relative text-xs uppercase tracking-widest text-gray-500 hover:text-black transition-colors whitespace-nowrap py-1 group"
             >
               {link.label}
               <span className="absolute bottom-0 left-0 w-full h-[1px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
             </a>
           ))}
+          <Link
+            href="/seguimiento"
+            className="relative text-xs uppercase tracking-widest text-gray-500 hover:text-black transition-colors whitespace-nowrap py-1 group"
+          >
+            Mi pedido
+            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+          </Link>
         </nav>
 
         {/* Derecha: hamburger (móvil) + carrito */}
@@ -116,13 +128,20 @@ export default function Header() {
           {NAV_LINKS.map(link => (
             <a
               key={link.href}
-              href={link.href}
+              href={isHome ? link.href : `/${link.href}`}
               onClick={() => setMenuOpen(false)}
               className="py-3 text-xs uppercase tracking-widest text-gray-500 hover:text-black transition-colors border-b border-gray-50 last:border-0"
             >
               {link.label}
             </a>
           ))}
+          <Link
+            href="/seguimiento"
+            onClick={() => setMenuOpen(false)}
+            className="py-3 text-xs uppercase tracking-widest text-gray-500 hover:text-black transition-colors"
+          >
+            Mi pedido
+          </Link>
         </nav>
       </div>
     </header>

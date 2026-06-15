@@ -18,6 +18,7 @@ export interface Product {
   images: string[];
   variantGroups?: VariantGroup[];
   active?: boolean;
+  freeShipping?: boolean;
 }
 
 export interface CartItem {

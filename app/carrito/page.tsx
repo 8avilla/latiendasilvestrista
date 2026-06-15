@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart, buildSelectionsKey } from '@/components/CartProvider';
-import { DEPARTMENTS, calculateShipping } from '@/lib/colombia';
+import { DEPARTMENTS } from '@/lib/colombia';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -43,14 +43,27 @@ export default function CarritoPage() {
     email: '',
   });
 
-  const selectedDeptMunicipalities = DEPARTMENTS.find(d => d.name === shippingDetails.department)?.municipalities ?? [];
-  const shippingPrice = shippingDetails.department
-    ? calculateShipping(shippingDetails.department, totalPrice)
-    : null;
-  const grandTotal = shippingPrice !== null ? totalPrice + shippingPrice : totalPrice;
-
+  const [shippingRates, setShippingRates] = useState<{ defaultPrice: number; rates: Record<string, number> } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    fetch('/api/shipping-rates')
+      .then(r => r.json())
+      .then(setShippingRates)
+      .catch(() => {});
+  }, []);
+
+  const selectedDeptMunicipalities = DEPARTMENTS.find(d => d.name === shippingDetails.department)?.municipalities ?? [];
+  const hasFreeShipping = items.some(item => item.product.freeShipping);
+  const shippingPrice: number | null = (() => {
+    if (hasFreeShipping) return 0;
+    if (!shippingDetails.city) return null;
+    if (totalPrice >= 150000) return 0;
+    if (!shippingRates) return null;
+    return shippingRates.rates[shippingDetails.city] ?? shippingRates.defaultPrice;
+  })();
+  const grandTotal = shippingPrice !== null ? totalPrice + shippingPrice : totalPrice;
 
   // Generar la URL de WhatsApp con los artículos y los datos de envío
   function getWhatsAppURL(): string {
@@ -266,11 +279,12 @@ export default function CarritoPage() {
                         {/* Imagen del Producto */}
                         <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
                           {item.product.images && item.product.images[0] ? (
-                            <Image 
-                              src={item.product.images[0]} 
-                              alt={item.product.name} 
-                              fill 
-                              className="object-cover" 
+                            <Image
+                              src={item.product.images[0]}
+                              alt={item.product.name}
+                              fill
+                              sizes="64px"
+                              className="object-cover"
                             />
                           ) : (
                             <div className="w-full h-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-400">
@@ -460,7 +474,9 @@ export default function CarritoPage() {
                   <div className="flex justify-between items-baseline text-xs text-gray-500 mb-2">
                     <span>Envío:</span>
                     {shippingPrice === null ? (
-                      <span className="text-gray-400 italic">Selecciona departamento</span>
+                      <span className="text-gray-400 italic">
+                        {shippingDetails.city && !shippingRates ? 'Calculando...' : 'Selecciona departamento y ciudad'}
+                      </span>
                     ) : shippingPrice === 0 ? (
                       <span className="text-green-600 font-semibold">Gratis</span>
                     ) : (
