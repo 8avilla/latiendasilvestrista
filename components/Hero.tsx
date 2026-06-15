@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573002493031';
 
@@ -87,14 +86,13 @@ export default function Hero() {
 
       {/* ── Columna imagen ── */}
       <div className="relative order-1 lg:order-2 w-full overflow-hidden rounded-2xl">
-        <Image
-          src="/images/hero_colombia.jpg"
-          alt="Colección Especial Colombia — La Tienda Silvestrista"
-          width={0}
-          height={0}
-          sizes="(max-width: 1024px) 90vw, 50vw"
+        <video
+          src="/video/camiseta-colombia-tienda.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
           className="w-full h-auto max-h-[340px] sm:max-h-[440px] lg:max-h-[520px] object-cover object-center"
-          priority
         />
       </div>
 
