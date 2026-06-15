@@ -59,7 +59,6 @@ export default function CarritoPage() {
   const shippingPrice: number | null = (() => {
     if (hasFreeShipping) return 0;
     if (!shippingDetails.city) return null;
-    if (totalPrice >= 150000) return 0;
     if (!shippingRates) return null;
     return shippingRates.rates[shippingDetails.city] ?? shippingRates.defaultPrice;
   })();
