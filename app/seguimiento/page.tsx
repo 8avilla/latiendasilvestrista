@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Order } from '@/types';
+import { formatDateCO } from '@/lib/dates';
 import { Suspense } from 'react';
 
 const STEPS: { key: string[]; label: string; sub: string }[] = [
@@ -31,7 +32,7 @@ function TrackingView({ order }: { order: Order }) {
   const isCancelled = order.status === 'CANCELADO';
   const active = stepIndex(order.status);
   const statusMeta = STATUS_LABELS[order.status] ?? { label: order.status, color: 'text-gray-700', bg: 'bg-gray-50', bar: 'bg-gray-400' };
-  const date = new Date(order.createdAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
+  const date = formatDateCO(order.createdAt);
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4 animate-fade-in">

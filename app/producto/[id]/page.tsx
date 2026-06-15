@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ObjectId } from 'mongodb';
 import { getDb } from '@/lib/mongodb';
 import { Product } from '@/types';
 import AddToCart from './AddToCart';
+import ProductGallery from './ProductGallery';
+import ProductTabs from './ProductTabs';
+import StickyAddToCart from './StickyAddToCart';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://latiendasilvestrista.com';
 
@@ -116,43 +118,11 @@ export default async function ProductoPage({ params }: { params: Promise<{ id: s
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
 
             {/* Galería */}
-            <div className="flex flex-col gap-3">
-              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100">
-                {product.images[0] ? (
-                  <Image
-                    src={product.images[0]}
-                    alt={product.name}
-                    fill
-                    priority
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300 text-sm">Sin imagen</div>
-                )}
-                {product.freeShipping && (
-                  <div className="absolute top-4 left-4 bg-green-500 text-white text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-full shadow">
-                    Envío gratis
-                  </div>
-                )}
-              </div>
-
-              {product.images.length > 1 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {product.images.slice(1).map((img, i) => (
-                    <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                      <Image
-                        src={img}
-                        alt={`${product.name} — imagen ${i + 2}`}
-                        fill
-                        sizes="(max-width: 1024px) 25vw, 12vw"
-                        className="object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ProductGallery
+              images={product.images}
+              name={product.name}
+              freeShipping={product.freeShipping}
+            />
 
             {/* Info */}
             <div className="flex flex-col gap-6 lg:py-4">
@@ -173,11 +143,11 @@ export default async function ProductoPage({ params }: { params: Promise<{ id: s
                 </p>
               </div>
 
-              {product.description && (
-                <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
-              )}
+              <ProductTabs description={product.description} />
 
-              <AddToCart product={product} />
+              <div id="add-to-cart-section">
+                <AddToCart product={product} />
+              </div>
 
               <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-3 text-xs text-gray-500">
                 <div className="flex items-center gap-2">
@@ -191,12 +161,6 @@ export default async function ProductoPage({ params }: { params: Promise<{ id: s
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
                   </svg>
                   Pago seguro con Bold
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-gray-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448L.057 24z"/>
-                  </svg>
-                  Pide por WhatsApp
                 </div>
                 <div className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,6 +180,12 @@ export default async function ProductoPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
       </main>
+
+      <StickyAddToCart
+        productName={product.name}
+        price={product.price}
+        soldOut={product.soldOut}
+      />
     </>
   );
 }

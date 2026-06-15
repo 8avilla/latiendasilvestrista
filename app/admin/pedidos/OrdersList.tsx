@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { Order, Product, OrderStatus, SalesChannel } from '@/types';
 import { DEPARTMENTS } from '@/lib/colombia';
+import { ClientDateTime } from '@/components/ClientDateTime';
 
 interface OrdersListProps {
   orders: Order[];
@@ -39,6 +40,25 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   const [showTrash, setShowTrash] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [takingId, setTakingId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<string | null>(null);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  function toggleSelect(orderId: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(orderId) ? next.delete(orderId) : next.add(orderId);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    const visibleIds = filteredOrders.map(o => o.orderId);
+    const allSelected = visibleIds.every(id => selectedIds.has(id));
+    setSelectedIds(allSelected ? new Set() : new Set(visibleIds));
+  }
 
   // Estados para creación manual de un nuevo pedido (Drawer 2)
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
@@ -149,6 +169,36 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
 
   const trashCount = useMemo(() => localOrders.filter(o => o.deleted).length, [localOrders]);
 
+  const metrics = useMemo(() => {
+    const TZ = 'America/Bogota';
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('es-CO', { timeZone: TZ });
+    const thisMonth = now.toLocaleString('es-CO', { timeZone: TZ, month: 'numeric' });
+    const thisYear = new Date(now.toLocaleString('en-US', { timeZone: TZ })).getFullYear();
+
+    const paidStatuses = ['PAGADO', 'PEDIDO TOMADO', 'ENVIADO'];
+    const active = localOrders.filter(o => !o.deleted);
+    const paidOrders = active.filter(o => paidStatuses.includes(o.status));
+
+    const todaySales = paidOrders
+      .filter(o => new Date(o.createdAt).toLocaleDateString('es-CO', { timeZone: TZ }) === todayStr)
+      .reduce((s, o) => s + o.totalPrice, 0);
+
+    const monthSales = paidOrders.filter(o => {
+      const d = new Date(o.createdAt);
+      const m = d.toLocaleString('es-CO', { timeZone: TZ, month: 'numeric' });
+      const y = new Date(d.toLocaleString('en-US', { timeZone: TZ })).getFullYear();
+      return m === thisMonth && y === thisYear;
+    }).reduce((s, o) => s + o.totalPrice, 0);
+
+    const pending = active.filter(o => o.status === 'PAGADO' || o.status === 'PEDIDO TOMADO').length;
+    const avgTicket = paidOrders.length > 0
+      ? Math.round(paidOrders.reduce((s, o) => s + o.totalPrice, 0) / paidOrders.length)
+      : 0;
+
+    return { todaySales, monthSales, pending, avgTicket, paidCount: paidOrders.length };
+  }, [localOrders]);
+
   // Calcular conteos de cada estado (solo pedidos activos)
   const counts = useMemo(() => {
     const active = localOrders.filter(o => !o.deleted);
@@ -179,6 +229,18 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         // Filtro por Canal de Venta
         if (channelFilter !== 'ALL' && order.salesChannel !== channelFilter) {
           return false;
+        }
+
+        // Filtro por rango de fechas
+        if (dateFrom) {
+          const from = new Date(dateFrom);
+          from.setHours(0, 0, 0, 0);
+          if (new Date(order.createdAt) < from) return false;
+        }
+        if (dateTo) {
+          const to = new Date(dateTo);
+          to.setHours(23, 59, 59, 999);
+          if (new Date(order.createdAt) > to) return false;
         }
 
         // Búsqueda por Texto Libre
@@ -215,7 +277,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         }
         return 0;
       });
-  }, [localOrders, showTrash, search, statusFilter, channelFilter, sortBy]);
+  }, [localOrders, showTrash, search, statusFilter, channelFilter, sortBy, dateFrom, dateTo]);
 
   // Abrir y precargar Drawer de Edición
   function openDrawer(order: Order) {
@@ -371,6 +433,61 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     }
   }
 
+  async function handleRefresh() {
+    setIsRefreshing(true);
+    try {
+      // 1. Re-fetch todos los pedidos de la DB
+      const ordersRes = await fetch('/api/orders');
+      if (!ordersRes.ok) throw new Error('Error al cargar pedidos');
+      const raw = await ordersRes.json();
+
+      // Mapear igual que el server component de la página
+      const fresh = (raw as Record<string, unknown>[]).map((doc) => ({
+        _id: String(doc._id),
+        orderId: doc.orderId as string,
+        items: doc.items as Order['items'],
+        totalPrice: doc.totalPrice as number,
+        shippingPrice: (doc.shippingPrice as number) ?? 0,
+        shippingDetails: doc.shippingDetails as Order['shippingDetails'],
+        paymentMethod: doc.paymentMethod as Order['paymentMethod'],
+        status: doc.status as Order['status'],
+        salesChannel: (doc.salesChannel as Order['salesChannel']) ?? 'Tienda Online',
+        notes: (doc.notes as string) ?? '',
+        transactionDetails: doc.transactionDetails as Order['transactionDetails'],
+        createdAt: doc.createdAt as string,
+        updatedAt: doc.updatedAt as string,
+        deleted: doc.deleted === true,
+      }));
+
+      // 2. Sincronizar PAGO SIN CONFIRMAR con Bold (en paralelo)
+      const syncRes = await fetch('/api/admin/sync-bold', { method: 'POST' });
+      const syncData = syncRes.ok ? await syncRes.json() : { updated: 0, results: [] };
+
+      // Aplicar cambios de Bold sobre los pedidos frescos
+      const syncMap = new Map<string, string>(
+        (syncData.results ?? [])
+          .filter((r: { orderId: string; newStatus: string | null }) => r.newStatus)
+          .map((r: { orderId: string; newStatus: string }) => [r.orderId, r.newStatus])
+      );
+
+      const merged = fresh.map((o) =>
+        syncMap.has(o.orderId) ? { ...o, status: syncMap.get(o.orderId) as Order['status'] } : o
+      );
+
+      setLocalOrders(merged);
+      setLastRefresh(new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }));
+
+      if (syncData.updated > 0) {
+        alert(`Actualización completa. ${syncData.updated} pedido(s) actualizados desde Bold.`);
+      }
+    } catch (err) {
+      alert('Error al actualizar los pedidos. Intenta de nuevo.');
+      console.error(err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
+
   // Crear Pedido Manual
   async function handleCreateOrder(e: React.FormEvent) {
     e.preventDefault();
@@ -432,6 +549,196 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     }
   }
 
+  function handlePrintGuides() {
+    const selected = localOrders.filter(o => selectedIds.has(o.orderId));
+    if (selected.length === 0) return;
+
+    const guidesHtml = selected.map(order => {
+      const items = order.items.map(i => {
+        const vars = i.selections ? ` (${Object.values(i.selections).join(' / ')})` : '';
+        return `<li>${i.quantity}× ${i.product.name}${vars}</li>`;
+      }).join('');
+
+      const subtotal = order.items.reduce((s, i) => s + i.product.price * i.quantity, 0);
+      const shipping = order.shippingPrice ?? 0;
+      const date = new Date(order.createdAt).toLocaleDateString('es-CO', {
+        timeZone: 'America/Bogota', day: '2-digit', month: 'short', year: 'numeric',
+      });
+
+      return `
+        <div class="guide">
+          <div class="guide-head">
+            <div>
+              <div class="store">La Tienda Silvestrista</div>
+              <div class="date">${date}</div>
+            </div>
+            <div class="order-id">${order.orderId}</div>
+          </div>
+
+          <div class="section">
+            <div class="lbl">Destinatario</div>
+            <div class="name">${order.shippingDetails.name}</div>
+            <div class="phone">${order.shippingDetails.phone}</div>
+            <div>${order.shippingDetails.address}</div>
+            <div>${order.shippingDetails.city}${order.shippingDetails.department ? ', ' + order.shippingDetails.department : ''}</div>
+            ${order.shippingDetails.email ? `<div class="email">${order.shippingDetails.email}</div>` : ''}
+          </div>
+
+          <div class="section">
+            <div class="lbl">Productos</div>
+            <ul class="items">${items}</ul>
+          </div>
+
+          <div class="totals">
+            <div class="totals-row"><span>Subtotal</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>
+            <div class="totals-row"><span>Domicilio</span><span>${shipping === 0 ? 'Gratis' : '$' + shipping.toLocaleString('es-CO')}</span></div>
+            <div class="totals-row total-row"><span>Total</span><span>$${order.totalPrice.toLocaleString('es-CO')} COP</span></div>
+          </div>
+
+          ${order.notes ? `<div class="notes"><strong>Notas:</strong> ${order.notes}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Guías de envío — La Tienda Silvestrista</title>
+  <style>
+    @page { margin: 8mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #000; background: #fff; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+    .guide {
+      border: 1.5px solid #000;
+      border-radius: 3px;
+      padding: 4mm;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      display: flex;
+      flex-direction: column;
+      gap: 3mm;
+    }
+    .guide-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 3mm;
+    }
+    .store { font-size: 12px; font-weight: bold; }
+    .date { font-size: 9px; color: #666; margin-top: 1mm; }
+    .order-id {
+      font-family: monospace;
+      font-size: 9px;
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    .section { display: flex; flex-direction: column; gap: 1mm; }
+    .lbl {
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #888;
+      font-weight: bold;
+    }
+    .name { font-size: 16px; font-weight: bold; }
+    .phone { font-size: 14px; font-weight: 600; }
+    .email { color: #666; font-size: 10px; }
+    .items { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5mm; }
+    .items li::before { content: "• "; }
+    .totals {
+      border-top: 1px solid #ddd;
+      padding-top: 2mm;
+      display: flex;
+      flex-direction: column;
+      gap: 1mm;
+    }
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #555;
+    }
+    .total-row {
+      font-size: 12px;
+      font-weight: bold;
+      color: #000;
+      border-top: 1px solid #ddd;
+      padding-top: 1.5mm;
+      margin-top: 0.5mm;
+    }
+    .notes {
+      font-size: 9px;
+      color: #555;
+      border-top: 1px dashed #ddd;
+      padding-top: 2mm;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid">${guidesHtml}</div>
+  <script>window.onload = () => { window.print(); }</script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    }
+  }
+
+  function handleExportCSV() {
+    const headers = [
+      'ID Pedido', 'Fecha', 'Estado', 'Canal',
+      'Cliente', 'Teléfono', 'Email', 'Departamento', 'Ciudad', 'Dirección',
+      'Artículos', 'Subtotal', 'Domicilio', 'Total', 'Notas',
+    ];
+
+    const rows = filteredOrders.map(o => {
+      const subtotal = o.items.reduce((s, i) => s + i.product.price * i.quantity, 0);
+      const items = o.items
+        .map(i => {
+          const vars = i.selections ? Object.values(i.selections).join('/') : '';
+          return `${i.quantity}x ${i.product.name}${vars ? ` (${vars})` : ''}`;
+        })
+        .join(' | ');
+      return [
+        o.orderId,
+        new Date(o.createdAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' }),
+        o.status,
+        o.salesChannel || '',
+        o.shippingDetails.name,
+        o.shippingDetails.phone,
+        o.shippingDetails.email || '',
+        o.shippingDetails.department || '',
+        o.shippingDetails.city,
+        o.shippingDetails.address,
+        items,
+        subtotal,
+        o.shippingPrice ?? 0,
+        o.totalPrice,
+        (o.notes || '').replace(/\n/g, ' '),
+      ];
+    });
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pedidos-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // Manejar Escape para cerrar paneles
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -446,6 +753,35 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
 
   return (
     <div>
+      {/* Panel de métricas */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1">Ventas hoy</p>
+          <p className="text-xl font-bold text-black" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+            ${metrics.todaySales.toLocaleString('es-CO')}
+          </p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1">Ventas del mes</p>
+          <p className="text-xl font-bold text-black" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+            ${metrics.monthSales.toLocaleString('es-CO')}
+          </p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1">Pedidos por atender</p>
+          <p className="text-xl font-bold text-black" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+            {metrics.pending}
+            <span className="text-xs font-normal text-gray-400 ml-1.5">pedido{metrics.pending !== 1 ? 's' : ''}</span>
+          </p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1">Ticket promedio</p>
+          <p className="text-xl font-bold text-black" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+            ${metrics.avgTicket.toLocaleString('es-CO')}
+          </p>
+        </div>
+      </div>
+
       {/* Toggle Activos / Papelera */}
       <div className="flex items-center gap-2 mb-5">
         <button
@@ -520,6 +856,33 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           </div>
         </div>
 
+        {/* Fila de fechas */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-gray-400 font-medium">Periodo:</span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+          />
+          <span className="text-xs text-gray-400">—</span>
+          <input
+            type="date"
+            value={dateTo}
+            min={dateFrom}
+            onChange={e => setDateTo(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => { setDateFrom(''); setDateTo(''); }}
+              className="text-xs text-gray-400 hover:text-red-600 transition-colors"
+            >
+              ✕ limpiar
+            </button>
+          )}
+        </div>
+
         {/* Fila inferior: Filtros de Estado */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
           <div className="flex flex-wrap gap-2">
@@ -577,13 +940,15 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
             })}
           </div>
 
-          {(search.trim() !== '' || statusFilter !== 'ALL' || channelFilter !== 'ALL') && (
+          {(search.trim() !== '' || statusFilter !== 'ALL' || channelFilter !== 'ALL' || dateFrom || dateTo) && (
             <button
               onClick={() => {
                 setSearch('');
                 setStatusFilter('ALL');
                 setChannelFilter('ALL');
                 setSortBy('NEWEST');
+                setDateFrom('');
+                setDateTo('');
               }}
               className="text-xs text-red-600 hover:underline font-semibold flex items-center gap-1.5 transition-all"
             >
@@ -596,20 +961,91 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         </div>
       </div>}
 
-      {/* Resultados de Pedidos y Botón de Creación */}
+      {/* Barra de selección — aparece cuando hay pedidos marcados */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between bg-black text-white rounded-xl px-5 py-3 mb-4 shadow-lg">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold">{selectedIds.size} pedido{selectedIds.size !== 1 ? 's' : ''} seleccionado{selectedIds.size !== 1 ? 's' : ''}</span>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="text-xs text-white/60 hover:text-white transition-colors underline underline-offset-2"
+            >
+              Deseleccionar todo
+            </button>
+          </div>
+          <button
+            onClick={handlePrintGuides}
+            className="flex items-center gap-2 bg-white text-black hover:bg-gray-100 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors active:scale-95"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Imprimir guías
+          </button>
+        </div>
+      )}
+
+      {/* Resultados de Pedidos y Botones de acción */}
       <div className="flex items-center justify-between mb-6 px-1">
-        <span className="text-xs uppercase tracking-widest text-gray-400 font-semibold flex items-center">
-          {filteredOrders.length} {filteredOrders.length === 1 ? 'pedido encontrado' : 'pedidos encontrados'}
-        </span>
-        <button
-          onClick={openCreateDrawer}
-          className="bg-black hover:bg-red-600 text-white px-4 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-          </svg>
-          Crear Pedido
-        </button>
+        <div className="flex items-center gap-3">
+          {filteredOrders.length > 0 && (
+            <label className="flex items-center gap-1.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={filteredOrders.length > 0 && filteredOrders.every(o => selectedIds.has(o.orderId))}
+                onChange={toggleSelectAll}
+                className="w-3.5 h-3.5 accent-black cursor-pointer"
+              />
+              <span className="text-[10px] text-gray-400 group-hover:text-black transition-colors">Todos</span>
+            </label>
+          )}
+          <span className="text-xs uppercase tracking-widest text-gray-400 font-semibold">
+            {filteredOrders.length} {filteredOrders.length === 1 ? 'pedido encontrado' : 'pedidos encontrados'}
+          </span>
+          {lastRefresh && (
+            <span className="text-[10px] text-gray-400">
+              · actualizado {lastRefresh}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            disabled={filteredOrders.length === 0}
+            title="Exportar pedidos visibles a CSV"
+            className="flex items-center gap-1.5 border border-gray-200 hover:border-black text-gray-600 hover:text-black disabled:opacity-40 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer active:scale-95"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            CSV
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            title="Actualizar pedidos y sincronizar con Bold"
+            className="flex items-center gap-1.5 border border-gray-200 hover:border-black text-gray-600 hover:text-black disabled:opacity-50 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer active:scale-95"
+          >
+            <svg
+              className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+          </button>
+          <button
+            onClick={openCreateDrawer}
+            className="bg-black hover:bg-red-600 text-white px-4 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            Crear Pedido
+          </button>
+        </div>
       </div>
 
       {filteredOrders.length === 0 ? (
@@ -635,17 +1071,18 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 {/* Header del pedido */}
                 <div className="bg-gray-50 border-b border-gray-100 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(order.orderId)}
+                      onChange={() => toggleSelect(order.orderId)}
+                      onClick={e => e.stopPropagation()}
+                      className="w-4 h-4 accent-black cursor-pointer shrink-0"
+                    />
                     <span className="text-xs font-mono bg-white border border-gray-200 px-2.5 py-1 text-black font-semibold rounded">
                       {order.orderId}
                     </span>
-                    <span className="text-xs text-gray-400" suppressHydrationWarning>
-                      {new Date(order.createdAt).toLocaleDateString('es-CO', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                    <span className="text-xs text-gray-400">
+                      <ClientDateTime date={order.createdAt} />
                     </span>
                     <span className="text-xs text-gray-400 border-l border-gray-200 pl-4">
                       Canal: <strong className="text-black font-semibold">{order.salesChannel || 'Otros'}</strong>
@@ -938,7 +1375,20 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 </h3>
                 <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 text-xs space-y-2 text-gray-700">
                   <p><strong className="text-black">Nombre:</strong> {editingOrder.shippingDetails.name}</p>
-                  <p><strong className="text-black">Celular:</strong> {editingOrder.shippingDetails.phone}</p>
+                  <div className="flex items-center gap-2">
+                    <p><strong className="text-black">Celular:</strong> {editingOrder.shippingDetails.phone}</p>
+                    <a
+                      href={`https://wa.me/57${editingOrder.shippingDetails.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${editingOrder.shippingDetails.name.split(' ')[0]}, te escribimos de La Tienda Silvestrista sobre tu pedido ${editingOrder.orderId}. `)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-colors"
+                    >
+                      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448L.057 24z"/>
+                      </svg>
+                      WhatsApp
+                    </a>
+                  </div>
                   <p><strong className="text-black">Email:</strong> {editingOrder.shippingDetails.email}</p>
                   {editingOrder.shippingDetails.department && (
                     <p><strong className="text-black">Departamento:</strong> {editingOrder.shippingDetails.department}</p>

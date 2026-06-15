@@ -6,6 +6,7 @@ import { useCart } from '@/components/CartProvider';
 import Link from 'next/link';
 
 import { Order } from '@/types';
+import { formatDateCO } from '@/lib/dates';
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573004340482';
 
@@ -25,9 +26,7 @@ function buildTrackingURL(order: Order): string {
     return `• ${item.quantity}x ${item.product.name}${sel ? ` (${sel})` : ''} — $${(item.product.price * item.quantity).toLocaleString('es-CO')}`;
   });
 
-  const date = new Date(order.createdAt).toLocaleDateString('es-CO', {
-    day: '2-digit', month: 'long', year: 'numeric',
-  });
+  const date = formatDateCO(order.createdAt);
 
   const location = [
     order.shippingDetails.city,
@@ -210,7 +209,7 @@ function CheckoutSuccessContent() {
 
           <div className="mt-8 pt-6 border-t border-gray-100 flex flex-wrap justify-center gap-6 text-xs text-gray-400">
             <p>REFERENCIA: <span className="font-mono text-black font-semibold">{order.orderId}</span></p>
-            <p>FECHA: <span className="text-black font-semibold">{new Date(order.createdAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}</span></p>
+            <p>FECHA: <span className="text-black font-semibold">{formatDateCO(order.createdAt)}</span></p>
           </div>
         </div>
 
