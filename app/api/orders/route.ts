@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     let finalStatus = status;
     if (!finalStatus) {
-      finalStatus = paymentMethod === 'WHATSAPP' ? 'PEDIDO SIN CONFIRMAR' : 'PAGO SIN CONFIRMAR';
+      finalStatus = paymentMethod === 'WHATSAPP' ? 'NUEVO PEDIDO' : 'PAGO PENDIENTE';
     }
 
     let finalChannel = salesChannel;
@@ -77,10 +77,10 @@ export async function GET(request: NextRequest) {
         return Response.json({ error: 'Pedido no encontrado' }, { status: 404 });
       }
 
-      if (order.status === 'PAGO SIN CONFIRMAR') {
+      if (order.status === 'PAGO PENDIENTE') {
         let updatedStatus = '';
         if (boldTxStatus === 'approved') {
-          updatedStatus = 'PAGADO';
+          updatedStatus = 'CONFIRMADO';
         } else if (boldTxStatus === 'rejected') {
           updatedStatus = 'CANCELADO';
         }
@@ -137,7 +137,7 @@ export async function PUT(request: Request) {
 
     await db.collection('orders').updateOne({ orderId }, { $set: updateFields });
 
-    if (status === 'PAGADO' && prevOrder.status !== 'PAGADO' && prevOrder.shippingDetails?.email) {
+    if (status === 'CONFIRMADO' && prevOrder.status !== 'CONFIRMADO' && prevOrder.shippingDetails?.email) {
       const updatedOrder = { ...prevOrder, ...updateFields } as unknown as Order;
       sendOrderConfirmedEmail(updatedOrder).catch(err =>
         console.error('Error enviando email de confirmación:', err)

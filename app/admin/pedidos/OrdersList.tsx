@@ -29,7 +29,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   // Estados para el panel de edición de pedido existente (Drawer 1)
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [editStatus, setEditStatus] = useState<OrderStatus>('PEDIDO SIN CONFIRMAR');
+  const [editStatus, setEditStatus] = useState<OrderStatus>('NUEVO PEDIDO');
   const [editChannel, setEditChannel] = useState<SalesChannel>('Tienda Online');
   const [editNotes, setEditNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -83,7 +83,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   const [selectedProdId, setSelectedProdId] = useState('');
   const [selectedQty, setSelectedQty] = useState(1);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
-  const [newOrderStatus, setNewOrderStatus] = useState<OrderStatus>('PAGADO');
+  const [newOrderStatus, setNewOrderStatus] = useState<OrderStatus>('CONFIRMADO');
   const [newOrderChannel, setNewOrderChannel] = useState<SalesChannel>('Whatsapp');
   const [newOrderNotes, setNewOrderNotes] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -176,7 +176,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     const thisMonth = now.toLocaleString('es-CO', { timeZone: TZ, month: 'numeric' });
     const thisYear = new Date(now.toLocaleString('en-US', { timeZone: TZ })).getFullYear();
 
-    const paidStatuses = ['PAGADO', 'PEDIDO TOMADO', 'ENVIADO'];
+    const paidStatuses = ['CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO'];
     const active = localOrders.filter(o => !o.deleted);
     const paidOrders = active.filter(o => paidStatuses.includes(o.status));
 
@@ -191,7 +191,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       return m === thisMonth && y === thisYear;
     }).reduce((s, o) => s + o.totalPrice, 0);
 
-    const pending = active.filter(o => o.status === 'PAGADO' || o.status === 'PEDIDO TOMADO').length;
+    const pending = active.filter(o => o.status === 'CONFIRMADO' || o.status === 'EN PREPARACIÓN').length;
     const avgTicket = paidOrders.length > 0
       ? Math.round(paidOrders.reduce((s, o) => s + o.totalPrice, 0) / paidOrders.length)
       : 0;
@@ -204,12 +204,13 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     const active = localOrders.filter(o => !o.deleted);
     return {
       ALL: active.length,
-      'PEDIDO SIN CONFIRMAR': active.filter((o) => o.status === 'PEDIDO SIN CONFIRMAR').length,
-      PAGADO: active.filter((o) => o.status === 'PAGADO').length,
-      'PEDIDO TOMADO': active.filter((o) => o.status === 'PEDIDO TOMADO').length,
-      CANCELADO: active.filter((o) => o.status === 'CANCELADO').length,
+      'NUEVO PEDIDO': active.filter((o) => o.status === 'NUEVO PEDIDO').length,
+      'PAGO PENDIENTE': active.filter((o) => o.status === 'PAGO PENDIENTE').length,
+      CONFIRMADO: active.filter((o) => o.status === 'CONFIRMADO').length,
+      'EN PREPARACIÓN': active.filter((o) => o.status === 'EN PREPARACIÓN').length,
       ENVIADO: active.filter((o) => o.status === 'ENVIADO').length,
-      'PAGO SIN CONFIRMAR': active.filter((o) => o.status === 'PAGO SIN CONFIRMAR').length,
+      ENTREGADO: active.filter((o) => o.status === 'ENTREGADO').length,
+      CANCELADO: active.filter((o) => o.status === 'CANCELADO').length,
     };
   }, [localOrders]);
 
@@ -309,7 +310,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     setSelectedProdId('');
     setProductSearch('');
     setProductCategoryFilter('');
-    setNewOrderStatus('PAGADO');
+    setNewOrderStatus('CONFIRMADO');
     setNewOrderChannel('Whatsapp');
     setNewOrderNotes('');
     setIsCreateDrawerOpen(true);
@@ -403,11 +404,11 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       const res = await fetch('/api/orders', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, status: 'PEDIDO TOMADO' }),
+        body: JSON.stringify({ orderId, status: 'EN PREPARACIÓN' }),
       });
       if (!res.ok) throw new Error();
       setLocalOrders(prev => prev.map(o =>
-        o.orderId === orderId ? { ...o, status: 'PEDIDO TOMADO' as const } : o
+        o.orderId === orderId ? { ...o, status: 'EN PREPARACIÓN' as const } : o
       ));
     } catch {
       alert('Error al actualizar el pedido.');
@@ -886,35 +887,38 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         {/* Fila inferior: Filtros de Estado */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
           <div className="flex flex-wrap gap-2">
-            {(['ALL', 'PEDIDO SIN CONFIRMAR', 'PAGADO', 'PEDIDO TOMADO', 'CANCELADO', 'ENVIADO', 'PAGO SIN CONFIRMAR'] as const).map((st) => {
+            {(['ALL', 'NUEVO PEDIDO', 'PAGO PENDIENTE', 'CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO', 'CANCELADO'] as const).map((st) => {
               const label = {
                 ALL: 'Todos',
-                'PEDIDO SIN CONFIRMAR': 'Ped. sin confirmar',
-                PAGADO: 'Pagados',
-                'PEDIDO TOMADO': 'Pedido tomado',
-                CANCELADO: 'Cancelados',
+                'NUEVO PEDIDO': 'Nuevo pedido',
+                'PAGO PENDIENTE': 'Pago pendiente',
+                CONFIRMADO: 'Confirmados',
+                'EN PREPARACIÓN': 'En preparación',
                 ENVIADO: 'Enviados',
-                'PAGO SIN CONFIRMAR': 'Pago sin confirmar',
+                ENTREGADO: 'Entregados',
+                CANCELADO: 'Cancelados',
               }[st];
 
               const activeStyles = {
                 ALL: 'bg-black text-white border-black',
-                'PEDIDO SIN CONFIRMAR': 'bg-blue-600 text-white border-blue-600',
-                PAGADO: 'bg-green-600 text-white border-green-600',
-                'PEDIDO TOMADO': 'bg-orange-500 text-white border-orange-500',
-                CANCELADO: 'bg-gray-600 text-white border-gray-600',
+                'NUEVO PEDIDO': 'bg-blue-600 text-white border-blue-600',
+                'PAGO PENDIENTE': 'bg-yellow-500 text-white border-yellow-500',
+                CONFIRMADO: 'bg-green-600 text-white border-green-600',
+                'EN PREPARACIÓN': 'bg-orange-500 text-white border-orange-500',
                 ENVIADO: 'bg-purple-600 text-white border-purple-600',
-                'PAGO SIN CONFIRMAR': 'bg-yellow-500 text-white border-yellow-500',
+                ENTREGADO: 'bg-teal-600 text-white border-teal-600',
+                CANCELADO: 'bg-gray-600 text-white border-gray-600',
               }[st];
 
               const inactiveStyles = {
                 ALL: 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200',
-                'PEDIDO SIN CONFIRMAR': 'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-100',
-                PAGADO: 'bg-green-50 text-green-700 hover:bg-green-100 border-green-100',
-                'PEDIDO TOMADO': 'bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-100',
-                CANCELADO: 'bg-red-50 text-red-700 hover:bg-red-100 border-red-100',
+                'NUEVO PEDIDO': 'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-100',
+                'PAGO PENDIENTE': 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-100',
+                CONFIRMADO: 'bg-green-50 text-green-700 hover:bg-green-100 border-green-100',
+                'EN PREPARACIÓN': 'bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-100',
                 ENVIADO: 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-100',
-                'PAGO SIN CONFIRMAR': 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-100',
+                ENTREGADO: 'bg-teal-50 text-teal-700 hover:bg-teal-100 border-teal-100',
+                CANCELADO: 'bg-red-50 text-red-700 hover:bg-red-100 border-red-100',
               }[st];
 
               const isActive = statusFilter === st;
@@ -1059,12 +1063,13 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       ) : (
         <div className="flex flex-col gap-6">
           {filteredOrders.map((order) => {
-            const isUnconfirmed = order.status === 'PEDIDO SIN CONFIRMAR';
-            const isPaid = order.status === 'PAGADO';
-            const isTaken = order.status === 'PEDIDO TOMADO';
-            const isCancelled = order.status === 'CANCELADO';
+            const isNew = order.status === 'NUEVO PEDIDO';
+            const isPendingPayment = order.status === 'PAGO PENDIENTE';
+            const isConfirmed = order.status === 'CONFIRMADO';
+            const isPreparation = order.status === 'EN PREPARACIÓN';
             const isShipped = order.status === 'ENVIADO';
-            const isPendingPayment = order.status === 'PAGO SIN CONFIRMAR';
+            const isDelivered = order.status === 'ENTREGADO';
+            const isCancelled = order.status === 'CANCELADO';
 
             return (
               <div key={order._id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -1095,24 +1100,24 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                         Eliminado
                       </span>
                     )}
-                    {isUnconfirmed && (
+                    {isNew && (
                       <span className="text-[11px] uppercase tracking-wider font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full">
-                        Pedido sin confirmar
+                        Nuevo pedido
                       </span>
                     )}
-                    {isPaid && (
+                    {isPendingPayment && (
+                      <span className="text-[11px] uppercase tracking-wider font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-1 rounded-full animate-pulse">
+                        Pago pendiente
+                      </span>
+                    )}
+                    {isConfirmed && (
                       <span className="text-[11px] uppercase tracking-wider font-semibold bg-green-50 text-green-700 border border-green-200 px-3 py-1 rounded-full">
-                        Pagado
+                        Confirmado
                       </span>
                     )}
-                    {isTaken && (
+                    {isPreparation && (
                       <span className="text-[11px] uppercase tracking-wider font-semibold bg-orange-50 text-orange-700 border border-orange-200 px-3 py-1 rounded-full">
-                        Pedido tomado
-                      </span>
-                    )}
-                    {isCancelled && (
-                      <span className="text-[11px] uppercase tracking-wider font-semibold bg-gray-50 text-gray-500 border border-gray-200 px-3 py-1 rounded-full">
-                        Cancelado
+                        En preparación
                       </span>
                     )}
                     {isShipped && (
@@ -1120,14 +1125,19 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                         Enviado
                       </span>
                     )}
-                    {isPendingPayment && (
-                      <span className="text-[11px] uppercase tracking-wider font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-1 rounded-full animate-pulse">
-                        Pago sin confirmar
+                    {isDelivered && (
+                      <span className="text-[11px] uppercase tracking-wider font-semibold bg-teal-50 text-teal-700 border border-teal-200 px-3 py-1 rounded-full">
+                        Entregado
                       </span>
                     )}
-                    {!isUnconfirmed && !isPaid && !isTaken && !isCancelled && !isShipped && !isPendingPayment && (
+                    {isCancelled && (
+                      <span className="text-[11px] uppercase tracking-wider font-semibold bg-gray-50 text-gray-500 border border-gray-200 px-3 py-1 rounded-full">
+                        Cancelado
+                      </span>
+                    )}
+                    {!isNew && !isPendingPayment && !isConfirmed && !isPreparation && !isShipped && !isDelivered && !isCancelled && (
                       <span className="text-[11px] uppercase tracking-wider font-semibold bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full">
-                        Fallido
+                        Desconocido
                       </span>
                     )}
                   </div>
@@ -1272,7 +1282,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                     /* Vista activos: eliminar (soft) + gestionar */
                     <>
                       <div className="flex items-center gap-2">
-                        {isPaid && (
+                        {isConfirmed && (
                           <button
                             onClick={() => handleQuickTaken(order.orderId)}
                             disabled={takingId === order.orderId}
@@ -1281,7 +1291,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                             </svg>
-                            {takingId === order.orderId ? 'Actualizando...' : 'Pedido tomado'}
+                            {takingId === order.orderId ? 'Actualizando...' : 'En preparación'}
                           </button>
                         )}
                         {quickDeleteId === order.orderId ? (
@@ -1409,12 +1419,13 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   disabled={isSaving || isDeleting}
                   className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
                 >
-                  <option value="PEDIDO SIN CONFIRMAR">Pedido sin confirmar</option>
-                  <option value="PAGADO">Pagado</option>
-                  <option value="PEDIDO TOMADO">Pedido tomado</option>
-                  <option value="CANCELADO">Cancelado</option>
+                  <option value="NUEVO PEDIDO">Nuevo pedido</option>
+                  <option value="PAGO PENDIENTE">Pago pendiente</option>
+                  <option value="CONFIRMADO">Confirmado</option>
+                  <option value="EN PREPARACIÓN">En preparación</option>
                   <option value="ENVIADO">Enviado</option>
-                  <option value="PAGO SIN CONFIRMAR">Pago sin confirmar</option>
+                  <option value="ENTREGADO">Entregado</option>
+                  <option value="CANCELADO">Cancelado</option>
                 </select>
               </div>
 
@@ -1912,12 +1923,13 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       disabled={isCreating}
                       className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
                     >
-                      <option value="PEDIDO SIN CONFIRMAR">Pedido sin confirmar</option>
-                      <option value="PAGADO">Pagado</option>
-                      <option value="PEDIDO TOMADO">Pedido tomado</option>
-                      <option value="CANCELADO">Cancelado</option>
+                      <option value="NUEVO PEDIDO">Nuevo pedido</option>
+                      <option value="PAGO PENDIENTE">Pago pendiente</option>
+                      <option value="CONFIRMADO">Confirmado</option>
+                      <option value="EN PREPARACIÓN">En preparación</option>
                       <option value="ENVIADO">Enviado</option>
-                      <option value="PAGO SIN CONFIRMAR">Pago sin confirmar</option>
+                      <option value="ENTREGADO">Entregado</option>
+                      <option value="CANCELADO">Cancelado</option>
                     </select>
                   </div>
                   <div>

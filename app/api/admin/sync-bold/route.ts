@@ -14,9 +14,9 @@ interface BoldVoucherResponse {
   id?: string;
 }
 
-function boldStatusToOrder(boldStatus: string): 'PAGADO' | 'CANCELADO' | null {
+function boldStatusToOrder(boldStatus: string): 'CONFIRMADO' | 'CANCELADO' | null {
   const s = boldStatus.toUpperCase();
-  if (s === 'APPROVED') return 'PAGADO';
+  if (s === 'APPROVED') return 'CONFIRMADO';
   if (s === 'REJECTED' || s === 'VOIDED' || s === 'FAILED') return 'CANCELADO';
   return null;
 }
@@ -31,7 +31,7 @@ export async function POST() {
 
     const pendingOrders = await db
       .collection('orders')
-      .find({ status: 'PAGO SIN CONFIRMAR', deleted: { $ne: true } })
+      .find({ status: 'PAGO PENDIENTE', deleted: { $ne: true } })
       .toArray();
 
     if (pendingOrders.length === 0) {
@@ -84,7 +84,7 @@ export async function POST() {
               }
             );
 
-            if (newStatus === 'PAGADO' && order.shippingDetails?.email) {
+            if (newStatus === 'CONFIRMADO' && order.shippingDetails?.email) {
               const updatedOrder = { ...order, status: newStatus } as unknown as Order;
               sendOrderConfirmedEmail(updatedOrder).catch(err =>
                 console.error('Error enviando email de confirmación tras sync Bold:', err)

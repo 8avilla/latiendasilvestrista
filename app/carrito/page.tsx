@@ -94,7 +94,7 @@ export default function CarritoPage() {
           shippingPrice: shippingPrice ?? 0,
           shippingDetails,
           paymentMethod: 'BOLD',
-          status: 'PAGO SIN CONFIRMAR',
+          status: 'PAGO PENDIENTE',
           salesChannel: 'Tienda Online',
         }),
       });

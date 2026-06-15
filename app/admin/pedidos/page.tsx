@@ -6,21 +6,23 @@ async function getOrders(): Promise<Order[]> {
   const db = await getDb();
   const docs = await db.collection('orders').find({}).sort({ createdAt: -1 }).toArray();
   return docs.map(doc => {
-    // Mapear estados anteriores al nuevo formato
-    let mappedStatus: OrderStatus = 'PAGO SIN CONFIRMAR';
+    // Mapear estados (incluyendo valores legacy de la DB)
+    let mappedStatus: OrderStatus = 'PAGO PENDIENTE';
     const rawStatus = doc.status as string;
-    if (rawStatus === 'PAID' || rawStatus === 'PAGADO') {
-      mappedStatus = 'PAGADO';
-    } else if (rawStatus === 'PENDING' || rawStatus === 'PAGO SIN CONFIRMAR') {
-      mappedStatus = 'PAGO SIN CONFIRMAR';
-    } else if (rawStatus === 'WHATSAPP' || rawStatus === 'PEDIDO SIN CONFIRMAR') {
-      mappedStatus = 'PEDIDO SIN CONFIRMAR';
+    if (rawStatus === 'PAID' || rawStatus === 'PAGADO' || rawStatus === 'CONFIRMADO') {
+      mappedStatus = 'CONFIRMADO';
+    } else if (rawStatus === 'PENDING' || rawStatus === 'PAGO SIN CONFIRMAR' || rawStatus === 'PAGO PENDIENTE') {
+      mappedStatus = 'PAGO PENDIENTE';
+    } else if (rawStatus === 'WHATSAPP' || rawStatus === 'PEDIDO SIN CONFIRMAR' || rawStatus === 'NUEVO PEDIDO') {
+      mappedStatus = 'NUEVO PEDIDO';
     } else if (rawStatus === 'FAILED' || rawStatus === 'CANCELADO') {
       mappedStatus = 'CANCELADO';
     } else if (rawStatus === 'SHIPPED' || rawStatus === 'ENVIADO') {
       mappedStatus = 'ENVIADO';
-    } else if (rawStatus === 'PEDIDO TOMADO') {
-      mappedStatus = 'PEDIDO TOMADO';
+    } else if (rawStatus === 'ENTREGADO') {
+      mappedStatus = 'ENTREGADO';
+    } else if (rawStatus === 'PEDIDO TOMADO' || rawStatus === 'EN PREPARACIÓN') {
+      mappedStatus = 'EN PREPARACIÓN';
     }
 
     // Mapear canal de venta (con fallback para históricos)

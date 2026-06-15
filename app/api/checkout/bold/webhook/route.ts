@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     let nextStatus = order.status;
 
     if (type === 'SALE_APPROVED') {
-      nextStatus = 'PAGADO';
+      nextStatus = 'CONFIRMADO';
     } else if (type === 'SALE_REJECTED') {
       nextStatus = 'CANCELADO';
     }
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       );
       console.log(`Pedido ${orderId} actualizado a estado: ${nextStatus}`);
 
-      if (nextStatus === 'PAGADO' && order.shippingDetails?.email) {
+      if (nextStatus === 'CONFIRMADO' && order.shippingDetails?.email) {
         const updatedOrder = { ...order, status: nextStatus } as unknown as Order;
         sendOrderConfirmedEmail(updatedOrder).catch(err =>
           console.error('Error enviando email de confirmación:', err)

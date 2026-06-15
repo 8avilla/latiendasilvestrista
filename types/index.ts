@@ -42,7 +42,7 @@ export interface OrderItem {
   selections?: Record<string, string>;
 }
 
-export type OrderStatus = 'PEDIDO SIN CONFIRMAR' | 'PAGADO' | 'PEDIDO TOMADO' | 'CANCELADO' | 'ENVIADO' | 'PAGO SIN CONFIRMAR';
+export type OrderStatus = 'NUEVO PEDIDO' | 'PAGO PENDIENTE' | 'CONFIRMADO' | 'EN PREPARACIÓN' | 'ENVIADO' | 'ENTREGADO' | 'CANCELADO';
 export type SalesChannel = 'Whatsapp' | 'Tienda Online' | 'Redes sociales' | 'Otros';
 
 export interface Order {

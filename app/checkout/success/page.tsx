@@ -12,10 +12,12 @@ const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573004340482
 
 function buildTrackingURL(order: Order): string {
   const statusLabel: Record<string, string> = {
-    'PAGADO': 'Pagado ✓',
-    'PEDIDO SIN CONFIRMAR': 'Pendiente de confirmación',
-    'PAGO SIN CONFIRMAR': 'Pago en procesamiento',
+    'CONFIRMADO': 'Pago confirmado ✓',
+    'NUEVO PEDIDO': 'Pendiente de confirmación',
+    'PAGO PENDIENTE': 'Pago en procesamiento',
+    'EN PREPARACIÓN': 'En preparación',
     'ENVIADO': 'Enviado 🚚',
+    'ENTREGADO': 'Entregado ✓',
     'CANCELADO': 'Cancelado',
   };
 

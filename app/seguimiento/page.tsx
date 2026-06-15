@@ -8,24 +8,30 @@ import { formatDateCO } from '@/lib/dates';
 import { Suspense } from 'react';
 
 const STEPS: { key: string[]; label: string; sub: string }[] = [
-  { key: ['PEDIDO SIN CONFIRMAR', 'PAGO SIN CONFIRMAR', 'PAGADO', 'ENVIADO'], label: 'Pedido recibido', sub: 'Tu pedido fue registrado' },
-  { key: ['PAGADO', 'ENVIADO'], label: 'Pago confirmado', sub: 'El pago fue procesado' },
-  { key: ['ENVIADO'], label: 'En camino', sub: 'Tu pedido está en ruta' },
+  { key: ['NUEVO PEDIDO', 'PAGO PENDIENTE', 'CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO'], label: 'Pedido recibido', sub: 'Tu pedido fue registrado' },
+  { key: ['CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO'], label: 'Pago confirmado', sub: 'El pago fue procesado' },
+  { key: ['EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO'], label: 'En preparación', sub: 'Estamos alistando tu pedido' },
+  { key: ['ENVIADO', 'ENTREGADO'], label: 'En camino', sub: 'Tu pedido está en ruta' },
+  { key: ['ENTREGADO'], label: 'Entregado', sub: 'Tu pedido llegó' },
 ];
 
 function stepIndex(status: string): number {
-  if (status === 'ENVIADO') return 3;
-  if (status === 'PAGADO') return 2;
-  if (status === 'PAGO SIN CONFIRMAR' || status === 'PEDIDO SIN CONFIRMAR') return 1;
+  if (status === 'ENTREGADO') return 5;
+  if (status === 'ENVIADO') return 4;
+  if (status === 'EN PREPARACIÓN') return 3;
+  if (status === 'CONFIRMADO') return 2;
+  if (status === 'PAGO PENDIENTE' || status === 'NUEVO PEDIDO') return 1;
   return 0;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string; bar: string }> = {
-  'PAGADO':               { label: 'Pago Confirmado',        color: 'text-green-700',  bg: 'bg-green-50',  bar: 'bg-green-500' },
-  'ENVIADO':              { label: 'Enviado',                 color: 'text-blue-700',   bg: 'bg-blue-50',   bar: 'bg-blue-500' },
-  'PAGO SIN CONFIRMAR':   { label: 'Procesando Pago',        color: 'text-yellow-700', bg: 'bg-yellow-50', bar: 'bg-yellow-400' },
-  'PEDIDO SIN CONFIRMAR': { label: 'Pendiente de Confirmar', color: 'text-blue-700',   bg: 'bg-blue-50',   bar: 'bg-blue-400' },
-  'CANCELADO':            { label: 'Cancelado',               color: 'text-red-700',    bg: 'bg-red-50',    bar: 'bg-red-500' },
+  'CONFIRMADO':     { label: 'Pago Confirmado',   color: 'text-green-700',  bg: 'bg-green-50',  bar: 'bg-green-500' },
+  'EN PREPARACIÓN': { label: 'En Preparación',    color: 'text-orange-700', bg: 'bg-orange-50', bar: 'bg-orange-400' },
+  'ENVIADO':        { label: 'Enviado',            color: 'text-blue-700',   bg: 'bg-blue-50',   bar: 'bg-blue-500' },
+  'ENTREGADO':      { label: 'Entregado',          color: 'text-green-700',  bg: 'bg-green-50',  bar: 'bg-green-600' },
+  'PAGO PENDIENTE': { label: 'Procesando Pago',   color: 'text-yellow-700', bg: 'bg-yellow-50', bar: 'bg-yellow-400' },
+  'NUEVO PEDIDO':   { label: 'Nuevo Pedido',       color: 'text-blue-700',   bg: 'bg-blue-50',   bar: 'bg-blue-400' },
+  'CANCELADO':      { label: 'Cancelado',          color: 'text-red-700',    bg: 'bg-red-50',    bar: 'bg-red-500' },
 };
 
 function TrackingView({ order }: { order: Order }) {
