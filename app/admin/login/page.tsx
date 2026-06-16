@@ -21,7 +21,7 @@ export default function LoginPage() {
       });
       
       if (res.ok) {
-        window.location.href = '/admin/productos';
+        window.location.href = '/admin';
       } else {
         const data = await res.json();
         setError(data.error || 'Credenciales incorrectas');
