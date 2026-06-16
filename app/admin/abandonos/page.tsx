@@ -1,6 +1,8 @@
 import { getDb } from '@/lib/mongodb';
 import AbandonosList from './AbandonosList';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AbandonosPage() {
   const db = await getDb();
   const docs = await db.collection('abandonos').find({ converted: { $ne: true } }).sort({ updatedAt: -1 }).toArray();

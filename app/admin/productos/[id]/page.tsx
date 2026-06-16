@@ -24,6 +24,11 @@ async function getProduct(id: string): Promise<AdminProduct | null> {
       variantGroups: (doc.variantGroups as Product['variantGroups']) ?? [],
       active: doc.active !== false,
       freeShipping: doc.freeShipping === true,
+      soldOut: doc.soldOut === true,
+      showPopup: doc.showPopup === true,
+      popupImage: (doc.popupImage as string) ?? '',
+      stock: (doc.stock as number | null) ?? null,
+      stockTracked: doc.stockTracked === true,
     };
   } catch {
     return null;
