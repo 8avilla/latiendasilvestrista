@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart, buildSelectionsKey } from '@/components/CartProvider';
 import { DEPARTMENTS } from '@/lib/colombia';
@@ -33,6 +33,8 @@ export default function CarritoPage() {
   const { items, removeItem, updateQty, clearCart, totalItems, totalPrice } = useCart();
   const router = useRouter();
 
+  const sessionId = useRef(Math.random().toString(36).slice(2) + Date.now().toString(36));
+
   const [shippingDetails, setShippingDetails] = useState({
     name: '',
     address: '',
@@ -52,6 +54,30 @@ export default function CarritoPage() {
       .then(setShippingRates)
       .catch(() => {});
   }, []);
+
+  // Track cart abandonment: post to /api/abandonos when email is filled and items exist
+  useEffect(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(shippingDetails.email) || items.length === 0) return;
+
+    const timer = setTimeout(() => {
+      fetch('/api/abandonos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: sessionId.current,
+          name: shippingDetails.name,
+          email: shippingDetails.email,
+          phone: shippingDetails.phone,
+          city: shippingDetails.city,
+          items: items.map(i => ({ product: { name: i.product.name, price: i.product.price }, quantity: i.quantity })),
+          total: totalPrice,
+        }),
+      }).catch(() => {});
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [shippingDetails.email, shippingDetails.name, shippingDetails.phone, shippingDetails.city, items, totalPrice]);
 
   const selectedDeptMunicipalities = DEPARTMENTS.find(d => d.name === shippingDetails.department)?.municipalities ?? [];
   const hasFreeShipping = items.some(item => item.product.freeShipping);

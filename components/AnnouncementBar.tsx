@@ -1,30 +1,18 @@
-const ITEMS = [
-  'Colección Oficial',
-  'Envíos a toda Colombia',
-  'Pago Seguro con Bold',
-  'El Rey del Vallenato',
-  'Silvestre Dangond',
-  'Productos Originales',
-  'Colección Oficial',
-  'Envíos a toda Colombia',
-  'Pago Seguro con Bold',
-  'El Rey del Vallenato',
-  'Silvestre Dangond',
-  'Productos Originales',
-];
+interface Props {
+  text?: string;
+  enabled?: boolean;
+}
 
-const CONTENT = ITEMS.join(' · ') + ' · ';
+const DEFAULT_TEXT = 'Colección Oficial · Envíos a toda Colombia · Pago Seguro con Bold · El Rey del Vallenato · Silvestre Dangond · Productos Originales';
 
-export default function AnnouncementBar() {
+export default function AnnouncementBar({ text = DEFAULT_TEXT, enabled = true }: Props) {
+  if (!enabled) return null;
+  const content = text + ' · ';
   return (
     <div className="bg-black text-white overflow-hidden py-2.5 select-none" aria-hidden="true">
       <div className="flex whitespace-nowrap animate-marquee">
-        <span className="text-[10px] uppercase tracking-[0.2em] font-semibold">
-          {CONTENT}
-        </span>
-        <span className="text-[10px] uppercase tracking-[0.2em] font-semibold" aria-hidden="true">
-          {CONTENT}
-        </span>
+        <span className="text-[10px] uppercase tracking-[0.2em] font-semibold">{content}</span>
+        <span className="text-[10px] uppercase tracking-[0.2em] font-semibold" aria-hidden="true">{content}</span>
       </div>
     </div>
   );

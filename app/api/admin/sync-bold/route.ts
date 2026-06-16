@@ -64,16 +64,25 @@ export async function POST() {
         const newStatus = boldStatusToOrder(boldStatus);
 
         if (newStatus && newStatus !== order.status) {
+          const setFields: Record<string, unknown> = {
+            status: newStatus,
+            updatedAt: new Date(),
+            ...(data.id ? { 'transactionDetails.paymentId': data.id } : {}),
+          };
+
+          if (newStatus === 'CONFIRMADO' && !order.stockDecremented) {
+            setFields.stockDecremented = true;
+          }
+
           await db.collection('orders').updateOne(
             { orderId: order.orderId },
-            {
-              $set: {
-                status: newStatus,
-                updatedAt: new Date(),
-                ...(data.id ? { 'transactionDetails.paymentId': data.id } : {}),
-              },
-            }
+            { $set: setFields }
           );
+
+          if (newStatus === 'CONFIRMADO' && !order.stockDecremented) {
+            const { decrementStock } = await import('@/lib/stock');
+            await decrementStock(db, order.items as import('@/types').OrderItem[]);
+          }
 
           if (newStatus === 'CONFIRMADO' && order.shippingDetails?.email) {
             sendOrderConfirmedEmail({ ...order, status: newStatus } as unknown as Order)

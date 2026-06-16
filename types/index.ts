@@ -22,6 +22,8 @@ export interface Product {
   soldOut?: boolean;
   showPopup?: boolean;
   popupImage?: string;
+  stock?: number | null;
+  stockTracked?: boolean;
 }
 
 export interface CartItem {
@@ -74,4 +76,16 @@ export interface Order {
     payloadType: string;
   };
 }
+
+export interface AdminUser {
+  _id?: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: 'admin' | 'editor';
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 

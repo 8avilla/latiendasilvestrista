@@ -136,6 +136,13 @@ export async function PUT(request: Request) {
       if (!deleted) updateFields.deletedAt = null;
     }
 
+    // Decrement stock when order transitions to CONFIRMADO for the first time
+    if (status === 'CONFIRMADO' && prevOrder.status !== 'CONFIRMADO' && !prevOrder.stockDecremented) {
+      const { decrementStock } = await import('@/lib/stock');
+      await decrementStock(db, prevOrder.items as import('@/types').OrderItem[]);
+      updateFields.stockDecremented = true;
+    }
+
     await db.collection('orders').updateOne({ orderId }, { $set: updateFields });
 
     if (status === 'CONFIRMADO' && prevOrder.status !== 'CONFIRMADO' && prevOrder.shippingDetails?.email) {

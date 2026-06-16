@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -11,15 +12,23 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const res = await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    });
-    if (res.ok) {
-      window.location.href = '/admin/productos';
-    } else {
-      setError('Contraseña incorrecta');
+    
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (res.ok) {
+        window.location.href = '/admin/productos';
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Credenciales incorrectas');
+        setLoading(false);
+      }
+    } catch {
+      setError('Error al conectar con el servidor');
       setLoading(false);
     }
   }
@@ -40,6 +49,21 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs uppercase tracking-widest text-gray-500 font-medium">
+              Correo Electrónico
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              autoFocus
+              className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-400"
+              placeholder="admin@latiendasilvestrista.com"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs uppercase tracking-widest text-gray-500 font-medium">
               Contraseña
             </label>
             <input
@@ -47,7 +71,6 @@ export default function LoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              autoFocus
               className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-400"
               placeholder="••••••••"
             />
@@ -60,7 +83,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors"
+            className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors mt-2"
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>

@@ -53,6 +53,7 @@ async function getData() {
     channelAgg,
     stalePrepCount, stalePendingCount, newCount,
     totalProducts,
+    lowStockProducts, outOfStockProducts,
   ] = await Promise.all([
     // Ventas hoy
     db.collection('orders').aggregate([
@@ -133,6 +134,20 @@ async function getData() {
     db.collection('orders').countDocuments({ status: 'NUEVO PEDIDO', deleted: { $ne: true } }),
 
     db.collection('products').countDocuments({ active: { $ne: false } }),
+
+    // Stock bajo (1-3 unidades)
+    db.collection('products').find({
+      stockTracked: true,
+      stock: { $lte: 3, $gt: 0 },
+      active: { $ne: false },
+    }).project({ name: 1, stock: 1 }).limit(5).toArray(),
+
+    // Sin stock
+    db.collection('products').countDocuments({
+      stockTracked: true,
+      stock: 0,
+      active: { $ne: false },
+    }),
   ]);
 
   // Construir array de 7 días
@@ -168,6 +183,12 @@ async function getData() {
     alerts.push({ level: 'warn', text: `${stalePendingCount} pago${stalePendingCount > 1 ? 's' : ''} pendiente${stalePendingCount > 1 ? 's' : ''} lleva${stalePendingCount > 1 ? 'n' : ''} más de 24h sin confirmar` });
   if (stalePrepCount > 0)
     alerts.push({ level: 'warn', text: `${stalePrepCount} pedido${stalePrepCount > 1 ? 's' : ''} en preparación lleva${stalePrepCount > 1 ? 'n' : ''} más de 48h sin actualizar` });
+  if (outOfStockProducts > 0)
+    alerts.push({ level: 'warn', text: `${outOfStockProducts} producto${outOfStockProducts > 1 ? 's' : ''} sin stock — revisar inventario` });
+  if (lowStockProducts.length > 0) {
+    const names = lowStockProducts.map((p) => `${p.name as string} (${p.stock as number})`).join(', ');
+    alerts.push({ level: 'info', text: `Stock bajo: ${names}` });
+  }
 
   return {
     todaySales, ydaySales, monthSales, prevMonthSales,

@@ -148,6 +148,8 @@ export default function ProductForm({ initial }: ProductFormProps) {
     soldOut: initial?.soldOut ?? false,
     showPopup: initial?.showPopup ?? false,
     popupImage: initial?.popupImage ?? '',
+    stock: initial?.stock ?? null,
+    stockTracked: initial?.stockTracked ?? false,
   });
 
   const [groupInputs, setGroupInputs] = useState<{ name: string; optionsStr: string }[]>(
@@ -655,6 +657,50 @@ export default function ProductForm({ initial }: ProductFormProps) {
               form.soldOut ? 'translate-x-6' : 'translate-x-1'
             }`} />
           </button>
+        </div>
+
+        {/* Stock control */}
+        <div className={`border rounded-xl overflow-hidden transition-colors ${
+          form.stockTracked ? 'border-blue-200 bg-blue-50/20' : 'border-gray-200'
+        }`}>
+          <div className="flex items-center justify-between px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-black">Controlar stock</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {form.stockTracked
+                  ? 'Se descuenta stock automáticamente al confirmar pedidos'
+                  : 'El stock no se controla para este producto'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setField('stockTracked', !form.stockTracked)}
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                form.stockTracked ? 'bg-blue-500' : 'bg-gray-200'
+              }`}
+              aria-label="Toggle stock tracking"
+            >
+              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                form.stockTracked ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+          {form.stockTracked && (
+            <div className="px-4 pb-4 border-t border-blue-100 pt-3">
+              <label className="text-[10px] uppercase tracking-widest text-blue-600 font-medium block mb-1.5">
+                Unidades disponibles
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={form.stock ?? ''}
+                onChange={e => setField('stock', e.target.value === '' ? null : Math.max(0, Number(e.target.value)))}
+                className="border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 w-32"
+                placeholder="0"
+              />
+              <p className="text-[10px] text-blue-400 mt-1">Al llegar a 0 el producto se marcará como agotado</p>
+            </div>
+          )}
         </div>
 
         <div className={`border rounded-xl overflow-hidden transition-colors ${

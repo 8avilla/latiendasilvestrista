@@ -1,8 +1,16 @@
-import AdminNav from '@/components/admin/AdminNav';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import AdminNav from '@/components/admin/AdminNav';
+import { usePathname } from 'next/navigation';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/admin/login';
+
+  if (isLoginPage) {
+    return <div className="min-h-screen bg-white">{children}</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminNav />
@@ -15,3 +23,4 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   );
 }
+

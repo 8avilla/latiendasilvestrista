@@ -35,22 +35,31 @@ export async function POST(request: Request) {
     }
 
     if (nextStatus !== order.status) {
+      const setFields: Record<string, unknown> = {
+        status: nextStatus,
+        updatedAt: new Date(),
+        transactionDetails: {
+          paymentId: data.payment_id,
+          subject: payload.subject,
+          time: payload.time,
+          payloadType: type,
+        },
+      };
+
+      if (nextStatus === 'CONFIRMADO' && !order.stockDecremented) {
+        setFields.stockDecremented = true;
+      }
+
       await db.collection('orders').updateOne(
         { orderId },
-        {
-          $set: {
-            status: nextStatus,
-            updatedAt: new Date(),
-            transactionDetails: {
-              paymentId: data.payment_id,
-              subject: payload.subject,
-              time: payload.time,
-              payloadType: type,
-            },
-          },
-        }
+        { $set: setFields }
       );
       console.log(`Pedido ${orderId} actualizado a estado: ${nextStatus}`);
+
+      if (nextStatus === 'CONFIRMADO' && !order.stockDecremented) {
+        const { decrementStock } = await import('@/lib/stock');
+        await decrementStock(db, order.items as import('@/types').OrderItem[]);
+      }
 
       if (nextStatus === 'CONFIRMADO' && order.shippingDetails?.email) {
         const updatedOrder = { ...order, status: nextStatus } as unknown as Order;

@@ -6,6 +6,7 @@ import { CartProvider } from "@/components/CartProvider";
 import { PopupProvider } from "@/components/PopupProvider";
 import StoreShell from "@/components/StoreShell";
 import Script from "next/script";
+import { getDb } from "@/lib/mongodb";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -77,11 +78,22 @@ const websiteJsonLd = {
   url: SITE_URL,
 };
 
-export default function RootLayout({
+async function getAnnouncementSettings(): Promise<{ text: string; enabled: boolean } | undefined> {
+  try {
+    const db = await getDb();
+    const doc = await db.collection('settings').findOne({ _id: 'main' as unknown as import('mongodb').ObjectId });
+    if (doc?.announcement) return doc.announcement as { text: string; enabled: boolean };
+  } catch { /* fallback to defaults */ }
+  return undefined;
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const announcement = await getAnnouncementSettings();
+
   return (
     <html
       lang="es"
@@ -100,7 +112,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-white">
         <CartProvider>
           <PopupProvider>
-            <StoreShell>
+            <StoreShell announcement={announcement}>
               {children}
             </StoreShell>
           </PopupProvider>

@@ -40,6 +40,8 @@ export async function PATCH(request: Request, { params }: Context) {
   const update: Record<string, unknown> = { updatedAt: new Date() };
   if (typeof data.active === 'boolean') update.active = data.active;
   if (typeof data.price === 'number' && data.price > 0) update.price = data.price;
+  if (data.stock !== undefined) update.stock = typeof data.stock === 'number' ? Math.max(0, data.stock) : null;
+  if (data.stockTracked !== undefined) update.stockTracked = data.stockTracked;
 
   await db.collection('products').updateOne(
     { _id: new ObjectId(id) },
