@@ -408,7 +408,7 @@ export default async function DashboardPage() {
               </div>
               <div className="divide-y divide-gray-50">
                 {d.staleProducts.map((p) => (
-                  <div key={p._id as string} className="px-5 py-2.5 flex items-center justify-between gap-3">
+                  <div key={String(p._id)} className="px-5 py-2.5 flex items-center justify-between gap-3">
                     <p className="text-xs text-black truncate max-w-[150px]">{p.name}</p>
                     <div className="text-right shrink-0">
                       <p className="text-xs font-semibold text-red-500">{p.stock} u. estancadas</p>
