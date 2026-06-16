@@ -3,33 +3,12 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart, buildSelectionsKey } from '@/components/CartProvider';
-import { CartItem } from '@/types';
 import Image from 'next/image';
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573004340482';
 
 function formatSelections(selections?: Record<string, string>): string {
   if (!selections || Object.keys(selections).length === 0) return '';
   return Object.entries(selections).map(([k, v]) => `${k}: ${v}`).join(', ');
-}
-
-function buildWhatsAppURL(items: CartItem[], total: number): string {
-  const lines = items.map(item => {
-    const sel = formatSelections(item.selections);
-    const subtotal = item.product.price * item.quantity;
-    return `• ${item.quantity}x ${item.product.name}${sel ? ` — ${sel}` : ''} — $${subtotal.toLocaleString('es-CO')}`;
-  });
-  const text = [
-    '*Pedido — La Tienda Silvestrista*',
-    '_Silvestre Dangond_',
-    '',
-    ...lines,
-    '',
-    `*Total: $${total.toLocaleString('es-CO')}*`,
-    '',
-    '_Enviado desde la tienda online_',
-  ].join('\n');
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 }
 
 export default function CartSidebar() {

@@ -8,56 +8,6 @@ import Link from 'next/link';
 import { Order } from '@/types';
 import { formatDateCO } from '@/lib/dates';
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573004340482';
-
-function buildTrackingURL(order: Order): string {
-  const statusLabel: Record<string, string> = {
-    'CONFIRMADO': 'Pago confirmado ✓',
-    'NUEVO PEDIDO': 'Pendiente de confirmación',
-    'PAGO PENDIENTE': 'Pago en procesamiento',
-    'EN PREPARACIÓN': 'En preparación',
-    'ENVIADO': 'Enviado 🚚',
-    'ENTREGADO': 'Entregado ✓',
-    'CANCELADO': 'Cancelado',
-  };
-
-  const itemLines = order.items.map(item => {
-    const sel = item.selections
-      ? Object.entries(item.selections).map(([k, v]) => `${k}: ${v}`).join(', ')
-      : '';
-    return `• ${item.quantity}x ${item.product.name}${sel ? ` (${sel})` : ''} — $${(item.product.price * item.quantity).toLocaleString('es-CO')}`;
-  });
-
-  const date = formatDateCO(order.createdAt);
-
-  const location = [
-    order.shippingDetails.city,
-    order.shippingDetails.department,
-  ].filter(Boolean).join(', ');
-
-  const text = [
-    '👋 Hola, quiero hacer seguimiento a mi pedido.',
-    '',
-    `*Referencia:* ${order.orderId}`,
-    `*Estado:* ${statusLabel[order.status] ?? order.status}`,
-    `*Fecha:* ${date}`,
-    `*Total:* $${order.totalPrice.toLocaleString('es-CO')}`,
-    '',
-    '*Artículos:*',
-    ...itemLines,
-    '',
-    '*Datos de envío:*',
-    `Nombre: ${order.shippingDetails.name}`,
-    `Celular: ${order.shippingDetails.phone}`,
-    ...(location ? [`Ciudad: ${location}`] : []),
-    `Dirección: ${order.shippingDetails.address}`,
-    '',
-    '¿Podrían darme una actualización? Gracias.',
-  ].join('\n');
-
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
-}
-
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId') || searchParams.get('bold-order-id');
@@ -133,7 +83,6 @@ function CheckoutSuccessContent() {
 
   const isPaid = order.status === 'CONFIRMADO' || order.status === 'EN PREPARACIÓN' || order.status === 'ENVIADO' || order.status === 'ENTREGADO';
   const isPending = order.status === 'PAGO PENDIENTE';
-  const isWhatsApp = order.status === 'NUEVO PEDIDO';
 
   return (
     <div className="flex-1 bg-gray-50 py-12 px-6">
@@ -174,24 +123,7 @@ function CheckoutSuccessContent() {
             </>
           )}
 
-          {isWhatsApp && (
-            <>
-              <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500" />
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-5">
-                <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.733-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.864-9.864.002-2.637-1.023-5.115-2.887-6.979C16.586 1.9 14.112.876 11.488.875c-5.44 0-9.867 4.42-9.871 9.863-.001 1.73.46 3.42 1.334 4.927L1.93 21.892l6.332-1.66c-.001.001.001-.001.001-.001zm14.734-7.235c-.328-.164-1.937-.955-2.237-1.063-.3-.11-.52-.164-.737.164-.218.327-.84.954-1.03 1.173-.19.219-.38.246-.708.082-.328-.164-1.386-.51-2.64-1.63-1.003-.896-1.642-2.016-1.84-2.344-.197-.328-.022-.505.142-.668.148-.147.328-.382.492-.573.164-.19.219-.328.328-.546.11-.219.055-.41-.027-.573-.082-.164-.737-1.773-1.01-2.428-.266-.64-.537-.552-.737-.562-.19-.01-.41-.01-.628-.01-.218 0-.573.082-.873.41-.3.327-1.146 1.12-1.146 2.73 0 1.61 1.173 3.167 1.337 3.386.164.218 2.3 3.51 5.57 4.927.778.337 1.387.538 1.86.689.782.249 1.494.214 2.057.13.628-.094 1.937-.792 2.21-1.558.272-.765.272-1.42.19-1.557-.081-.137-.3-.219-.627-.383z"/>
-                </svg>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-black mb-3" style={{ fontFamily: 'var(--font-dm-serif)' }}>
-                Pedido Recibido por WhatsApp
-              </h1>
-              <p className="text-gray-500 text-sm max-w-lg mx-auto">
-                Tu solicitud de pedido por **${order.totalPrice.toLocaleString('es-CO')}** ha sido registrada. Nuestro asesor te atenderá por WhatsApp para coordinar el pago y envío.
-              </p>
-            </>
-          )}
-
-          {!isPaid && !isPending && !isWhatsApp && (
+          {!isPaid && !isPending && (
             <>
               <div className="absolute top-0 left-0 w-full h-1.5 bg-red-600" />
               <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5">
@@ -286,18 +218,7 @@ function CheckoutSuccessContent() {
             </div>
 
             <div className="pt-2 flex flex-col gap-3">
-              {(isPaid || isPending || isWhatsApp) && (
-                <button
-                  type="button"
-                  onClick={() => window.open(buildTrackingURL(order), '_blank', 'noopener,noreferrer')}
-                  className="flex items-center justify-center gap-2 w-full bg-[#25D366] hover:bg-[#1ebe5d] text-white py-4 text-xs font-semibold uppercase tracking-widest transition-colors rounded-sm"
-                >
-                  <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.733-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.864-9.864.002-2.637-1.023-5.115-2.887-6.979C16.586 1.9 14.112.876 11.488.875c-5.44 0-9.867 4.42-9.871 9.863-.001 1.73.46 3.42 1.334 4.927L1.93 21.892l6.332-1.66c-.001.001.001-.001.001-.001zm14.734-7.235c-.328-.164-1.937-.955-2.237-1.063-.3-.11-.52-.164-.737.164-.218.327-.84.954-1.03 1.173-.19.219-.38.246-.708.082-.328-.164-1.386-.51-2.64-1.63-1.003-.896-1.642-2.016-1.84-2.344-.197-.328-.022-.505.142-.668.148-.147.328-.382.492-.573.164-.19.219-.328.328-.546.11-.219.055-.41-.027-.573-.082-.164-.737-1.773-1.01-2.428-.266-.64-.537-.552-.737-.562-.19-.01-.41-.01-.628-.01-.218 0-.573.082-.873.41-.3.327-1.146 1.12-1.146 2.73 0 1.61 1.173 3.167 1.337 3.386.164.218 2.3 3.51 5.57 4.927.778.337 1.387.538 1.86.689.782.249 1.494.214 2.057.13.628-.094 1.937-.792 2.21-1.558.272-.765.272-1.42.19-1.557-.081-.137-.3-.219-.627-.383z"/>
-                  </svg>
-                  Seguir pedido
-                </button>
-              )}
+
               <Link href="/" className="block w-full bg-black hover:bg-neutral-900 text-white text-center py-4 text-xs font-semibold uppercase tracking-widest transition-colors">
                 Seguir comprando
               </Link>

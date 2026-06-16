@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/mongodb';
 import Link from 'next/link';
 import { ClientDateTime } from '@/components/ClientDateTime';
+import DashboardCharts from './DashboardCharts';
 
 const PAID   = ['CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO'];
 const ACTIVE = ['NUEVO PEDIDO', 'PAGO PENDIENTE', 'CONFIRMADO', 'EN PREPARACIÓN'];
@@ -33,12 +34,12 @@ function pct(curr: number, prev: number): number | null {
   return Math.round(((curr - prev) / prev) * 100);
 }
 
-function Delta({ value }: { value: number | null }) {
+function Delta({ value, text }: { value: number | null, text: string }) {
   if (value === null) return <span className="text-[10px] text-gray-300">sin datos previos</span>;
   const up = value >= 0;
   return (
-    <span className={`text-[10px] font-medium ${up ? 'text-green-600' : 'text-red-500'}`}>
-      {up ? '↑' : '↓'} {Math.abs(value)}% vs mes pasado
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded-full text-[10px] font-bold w-fit ${up ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+      {up ? '↑' : '↓'} {Math.abs(value)}% <span className="font-normal opacity-70 ml-0.5">{text}</span>
     </span>
   );
 }
@@ -50,10 +51,11 @@ async function getData() {
   const [
     todayAgg, ydayAgg, monthAgg, prevMonthAgg,
     statusAgg, dailyAgg, topProducts, recentOrders,
-    channelAgg,
+    channelAgg, geoAgg,
     stalePrepCount, stalePendingCount, newCount,
     totalProducts,
     lowStockProducts, outOfStockProducts,
+    abandonedAgg, dispatchTimeAgg, staleProducts
   ] = await Promise.all([
     // Ventas hoy
     db.collection('orders').aggregate([
@@ -116,6 +118,14 @@ async function getData() {
       { $sort: { total: -1 } },
     ]).toArray(),
 
+    // Geográfico (Municipios)
+    db.collection('orders').aggregate([
+      { $match: { status: { $in: PAID }, deleted: { $ne: true }, 'shippingDetails.city': { $nin: [null, ''] } } },
+      { $group: { _id: '$shippingDetails.city', total: { $sum: '$totalPrice' }, count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 8 },
+    ]).toArray(),
+
     // Alertas: en preparación > 48h
     db.collection('orders').countDocuments({
       status: 'EN PREPARACIÓN',
@@ -148,6 +158,37 @@ async function getData() {
       stock: 0,
       active: { $ne: false },
     }),
+
+    // Dinero en la mesa (abandonos)
+    db.collection('abandonos').aggregate([
+      { $match: { converted: { $ne: true } } },
+      { $group: { _id: null, total: { $sum: '$total' } } }
+    ]).toArray(),
+
+    // Tiempos de despacho (últimos 30 días)
+    db.collection('orders').aggregate([
+      { $match: { status: { $in: ['ENVIADO', 'ENTREGADO'] }, createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }, deleted: { $ne: true } } },
+      { $project: { durationHours: { $divide: [{ $subtract: [{ $toDate: '$updatedAt' }, { $toDate: '$createdAt' }] }, 3600000] } } },
+      { $group: { _id: null, avgHours: { $avg: '$durationHours' } } }
+    ]).toArray(),
+
+    // Productos hueso (Sin ventas en 30 días)
+    (async () => {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const recentSoldProducts = await db.collection('orders').distinct('items.product.id', { createdAt: { $gte: thirtyDaysAgo }, status: { $in: PAID } });
+      const recentSoldProductsAlt = await db.collection('orders').distinct('items.product._id', { createdAt: { $gte: thirtyDaysAgo }, status: { $in: PAID } });
+      const activeSoldIds = [...new Set([...recentSoldProducts, ...recentSoldProductsAlt])];
+      
+      return db.collection('products').find({
+        $and: [
+          { $or: [{ id: { $nin: activeSoldIds } }, { id: { $exists: false } }] },
+          { $or: [{ _id: { $nin: activeSoldIds } }, { _id: { $type: 'objectId' } }] } // Fallback
+        ],
+        active: { $ne: false },
+        stockTracked: true,
+        stock: { $gt: 0 }
+      }).limit(5).toArray();
+    })(),
   ]);
 
   // Construir array de 7 días
@@ -175,8 +216,12 @@ async function getData() {
   const maxDay        = Math.max(...days.map(d => d.total), 1);
   const totalChannel  = channelAgg.reduce((a, c) => a + c.total, 0);
   const maxStatus     = Math.max(...statusAgg.map(s => s.count), 1);
+  const abandonedTotal = abandonedAgg[0]?.total ?? 0;
+  const dispatchAvgHours = dispatchTimeAgg[0]?.avgHours ?? 0;
 
-  const alerts: { level: 'warn' | 'info'; text: string }[] = [];
+  const alerts: { level: 'warn' | 'info'; text: string; href?: string }[] = [];
+  if (abandonedTotal > 0)
+    alerts.push({ level: 'warn', text: `¡Dinero en la mesa! Tienes $${abandonedTotal.toLocaleString('es-CO')} estancados en carritos abandonados.`, href: '/admin/abandonos' });
   if (newCount > 0)
     alerts.push({ level: 'info', text: `${newCount} pedido${newCount > 1 ? 's' : ''} nuevo${newCount > 1 ? 's' : ''} esperando gestión` });
   if (stalePendingCount > 0)
@@ -197,7 +242,8 @@ async function getData() {
     statusAgg, maxStatus,
     topProducts, recentOrders,
     channelAgg, totalChannel,
-    alerts, totalProducts,
+    geoAgg,
+    alerts, totalProducts, abandonedTotal, dispatchAvgHours, staleProducts,
     deltaToday: pct(todaySales, ydaySales),
     deltaMonth: pct(monthSales, prevMonthSales),
     deltaCount: pct(monthCount, prevMonthCount),
@@ -209,10 +255,11 @@ export default async function DashboardPage() {
   const d = await getData();
 
   const metrics = [
-    { label: 'Ventas hoy',      value: `$${d.todaySales.toLocaleString('es-CO')}`,          sub: `${d.todaySales === 0 && d.ydaySales === 0 ? '—' : d.ydaySales > 0 ? `Ayer: $${d.ydaySales.toLocaleString('es-CO')}` : 'Sin ventas ayer'}`, delta: d.deltaToday, accent: 'text-red-600' },
-    { label: 'Ventas del mes',  value: `$${d.monthSales.toLocaleString('es-CO')}`,          sub: `${d.monthCount} pedidos`,                delta: d.deltaMonth, accent: 'text-red-600' },
-    { label: 'Pedidos activos', value: String(d.activeOrders),                               sub: 'por gestionar',                          delta: null,         accent: d.activeOrders > 0 ? 'text-orange-500' : 'text-gray-400' },
-    { label: 'Ticket promedio', value: `$${Math.round(d.avgTicket).toLocaleString('es-CO')}`, sub: 'este mes',                               delta: d.deltaAvg,   accent: 'text-gray-700' },
+    { label: 'Ventas hoy',      value: `$${d.todaySales.toLocaleString('es-CO')}`,          sub: `${d.todaySales === 0 && d.ydaySales === 0 ? '—' : d.ydaySales > 0 ? `Ayer: $${d.ydaySales.toLocaleString('es-CO')}` : 'Sin ventas ayer'}`, delta: d.deltaToday, deltaText: 'vs ayer', accent: 'text-red-600' },
+    { label: 'Ventas del mes',  value: `$${d.monthSales.toLocaleString('es-CO')}`,          sub: `${d.monthCount} pedidos`,                delta: d.deltaMonth, deltaText: 'vs mes pasado', accent: 'text-red-600' },
+    { label: 'Tiempo despacho', value: d.dispatchAvgHours > 0 ? `${Math.round(d.dispatchAvgHours)}h` : '—', sub: 'promedio (30 días)',      delta: null, deltaText: '',        accent: 'text-indigo-600' },
+    { label: 'Pedidos activos', value: String(d.activeOrders),                               sub: 'por gestionar',                          delta: null, deltaText: '',        accent: d.activeOrders > 0 ? 'text-orange-500' : 'text-gray-400' },
+    { label: 'Ticket promedio', value: `$${Math.round(d.avgTicket).toLocaleString('es-CO')}`, sub: 'este mes',                               delta: d.deltaAvg, deltaText: 'vs mes pasado',   accent: 'text-gray-700' },
   ];
 
   return (
@@ -224,11 +271,27 @@ export default async function DashboardPage() {
         <p className="text-xs text-gray-400 mt-0.5">{d.totalProducts} productos activos</p>
       </div>
 
+      {/* Accesos Directos (Shortcuts) */}
+      <div className="flex flex-wrap gap-3">
+        <Link href="/admin/pedidos/nuevo" className="inline-flex items-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm">
+          <span className="text-lg leading-none">+</span>
+          Crear Pedido
+        </Link>
+        <Link href="/admin/productos/nuevo" className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-black px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm">
+          <span className="text-lg leading-none">+</span>
+          Añadir Producto
+        </Link>
+        <Link href="/admin/configuracion" className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-black px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm ml-auto">
+          <span>⚙️</span>
+          Configuración
+        </Link>
+      </div>
+
       {/* Alertas */}
       {d.alerts.length > 0 && (
         <div className="flex flex-col gap-2">
           {d.alerts.map((alert, i) => (
-            <Link key={i} href="/admin/pedidos"
+            <Link key={i} href={alert.href || "/admin/pedidos"}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-opacity hover:opacity-80 ${
                 alert.level === 'warn'
                   ? 'bg-amber-50 border-amber-200 text-amber-800'
@@ -236,83 +299,26 @@ export default async function DashboardPage() {
               }`}>
               <span className="shrink-0 text-base">{alert.level === 'warn' ? '⚠️' : 'ℹ️'}</span>
               {alert.text}
-              <span className="ml-auto text-xs opacity-60">Ver pedidos →</span>
+              <span className="ml-auto text-xs opacity-60">{alert.href ? 'Ver detalles →' : 'Ver pedidos →'}</span>
             </Link>
           ))}
         </div>
       )}
 
       {/* Métricas */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {metrics.map(m => (
           <div key={m.label} className="bg-white border border-gray-100 rounded-xl px-5 py-4 flex flex-col gap-1">
             <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">{m.label}</p>
             <p className={`text-2xl font-bold leading-none ${m.accent}`}>{m.value}</p>
             <p className="text-[10px] text-gray-400">{m.sub}</p>
-            <Delta value={m.delta} />
+            <Delta value={m.delta} text={m.deltaText} />
           </div>
         ))}
       </div>
 
-      {/* Gráfica 7 días + Canal */}
-      <div className="grid lg:grid-cols-3 gap-4">
-
-        {/* Gráfica */}
-        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-black">Ventas últimos 7 días</h2>
-            <span className="text-xs text-gray-400">solo pedidos confirmados</span>
-          </div>
-          <div className="flex items-end justify-between gap-2" style={{ height: '120px' }}>
-            {d.days.map((day, i) => {
-              const isToday = i === 6;
-              const barPct  = d.maxDay > 0 ? (day.total / d.maxDay) * 100 : 0;
-              return (
-                <div key={day.date} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                  <span className="text-[9px] text-gray-400 truncate w-full text-center h-3">
-                    {day.total > 0 ? `$${Math.round(day.total / 1000)}k` : ''}
-                  </span>
-                  <div className="w-full flex items-end rounded-t-sm overflow-hidden" style={{ height: '80px' }}>
-                    <div
-                      className={`w-full rounded-t-md ${isToday ? 'bg-red-500' : 'bg-red-200'}`}
-                      style={{ height: barPct > 0 ? `${Math.max(barPct, 4)}%` : '2px', opacity: barPct === 0 ? 0.25 : 1 }}
-                    />
-                  </div>
-                  <span className={`text-[9px] truncate capitalize ${isToday ? 'font-bold text-black' : 'text-gray-400'}`}>
-                    {day.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Por canal */}
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-black mb-4">Por canal</h2>
-          {d.channelAgg.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-4">Sin ventas registradas</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {d.channelAgg.map(ch => {
-                const barPct = d.totalChannel > 0 ? (ch.total / d.totalChannel) * 100 : 0;
-                return (
-                  <div key={ch._id}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-600 truncate">{ch._id ?? 'Tienda Online'}</span>
-                      <span className="text-xs font-semibold text-black ml-2 shrink-0">{Math.round(barPct)}%</span>
-                    </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-red-400 rounded-full" style={{ width: `${barPct}%` }} />
-                    </div>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{ch.count} pedidos · ${ch.total.toLocaleString('es-CO')}</p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Gráficos Avanzados (Recharts) */}
+      <DashboardCharts days={d.days} channels={d.channelAgg as Array<{ _id: string; total: number; count: number }>} geo={d.geoAgg as Array<{ _id: string; total: number; count: number }>} />
 
       {/* Pedidos recientes + lateral */}
       <div className="grid lg:grid-cols-3 gap-4">
@@ -393,6 +399,25 @@ export default async function DashboardPage() {
             </div>
           </div>
 
+          {/* Productos Hueso */}
+          {d.staleProducts.length > 0 && (
+            <div className="bg-white border border-gray-100 rounded-xl overflow-hidden mt-4">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-black">Productos "Hueso"</h2>
+                <span className="text-[10px] text-gray-400">+30 días sin ventas</span>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {d.staleProducts.map((p) => (
+                  <div key={p._id as string} className="px-5 py-2.5 flex items-center justify-between gap-3">
+                    <p className="text-xs text-black truncate max-w-[150px]">{p.name}</p>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-semibold text-red-500">{p.stock} u. estancadas</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -6,6 +6,20 @@ const DEFAULT: Record<string, unknown> = {
   instagram: '',
   tiktok: '',
   facebook: '',
+  storeInfo: {
+    name: 'La Tienda Silvestrista',
+    description: 'La tienda oficial del Rey del Vallenato.',
+    logoUrl: '/logo.png',
+  },
+  shipping: {
+    baseCost: 15000,
+    freeThreshold: 250000,
+    enabled: true,
+  },
+  integrations: {
+    boldSandbox: true,
+    adminEmail: '',
+  }
 };
 
 export async function GET() {

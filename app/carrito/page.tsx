@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { useCart, buildSelectionsKey } from '@/components/CartProvider';
 import { DEPARTMENTS } from '@/lib/colombia';
 import Link from 'next/link';
@@ -31,9 +30,12 @@ function formatSelections(selections?: Record<string, string>): string {
 
 export default function CarritoPage() {
   const { items, removeItem, updateQty, clearCart, totalItems, totalPrice } = useCart();
-  const router = useRouter();
-
-  const sessionId = useRef(Math.random().toString(36).slice(2) + Date.now().toString(36));
+  const sessionId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!sessionId.current) {
+      sessionId.current = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+  }, []);
 
   const [shippingDetails, setShippingDetails] = useState({
     name: '',
@@ -89,14 +91,7 @@ export default function CarritoPage() {
   })();
   const grandTotal = shippingPrice !== null ? totalPrice + shippingPrice : totalPrice;
 
-  function validateForm(): boolean {
-    const form = document.getElementById('checkout-form') as HTMLFormElement;
-    if (form && !form.checkValidity()) {
-      form.reportValidity();
-      return false;
-    }
-    return true;
-  }
+
 
   async function handleBoldCheckout(e: React.FormEvent) {
     e.preventDefault();
@@ -155,8 +150,13 @@ export default function CarritoPage() {
         ? 'https://latiendasilvestrista.com'
         : window.location.origin.replace('http://', 'https://');
 
+      const apiKey = process.env.NEXT_PUBLIC_BOLD_API_KEY;
+      if (!apiKey) {
+        throw new Error('La llave pública de Bold (API Key) no se ha cargado. Por favor, asegúrate de haber reiniciado el servidor de desarrollo después de agregarla al archivo .env');
+      }
+
       const checkout = new boldWindow.BoldCheckout({
-        apiKey: process.env.NEXT_PUBLIC_BOLD_API_KEY,
+        apiKey: apiKey,
         amount: grandTotal.toString(),
         currency: 'COP',
         orderId: orderId,

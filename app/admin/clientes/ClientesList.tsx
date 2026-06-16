@@ -16,7 +16,7 @@ export default function ClientesList({ clientes }: Props) {
   const filtered = useMemo(() => {
     let list = clientes;
 
-    if (onlyRecurrent) list = list.filter(c => c.orderCount > 1);
+    if (onlyRecurrent) list = list.filter(c => c.paidOrderCount > 1);
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -28,7 +28,7 @@ export default function ClientesList({ clientes }: Props) {
     }
 
     return [...list].sort((a, b) => {
-      if (sortBy === 'ORDERS') return b.orderCount - a.orderCount;
+      if (sortBy === 'ORDERS') return b.paidOrderCount - a.paidOrderCount;
       if (sortBy === 'SPENT')  return b.totalSpent - a.totalSpent;
       return new Date(b.lastOrderDate).getTime() - new Date(a.lastOrderDate).getTime();
     });
@@ -41,7 +41,7 @@ export default function ClientesList({ clientes }: Props) {
     });
   }
 
-  const maxOrders = Math.max(...clientes.map(c => c.orderCount), 1);
+  const maxOrders = Math.max(...clientes.map(c => c.paidOrderCount), 1);
   const maxSpent  = Math.max(...clientes.map(c => c.totalSpent), 1);
 
   return (
@@ -128,15 +128,15 @@ export default function ClientesList({ clientes }: Props) {
                   <div className="flex items-center gap-2 w-full">
                     <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full ${c.orderCount > 1 ? 'bg-red-400' : 'bg-gray-300'}`}
-                        style={{ width: `${(c.orderCount / maxOrders) * 100}%` }}
+                        className={`h-full rounded-full ${c.paidOrderCount > 1 ? 'bg-red-400' : 'bg-gray-300'}`}
+                        style={{ width: `${(c.paidOrderCount / maxOrders) * 100}%` }}
                       />
                     </div>
-                    <span className={`text-sm font-bold w-5 text-right shrink-0 ${c.orderCount > 1 ? 'text-red-600' : 'text-gray-400'}`}>
-                      {c.orderCount}
+                    <span className={`text-sm font-bold w-5 text-right shrink-0 ${c.paidOrderCount > 1 ? 'text-red-600' : 'text-gray-400'}`}>
+                      {c.paidOrderCount}
                     </span>
                   </div>
-                  {c.orderCount > 1 && (
+                  {c.paidOrderCount > 1 && (
                     <span className="text-[9px] text-red-500 font-semibold uppercase tracking-wide">recurrente</span>
                   )}
                 </div>

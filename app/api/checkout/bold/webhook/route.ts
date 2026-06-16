@@ -1,11 +1,35 @@
 import { getDb } from '@/lib/mongodb';
 import { sendOrderConfirmedEmail } from '@/lib/mail';
 import { Order } from '@/types';
+import crypto from 'crypto';
 
 export async function POST(request: Request) {
   try {
-    const payload = await request.json();
-    console.log('Webhook de Bold recibido:', JSON.stringify(payload, null, 2));
+    const signature = request.headers.get('bold-signature');
+    const rawBody = await request.text();
+    
+    const secretKey = process.env.BOLD_SECRET_KEY;
+    if (!secretKey) {
+      console.error('Falta la variable de entorno BOLD_SECRET_KEY');
+      return Response.json({ error: 'Error interno del servidor' }, { status: 500 });
+    }
+
+    if (!signature) {
+      return Response.json({ error: 'Firma ausente' }, { status: 400 });
+    }
+
+    const hashed = crypto
+      .createHmac('sha256', secretKey)
+      .update(rawBody)
+      .digest('hex');
+
+    if (hashed !== signature) {
+      console.warn('Firma de Webhook inválida:', { received: signature, expected: hashed });
+      return Response.json({ error: 'Firma inválida' }, { status: 400 });
+    }
+
+    const payload = JSON.parse(rawBody);
+    console.log('Webhook de Bold recibido y validado:', JSON.stringify(payload, null, 2));
 
     const { type, data } = payload;
 

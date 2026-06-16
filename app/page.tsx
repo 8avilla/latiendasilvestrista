@@ -58,7 +58,6 @@ async function getCategories(): Promise<CategoryDoc[]> {
 
 export default async function Home() {
   const [products, categories] = await Promise.all([getProducts(), getCategories()]);
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573004340482';
 
   return (
     <main className="flex-1 w-full">
@@ -90,17 +89,7 @@ export default async function Home() {
             </div>
           </div>
           <div className="flex flex-col items-center sm:items-end gap-2">
-            <p className="text-xs text-gray-400 text-center sm:text-right">
-              Pedidos y consultas por WhatsApp&nbsp;
-              <a
-                href={`https://wa.me/${whatsappNumber}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-red-600 font-medium hover:underline"
-              >
-                +57 300 434 0482
-              </a>
-            </p>
+
             <a
               href="/admin"
               className="text-[10px] uppercase tracking-widest text-gray-400 hover:text-black transition-colors"

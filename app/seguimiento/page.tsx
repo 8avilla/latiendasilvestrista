@@ -188,17 +188,6 @@ function SearchForm() {
           Buscar pedido
         </button>
       </form>
-      <p className="mt-6 text-xs text-gray-400">
-        ¿Tienes dudas?{' '}
-        <a
-          href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573004340482'}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-black underline underline-offset-2"
-        >
-          Escríbenos por WhatsApp
-        </a>
-      </p>
     </div>
   );
 }
@@ -213,16 +202,37 @@ function SeguimientoContent() {
 
   useEffect(() => {
     if (!orderId) return;
-    setLoading(true);
-    setError('');
-    setOrder(null);
-    fetch(`/api/orders?orderId=${encodeURIComponent(orderId)}`)
-      .then(async r => {
-        if (!r.ok) throw new Error((await r.json()).error || 'Pedido no encontrado');
-        return r.json();
-      })
-      .then(data => { setOrder(data); setLoading(false); })
-      .catch(err => { setError(err.message); setLoading(false); });
+
+    let isSubscribed = true;
+
+    async function fetchOrder() {
+      setLoading(true);
+      setError('');
+      setOrder(null);
+      try {
+        const r = await fetch(`/api/orders?orderId=${encodeURIComponent(orderId as string)}`);
+        if (!r.ok) {
+          const errData = await r.json();
+          throw new Error(errData.error || 'Pedido no encontrado');
+        }
+        const data = await r.json();
+        if (isSubscribed) {
+          setOrder(data);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isSubscribed) {
+          setError(err instanceof Error ? err.message : 'Error al cargar los detalles del pedido.');
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchOrder();
+
+    return () => {
+      isSubscribed = false;
+    };
   }, [orderId]);
 
   if (!orderId) return <SearchForm />;

@@ -7,6 +7,20 @@ interface Settings {
   instagram: string;
   tiktok: string;
   facebook: string;
+  storeInfo: {
+    name: string;
+    description: string;
+    logoUrl: string;
+  };
+  shipping: {
+    baseCost: number;
+    freeThreshold: number;
+    enabled: boolean;
+  };
+  integrations: {
+    boldSandbox: boolean;
+    adminEmail: string;
+  };
 }
 
 const DEFAULT: Settings = {
@@ -15,6 +29,20 @@ const DEFAULT: Settings = {
   instagram: '',
   tiktok: '',
   facebook: '',
+  storeInfo: {
+    name: 'La Tienda Silvestrista',
+    description: 'La tienda oficial del Rey del Vallenato.',
+    logoUrl: '/logo.png',
+  },
+  shipping: {
+    baseCost: 15000,
+    freeThreshold: 250000,
+    enabled: true,
+  },
+  integrations: {
+    boldSandbox: true,
+    adminEmail: '',
+  }
 };
 
 export default async function ConfiguracionPage() {
@@ -23,7 +51,9 @@ export default async function ConfiguracionPage() {
     const db = await getDb();
     const doc = await db.collection('settings').findOne({ _id: 'main' as unknown as import('mongodb').ObjectId });
     if (doc) {
-      const { _id, updatedAt, ...rest } = doc as Record<string, unknown>;
+      const rest = { ...doc } as Record<string, unknown>;
+      delete rest._id;
+      delete rest.updatedAt;
       settings = { ...DEFAULT, ...rest } as Settings;
     }
   } catch {

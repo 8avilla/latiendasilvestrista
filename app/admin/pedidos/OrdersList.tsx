@@ -65,6 +65,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   const [editChannel, setEditChannel] = useState<SalesChannel>('Tienda Online');
   const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('Bold');
   const [editNotes, setEditNotes] = useState('');
+  const [editShipping, setEditShipping] = useState<Order['shippingDetails'] | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -79,12 +80,26 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   const [lastRefresh, setLastRefresh] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [productFilter, setProductFilter] = useState('');
+
+  const filterMunicipalities = useMemo(
+    () => DEPARTMENTS.find(d => d.name === departmentFilter)?.municipalities ?? [],
+    [departmentFilter]
+  );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   function toggleSelect(orderId: string) {
     setSelectedIds(prev => {
       const next = new Set(prev);
-      next.has(orderId) ? next.delete(orderId) : next.add(orderId);
+      if (next.has(orderId)) {
+        next.delete(orderId);
+      } else {
+        next.add(orderId);
+      }
       return next;
     });
   }
@@ -251,75 +266,97 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   }, [localOrders]);
 
   // Filtrado y ordenamiento de pedidos
-  const filteredOrders = useMemo(() => {
-    const source = showTrash
-      ? localOrders.filter(o => o.deleted)
-      : localOrders.filter(o => !o.deleted);
+  const sourceOrders = showTrash
+    ? localOrders.filter(o => o.deleted)
+    : localOrders.filter(o => !o.deleted);
 
-    return source
-      .filter((order) => {
-        // Filtro por Estado
-        if (statusFilter !== 'ALL' && order.status !== statusFilter) {
-          return false;
-        }
+  const filteredOrders = sourceOrders
+    .filter((order) => {
+      // Filtro por Estado
+      if (statusFilter !== 'ALL' && order.status !== statusFilter) {
+        return false;
+      }
 
-        // Filtro por Canal de Venta
-        if (channelFilter !== 'ALL' && order.salesChannel !== channelFilter) {
-          return false;
-        }
+      // Filtro por Canal de Venta
+      if (channelFilter !== 'ALL' && order.salesChannel !== channelFilter) {
+        return false;
+      }
 
-        // Filtro por Método de Pago
-        if (paymentFilter !== 'ALL') {
-          if (normalizePM(order.paymentMethod as string | undefined) !== paymentFilter) return false;
-        }
+      // Filtro por Método de Pago
+      if (paymentFilter !== 'ALL') {
+        if (normalizePM(order.paymentMethod as string | undefined) !== paymentFilter) return false;
+      }
 
-        // Filtro por rango de fechas
-        if (dateFrom) {
-          const from = new Date(dateFrom);
-          from.setHours(0, 0, 0, 0);
-          if (new Date(order.createdAt) < from) return false;
-        }
-        if (dateTo) {
-          const to = new Date(dateTo);
-          to.setHours(23, 59, 59, 999);
-          if (new Date(order.createdAt) > to) return false;
-        }
+      // Filtro por rango de fechas
+      if (dateFrom) {
+        const from = new Date(dateFrom);
+        from.setHours(0, 0, 0, 0);
+        if (new Date(order.createdAt) < from) return false;
+      }
+      if (dateTo) {
+        const to = new Date(dateTo);
+        to.setHours(23, 59, 59, 999);
+        if (new Date(order.createdAt) > to) return false;
+      }
 
-        // Búsqueda por Texto Libre
-        if (search.trim() !== '') {
-          const query = search.toLowerCase();
-          const matchesId = order.orderId.toLowerCase().includes(query);
-          const matchesName = order.shippingDetails?.name?.toLowerCase().includes(query);
-          const matchesEmail = order.shippingDetails?.email?.toLowerCase().includes(query);
-          const matchesPhone = order.shippingDetails?.phone?.includes(query);
-          const matchesCity = order.shippingDetails?.city?.toLowerCase().includes(query);
-          const matchesItems = order.items.some((item) =>
-            item.product?.name?.toLowerCase().includes(query)
-          );
+      // Filtros avanzados
+      if (departmentFilter) {
+        const orderDept = order.shippingDetails?.department || '';
+        if (orderDept.toLowerCase() !== departmentFilter.toLowerCase()) return false;
+      }
+      if (cityFilter) {
+        const orderCity = order.shippingDetails?.city || '';
+        if (orderCity.toLowerCase() !== cityFilter.toLowerCase()) return false;
+      }
+      if (categoryFilter) {
+        const hasCategory = order.items.some(item => {
+          if (item.product?.category === categoryFilter) return true;
+          const prodId = item.product?.id || (item.product as Record<string, unknown>)?._id;
+          const product = products.find(p => p.id === prodId);
+          return product && product.category === categoryFilter;
+        });
+        if (!hasCategory) return false;
+      }
+      if (productFilter) {
+        const hasProduct = order.items.some(item => {
+          const prodId = item.product?.id || (item.product as Record<string, unknown>)?._id;
+          return prodId === productFilter;
+        });
+        if (!hasProduct) return false;
+      }
 
-          if (!matchesId && !matchesName && !matchesEmail && !matchesPhone && !matchesCity && !matchesItems) {
-            return false;
-          }
-        }
+      // Búsqueda por Texto Libre
+      if (search.trim() !== '') {
+        const query = search.toLowerCase();
+        const matchesId = order.orderId.toLowerCase().includes(query);
+        const matchesName = order.shippingDetails?.name?.toLowerCase().includes(query);
+        const matchesEmail = order.shippingDetails?.email?.toLowerCase().includes(query);
+        const matchesPhone = order.shippingDetails?.phone?.includes(query);
+        const matchesCity = order.shippingDetails?.city?.toLowerCase().includes(query);
+        const matchesItems = order.items.some((item) =>
+          item.product?.name?.toLowerCase().includes(query)
+        );
 
-        return true;
-      })
-      .sort((a, b) => {
-        if (sortBy === 'NEWEST') {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        }
-        if (sortBy === 'OLDEST') {
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        }
-        if (sortBy === 'PRICE_DESC') {
-          return b.totalPrice - a.totalPrice;
-        }
-        if (sortBy === 'PRICE_ASC') {
-          return a.totalPrice - b.totalPrice;
-        }
-        return 0;
-      });
-  }, [localOrders, showTrash, search, statusFilter, channelFilter, paymentFilter, sortBy, dateFrom, dateTo]);
+        return matchesId || matchesName || matchesEmail || matchesPhone || matchesCity || matchesItems;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'NEWEST') {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      if (sortBy === 'OLDEST') {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      if (sortBy === 'PRICE_DESC') {
+        return b.totalPrice - a.totalPrice;
+      }
+      if (sortBy === 'PRICE_ASC') {
+        return a.totalPrice - b.totalPrice;
+      }
+      return 0;
+    });
 
   // Abrir y precargar Drawer de Edición
   function openDrawer(order: Order) {
@@ -328,6 +365,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     setEditChannel(order.salesChannel || 'Tienda Online');
     setEditPaymentMethod(normalizePM(order.paymentMethod as string | undefined));
     setEditNotes(order.notes || '');
+    setEditShipping({ ...order.shippingDetails });
     setConfirmDelete(false);
     setIsDrawerOpen(true);
   }
@@ -380,6 +418,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           salesChannel: editChannel,
           paymentMethod: editPaymentMethod,
           notes: editNotes,
+          shippingDetails: editShipping,
         }),
       });
 
@@ -390,7 +429,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       setLocalOrders((prev) =>
         prev.map((o) =>
           o.orderId === editingOrder.orderId
-            ? { ...o, status: editStatus, salesChannel: editChannel, paymentMethod: editPaymentMethod, notes: editNotes, updatedAt: new Date().toISOString() }
+            ? { ...o, status: editStatus, salesChannel: editChannel, paymentMethod: editPaymentMethod, notes: editNotes, shippingDetails: editShipping!, updatedAt: new Date().toISOString() }
             : o
         )
       );
@@ -940,32 +979,113 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           </div>
         </div>
 
-        {/* Fila de fechas */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-gray-400 font-medium">Periodo:</span>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={e => setDateFrom(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
-          />
-          <span className="text-xs text-gray-400">—</span>
-          <input
-            type="date"
-            value={dateTo}
-            min={dateFrom}
-            onChange={e => setDateTo(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
-          />
-          {(dateFrom || dateTo) && (
-            <button
-              onClick={() => { setDateFrom(''); setDateTo(''); }}
-              className="text-xs text-gray-400 hover:text-red-600 transition-colors"
-            >
-              ✕ limpiar
-            </button>
-          )}
+        {/* Fila de fechas y Filtros avanzados */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-400 font-medium">Periodo:</span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+            />
+            <span className="text-xs text-gray-400">—</span>
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom}
+              onChange={e => setDateTo(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(''); setDateTo(''); }}
+                className="text-xs text-gray-400 hover:text-red-600 transition-colors"
+              >
+                ✕ limpiar
+              </button>
+            )}
+          </div>
+          
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="text-xs text-gray-500 hover:text-black font-semibold flex items-center gap-1 transition-colors"
+          >
+            Filtros avanzados
+            <svg className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
+
+        {/* Panel de Filtros Avanzados */}
+        {showAdvancedFilters && (
+          <div className="grid md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 mt-2">
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1.5">
+                Departamento
+              </label>
+              <select
+                value={departmentFilter}
+                onChange={(e) => { setDepartmentFilter(e.target.value); setCityFilter(''); }}
+                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+              >
+                <option value="">Todos los departamentos</option>
+                {DEPARTMENTS.map(d => (
+                  <option key={d.name} value={d.name}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1.5">
+                Ciudad
+              </label>
+              <select
+                value={cityFilter}
+                onChange={(e) => setCityFilter(e.target.value)}
+                disabled={!departmentFilter}
+                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black disabled:bg-opacity-50 disabled:text-gray-400"
+              >
+                <option value="">Todas las ciudades</option>
+                {filterMunicipalities.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1.5">
+                Categoría
+              </label>
+              <select
+                value={categoryFilter}
+                onChange={(e) => { setCategoryFilter(e.target.value); setProductFilter(''); }}
+                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+              >
+                <option value="">Todas las categorías</option>
+                {uniqueCategories.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1.5">
+                Producto
+              </label>
+              <select
+                value={productFilter}
+                onChange={(e) => setProductFilter(e.target.value)}
+                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+              >
+                <option value="">Todos los productos</option>
+                {products
+                  .filter(p => !categoryFilter || p.category === categoryFilter)
+                  .map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* Fila inferior: Filtros de Estado */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
@@ -1027,7 +1147,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
             })}
           </div>
 
-          {(search.trim() !== '' || statusFilter !== 'ALL' || channelFilter !== 'ALL' || paymentFilter !== 'ALL' || dateFrom || dateTo) && (
+          {(search.trim() !== '' || statusFilter !== 'ALL' || channelFilter !== 'ALL' || paymentFilter !== 'ALL' || dateFrom || dateTo || categoryFilter || departmentFilter || cityFilter || productFilter) && (
             <button
               onClick={() => {
                 setSearch('');
@@ -1037,6 +1157,10 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 setSortBy('NEWEST');
                 setDateFrom('');
                 setDateTo('');
+                setCategoryFilter('');
+                setDepartmentFilter('');
+                setCityFilter('');
+                setProductFilter('');
               }}
               className="text-xs text-red-600 hover:underline font-semibold flex items-center gap-1.5 transition-all"
             >
@@ -1490,28 +1614,84 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 <h3 className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">
                   Datos de Envío
                 </h3>
-                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 text-xs space-y-2 text-gray-700">
-                  <p><strong className="text-black">Nombre:</strong> {editingOrder.shippingDetails.name}</p>
-                  <div className="flex items-center gap-2">
-                    <p><strong className="text-black">Celular:</strong> {editingOrder.shippingDetails.phone}</p>
-                    <a
-                      href={`https://wa.me/57${editingOrder.shippingDetails.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${editingOrder.shippingDetails.name.split(' ')[0]}, te escribimos de La Tienda Silvestrista sobre tu pedido ${editingOrder.orderId}. `)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-colors"
-                    >
-                      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448L.057 24z"/>
-                      </svg>
-                      WhatsApp
-                    </a>
-                  </div>
-                  <p><strong className="text-black">Email:</strong> {editingOrder.shippingDetails.email}</p>
-                  {editingOrder.shippingDetails.department && (
-                    <p><strong className="text-black">Departamento:</strong> {editingOrder.shippingDetails.department}</p>
+                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 text-xs space-y-3 text-gray-700">
+                  {editShipping && (
+                    <>
+                      <div>
+                        <strong className="block text-black mb-1">Nombre:</strong>
+                        <input
+                          type="text"
+                          value={editShipping.name}
+                          onChange={(e) => setEditShipping({ ...editShipping, name: e.target.value })}
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded"
+                          disabled={isSaving}
+                        />
+                      </div>
+                      <div className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <strong className="block text-black mb-1">Celular:</strong>
+                          <input
+                            type="text"
+                            value={editShipping.phone}
+                            onChange={(e) => setEditShipping({ ...editShipping, phone: e.target.value })}
+                            className="w-full px-2 py-1.5 border border-gray-200 rounded"
+                            disabled={isSaving}
+                          />
+                        </div>
+                        <a
+                          href={`https://wa.me/57${editShipping.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${editShipping.name.split(' ')[0]}, te escribimos de La Tienda Silvestrista sobre tu pedido ${editingOrder.orderId}. `)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 px-3 py-1.5 rounded text-[11px] font-semibold transition-colors h-[34px]"
+                        >
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448L.057 24z"/>
+                          </svg>
+                          WhatsApp
+                        </a>
+                      </div>
+                      <div>
+                        <strong className="block text-black mb-1">Email:</strong>
+                        <input
+                          type="email"
+                          value={editShipping.email || ''}
+                          onChange={(e) => setEditShipping({ ...editShipping, email: e.target.value })}
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded"
+                          disabled={isSaving}
+                        />
+                      </div>
+                      <div>
+                        <strong className="block text-black mb-1">Departamento:</strong>
+                        <input
+                          type="text"
+                          value={editShipping.department || ''}
+                          onChange={(e) => setEditShipping({ ...editShipping, department: e.target.value })}
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded"
+                          disabled={isSaving}
+                        />
+                      </div>
+                      <div>
+                        <strong className="block text-black mb-1">Ciudad:</strong>
+                        <input
+                          type="text"
+                          value={editShipping.city}
+                          onChange={(e) => setEditShipping({ ...editShipping, city: e.target.value })}
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded"
+                          disabled={isSaving}
+                        />
+                      </div>
+                      <div>
+                        <strong className="block text-black mb-1">Dirección:</strong>
+                        <input
+                          type="text"
+                          value={editShipping.address}
+                          onChange={(e) => setEditShipping({ ...editShipping, address: e.target.value })}
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded"
+                          disabled={isSaving}
+                        />
+                      </div>
+                    </>
                   )}
-                  <p><strong className="text-black">Ciudad:</strong> {editingOrder.shippingDetails.city}</p>
-                  <p><strong className="text-black">Dirección:</strong> {editingOrder.shippingDetails.address}</p>
                 </div>
               </div>
 

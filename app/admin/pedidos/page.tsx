@@ -3,6 +3,9 @@ import { getDb } from '@/lib/mongodb';
 import { Order, OrderItem, Product, OrderStatus, SalesChannel } from '@/types';
 import OrdersList from './OrdersList';
 
+export const dynamic = 'force-dynamic';
+
+
 async function getOrders(): Promise<Order[]> {
   const db = await getDb();
   const docs = await db.collection('orders').find({}).sort({ createdAt: -1 }).toArray();
@@ -34,7 +37,7 @@ async function getOrders(): Promise<Order[]> {
       mappedChannel = 'Whatsapp';
     }
 
-    const rawDetails = doc.shippingDetails as any;
+    const rawDetails = doc.shippingDetails as Record<string, unknown> | undefined;
     const mappedShippingDetails: Order['shippingDetails'] = {
       name: (rawDetails?.name as string) ?? '',
       address: (rawDetails?.address as string) ?? '',

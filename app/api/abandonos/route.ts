@@ -1,6 +1,6 @@
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
-import { NextRequest } from 'next/server';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   return Response.json({ ok: true });
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const db = await getDb();
   const docs = await db.collection('abandonos').find({ converted: { $ne: true } }).sort({ updatedAt: -1 }).toArray();
   return Response.json(docs.map(d => ({ ...d, _id: d._id.toString() })));

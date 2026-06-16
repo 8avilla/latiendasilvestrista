@@ -2,23 +2,23 @@ import { getDb } from '@/lib/mongodb';
 import { sendOrderConfirmedEmail } from '@/lib/mail';
 import { Order } from '@/types';
 
-const BOLD_API_URL = 'https://api.bold.co/v1/transactions';
+const BOLD_API_URL = 'https://payments.api.bold.co/v2/payment-voucher';
 const BOLD_API_KEY = process.env.NEXT_PUBLIC_BOLD_API_KEY;
 
 interface BoldTransaction {
   id?: string;
-  reference?: string;
+  reference_id?: string;
   amount?: number;
   currency?: string;
-  status?: string;
+  payment_status?: string;
   payment_method?: string;
-  created_at?: string;
+  transaction_date?: string;
 }
 
 function boldStatusToOrder(status: string): 'CONFIRMADO' | 'CANCELADO' | null {
   const s = status.toUpperCase();
   if (s === 'APPROVED') return 'CONFIRMADO';
-  if (s === 'REJECTED' || s === 'VOIDED' || s === 'FAILED') return 'CANCELADO';
+  if (s === 'REJECTED' || s === 'VOIDED' || s === 'FAILED' || s === 'CANCELED') return 'CANCELADO';
   return null;
 }
 
@@ -43,15 +43,21 @@ export async function POST() {
 
   await Promise.all(
     pendingOrders.map(async (order) => {
-      const url = `${BOLD_API_URL}?reference=${encodeURIComponent(order.orderId)}`;
+      const url = `${BOLD_API_URL}/${encodeURIComponent(order.orderId)}`;
 
       try {
         const res = await fetch(url, {
           headers: {
-            'Authorization': `Bearer ${BOLD_API_KEY}`,
+            'Authorization': `x-api-key ${BOLD_API_KEY}`,
             'Content-Type': 'application/json',
           },
         });
+
+        if (res.status === 404) {
+          // Transaction not found yet or not created
+          results.push({ orderId: order.orderId, boldStatus: 'NOT_FOUND', newStatus: null });
+          return;
+        }
 
         if (!res.ok) {
           const body = await res.text().catch(() => '');
@@ -59,8 +65,9 @@ export async function POST() {
           return;
         }
 
-        const data: BoldTransaction = await res.json();
-        const boldStatus = data.status ?? '';
+        const payload = await res.json();
+        const data: BoldTransaction = payload.payment || payload;
+        const boldStatus = data.payment_status ?? '';
         const newStatus = boldStatusToOrder(boldStatus);
 
         if (newStatus && newStatus !== order.status) {

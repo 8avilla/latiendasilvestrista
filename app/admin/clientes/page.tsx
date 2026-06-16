@@ -9,6 +9,7 @@ export interface ClienteDoc {
   name: string;
   email: string;
   orderCount: number;
+  paidOrderCount: number;
   totalSpent: number;
   lastOrderDate: string;
   firstOrderDate: string;
@@ -26,6 +27,7 @@ export default async function ClientesPage() {
         email:         { $last: '$shippingDetails.email' },
         phone:         { $last: '$shippingDetails.phone' },
         orderCount:    { $sum: 1 },
+        paidOrderCount:{ $sum: { $cond: [{ $in: ['$status', PAID] }, 1, 0] } },
         totalSpent:    { $sum: { $cond: [{ $in: ['$status', PAID] }, '$totalPrice', 0] } },
         lastOrderDate: { $max: '$createdAt' },
         firstOrderDate:{ $min: '$createdAt' },
@@ -39,15 +41,16 @@ export default async function ClientesPage() {
     name:           c.name ?? '',
     email:          c.email ?? '',
     orderCount:     c.orderCount ?? 0,
+    paidOrderCount: c.paidOrderCount ?? 0,
     totalSpent:     c.totalSpent ?? 0,
     lastOrderDate:  c.lastOrderDate ? new Date(c.lastOrderDate).toISOString() : '',
     firstOrderDate: c.firstOrderDate ? new Date(c.firstOrderDate).toISOString() : '',
   }));
 
   const totalClientes   = clientes.length;
-  const recurrentes     = clientes.filter(c => c.orderCount > 1).length;
   const totalFacturado  = clientes.reduce((s, c) => s + c.totalSpent, 0);
-  const avgTicket       = totalClientes > 0 ? Math.round(totalFacturado / clientes.reduce((s, c) => s + c.orderCount, 0)) : 0;
+  const recurrentes     = clientes.filter(c => c.paidOrderCount > 1).length;
+  const avgTicket       = totalClientes > 0 ? Math.round(totalFacturado / clientes.reduce((s, c) => s + c.paidOrderCount, 0)) : 0;
 
   return (
     <div className="flex flex-col gap-6">
