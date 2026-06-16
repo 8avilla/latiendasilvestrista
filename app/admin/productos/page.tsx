@@ -1,15 +1,13 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { getDb } from '@/lib/mongodb';
-import { Product } from '@/types';
-import DeleteButton from './DeleteButton';
-import ToggleActiveButton from './ToggleActiveButton';
+import { Product, CategoryDoc } from '@/types';
+import ProductsList from './ProductsList';
 
 type AdminProduct = Product & { id: string };
 
 async function getProducts(): Promise<AdminProduct[]> {
   const db = await getDb();
-  const docs = await db.collection('products').find({}).sort({ createdAt: -1 }).toArray();
+  const docs = await db.collection('products').find({}).sort({ position: 1, createdAt: -1 }).toArray();
   return docs.map(doc => ({
     id: doc._id.toString(),
     name: doc.name as string,
@@ -19,15 +17,23 @@ async function getProducts(): Promise<AdminProduct[]> {
     images: (doc.images as string[] | undefined) ?? [],
     variantGroups: (doc.variantGroups as Product['variantGroups']) ?? [],
     active: doc.active !== false,
+    soldOut: doc.soldOut === true,
+    freeShipping: doc.freeShipping === true,
   }));
 }
 
+async function getCategories(): Promise<CategoryDoc[]> {
+  const db = await getDb();
+  const docs = await db.collection('categories').find({}).sort({ order: 1, name: 1 }).toArray();
+  return docs.map(doc => ({ id: doc._id.toString(), name: doc.name as string, slug: doc.slug as string }));
+}
+
 export default async function ProductosPage() {
-  const products = await getProducts();
+  const [products, categories] = await Promise.all([getProducts(), getCategories()]);
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-serif italic text-black">Productos</h1>
         <Link
           href="/admin/productos/nuevo"
@@ -45,48 +51,7 @@ export default async function ProductosPage() {
           </Link>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {products.map((p) => (
-            <div key={p.id} className={`bg-white rounded-xl border px-4 py-3 flex items-center gap-4 transition-opacity ${
-              p.active ? 'border-gray-100' : 'border-gray-100 opacity-50'
-            }`}>
-              <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                {p.images[0] ? (
-                  <Image src={p.images[0]} alt={p.name} fill sizes="48px" className="object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gray-100" />
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-black truncate">{p.name}</p>
-                  {!p.active && (
-                    <span className="text-[10px] uppercase tracking-wider text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded shrink-0">
-                      Oculto
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-400 capitalize">{p.category}</p>
-              </div>
-
-              <p className="text-sm font-semibold text-red-600 shrink-0">
-                ${p.price.toLocaleString('es-CO')}
-              </p>
-
-              <div className="flex items-center gap-3 shrink-0">
-                <ToggleActiveButton id={p.id} active={p.active ?? true} />
-                <Link
-                  href={`/admin/productos/${p.id}`}
-                  className="text-xs border border-gray-200 hover:border-black text-gray-600 px-3 py-1.5 rounded-full transition-colors"
-                >
-                  Editar
-                </Link>
-                <DeleteButton id={p.id} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <ProductsList initial={products} categories={categories} />
       )}
     </div>
   );

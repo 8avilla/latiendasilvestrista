@@ -4,9 +4,7 @@ import { DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
 import { PopupProvider } from "@/components/PopupProvider";
-import AnnouncementBar from "@/components/AnnouncementBar";
-import Header from "@/components/Header";
-import CartSidebar from "@/components/CartSidebar";
+import StoreShell from "@/components/StoreShell";
 import Script from "next/script";
 
 const geistSans = Geist({
@@ -102,10 +100,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-white">
         <CartProvider>
           <PopupProvider>
-            <AnnouncementBar />
-            <Header />
-            <CartSidebar />
-            {children}
+            <StoreShell>
+              {children}
+            </StoreShell>
           </PopupProvider>
         </CartProvider>
         <Script

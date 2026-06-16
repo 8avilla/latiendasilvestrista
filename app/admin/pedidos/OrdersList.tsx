@@ -1,8 +1,37 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { Order, Product, OrderStatus, SalesChannel } from '@/types';
+import { Order, Product, OrderStatus, SalesChannel, PaymentMethod } from '@/types';
+
+const PAYMENT_METHODS: PaymentMethod[] = ['Bold', 'Efectivo', 'Nequi', 'Bancolombia', 'Daviplata', 'Otros'];
+
+const PM_LABELS: Record<PaymentMethod, string> = {
+  Bold:        'Bold (Tarjeta / PSE)',
+  Efectivo:    'Efectivo',
+  Nequi:       'Nequi',
+  Bancolombia: 'Bancolombia',
+  Daviplata:   'Daviplata',
+  Otros:       'Otros',
+};
+
+const PM_COLORS: Record<PaymentMethod, string> = {
+  Bold:        'bg-blue-50 text-blue-700 border-blue-200',
+  Efectivo:    'bg-green-50 text-green-700 border-green-200',
+  Nequi:       'bg-pink-50 text-pink-700 border-pink-200',
+  Bancolombia: 'bg-orange-50 text-orange-700 border-orange-200',
+  Daviplata:   'bg-purple-50 text-purple-700 border-purple-200',
+  Otros:       'bg-gray-50 text-gray-600 border-gray-200',
+};
+
+function normalizePM(raw: string | undefined): PaymentMethod {
+  if (!raw) return 'Bold';
+  if (raw === 'BOLD') return 'Bold';
+  if (raw === 'WHATSAPP' || raw === 'MANUAL') return 'Efectivo';
+  if ((PAYMENT_METHODS as string[]).includes(raw)) return raw as PaymentMethod;
+  return 'Otros';
+}
 import { DEPARTMENTS } from '@/lib/colombia';
 import { ClientDateTime } from '@/components/ClientDateTime';
 
@@ -12,6 +41,8 @@ interface OrdersListProps {
 }
 
 export default function OrdersList({ orders, products }: OrdersListProps) {
+  const searchParams = useSearchParams();
+
   // Mantener estado local para actualizaciones rápidas e interactivas
   const [prevOrders, setPrevOrders] = useState<Order[]>(orders);
   const [localOrders, setLocalOrders] = useState<Order[]>(orders);
@@ -21,9 +52,10 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     setLocalOrders(orders);
   }
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '');
   const [statusFilter, setStatusFilter] = useState<'ALL' | OrderStatus>('ALL');
   const [channelFilter, setChannelFilter] = useState<'ALL' | SalesChannel>('ALL');
+  const [paymentFilter, setPaymentFilter] = useState<'ALL' | PaymentMethod>('ALL');
   const [sortBy, setSortBy] = useState<'NEWEST' | 'OLDEST' | 'PRICE_DESC' | 'PRICE_ASC'>('NEWEST');
 
   // Estados para el panel de edición de pedido existente (Drawer 1)
@@ -31,10 +63,13 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editStatus, setEditStatus] = useState<OrderStatus>('NUEVO PEDIDO');
   const [editChannel, setEditChannel] = useState<SalesChannel>('Tienda Online');
+  const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('Bold');
   const [editNotes, setEditNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState<OrderStatus | ''>('');
+  const [isBulkChanging, setIsBulkChanging] = useState(false);
   const [quickDeleteId, setQuickDeleteId] = useState<string | null>(null);
   const [quickDeleting, setQuickDeleting] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
@@ -85,6 +120,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [newOrderStatus, setNewOrderStatus] = useState<OrderStatus>('CONFIRMADO');
   const [newOrderChannel, setNewOrderChannel] = useState<SalesChannel>('Whatsapp');
+  const [newOrderPaymentMethod, setNewOrderPaymentMethod] = useState<PaymentMethod>('Efectivo');
   const [newOrderNotes, setNewOrderNotes] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [productSearch, setProductSearch] = useState('');
@@ -232,6 +268,11 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           return false;
         }
 
+        // Filtro por Método de Pago
+        if (paymentFilter !== 'ALL') {
+          if (normalizePM(order.paymentMethod as string | undefined) !== paymentFilter) return false;
+        }
+
         // Filtro por rango de fechas
         if (dateFrom) {
           const from = new Date(dateFrom);
@@ -278,13 +319,14 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         }
         return 0;
       });
-  }, [localOrders, showTrash, search, statusFilter, channelFilter, sortBy, dateFrom, dateTo]);
+  }, [localOrders, showTrash, search, statusFilter, channelFilter, paymentFilter, sortBy, dateFrom, dateTo]);
 
   // Abrir y precargar Drawer de Edición
   function openDrawer(order: Order) {
     setEditingOrder(order);
     setEditStatus(order.status);
     setEditChannel(order.salesChannel || 'Tienda Online');
+    setEditPaymentMethod(normalizePM(order.paymentMethod as string | undefined));
     setEditNotes(order.notes || '');
     setConfirmDelete(false);
     setIsDrawerOpen(true);
@@ -312,6 +354,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     setProductCategoryFilter('');
     setNewOrderStatus('CONFIRMADO');
     setNewOrderChannel('Whatsapp');
+    setNewOrderPaymentMethod('Efectivo');
     setNewOrderNotes('');
     setIsCreateDrawerOpen(true);
   }
@@ -335,6 +378,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           orderId: editingOrder.orderId,
           status: editStatus,
           salesChannel: editChannel,
+          paymentMethod: editPaymentMethod,
           notes: editNotes,
         }),
       });
@@ -346,7 +390,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       setLocalOrders((prev) =>
         prev.map((o) =>
           o.orderId === editingOrder.orderId
-            ? { ...o, status: editStatus, salesChannel: editChannel, notes: editNotes, updatedAt: new Date().toISOString() }
+            ? { ...o, status: editStatus, salesChannel: editChannel, paymentMethod: editPaymentMethod, notes: editNotes, updatedAt: new Date().toISOString() }
             : o
         )
       );
@@ -356,6 +400,35 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       console.error(err);
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleBulkStatusChange() {
+    if (!bulkStatus || selectedIds.size === 0) return;
+    setIsBulkChanging(true);
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map(orderId =>
+          fetch('/api/orders', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, status: bulkStatus }),
+          })
+        )
+      );
+      setLocalOrders(prev =>
+        prev.map(o =>
+          selectedIds.has(o.orderId)
+            ? { ...o, status: bulkStatus as OrderStatus, updatedAt: new Date().toISOString() }
+            : o
+        )
+      );
+      setSelectedIds(new Set());
+      setBulkStatus('');
+    } catch {
+      alert('Error al cambiar el estado. Intenta de nuevo.');
+    } finally {
+      setIsBulkChanging(false);
     }
   }
 
@@ -526,7 +599,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           items: formattedItems,
           totalPrice: newOrderTotal,
           shippingDetails: newOrderShipping,
-          paymentMethod: newOrderChannel === 'Whatsapp' ? 'WHATSAPP' : 'MANUAL',
+          paymentMethod: newOrderPaymentMethod,
           status: newOrderStatus,
           salesChannel: newOrderChannel,
           notes: newOrderNotes,
@@ -854,6 +927,16 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               <option value="Redes sociales">Redes sociales</option>
               <option value="Otros">Otros</option>
             </select>
+            <select
+              className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value as typeof paymentFilter)}
+            >
+              <option value="ALL">Pago: Todos</option>
+              {PAYMENT_METHODS.map(pm => (
+                <option key={pm} value={pm}>{pm}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -944,12 +1027,13 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
             })}
           </div>
 
-          {(search.trim() !== '' || statusFilter !== 'ALL' || channelFilter !== 'ALL' || dateFrom || dateTo) && (
+          {(search.trim() !== '' || statusFilter !== 'ALL' || channelFilter !== 'ALL' || paymentFilter !== 'ALL' || dateFrom || dateTo) && (
             <button
               onClick={() => {
                 setSearch('');
                 setStatusFilter('ALL');
                 setChannelFilter('ALL');
+                setPaymentFilter('ALL');
                 setSortBy('NEWEST');
                 setDateFrom('');
                 setDateTo('');
@@ -967,9 +1051,11 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
 
       {/* Barra de selección — aparece cuando hay pedidos marcados */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between bg-black text-white rounded-xl px-5 py-3 mb-4 shadow-lg">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-black text-white rounded-xl px-5 py-3 mb-4 shadow-lg">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold">{selectedIds.size} pedido{selectedIds.size !== 1 ? 's' : ''} seleccionado{selectedIds.size !== 1 ? 's' : ''}</span>
+            <span className="text-sm font-semibold">
+              {selectedIds.size} pedido{selectedIds.size !== 1 ? 's' : ''} seleccionado{selectedIds.size !== 1 ? 's' : ''}
+            </span>
             <button
               onClick={() => setSelectedIds(new Set())}
               className="text-xs text-white/60 hover:text-white transition-colors underline underline-offset-2"
@@ -977,15 +1063,41 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               Deseleccionar todo
             </button>
           </div>
-          <button
-            onClick={handlePrintGuides}
-            className="flex items-center gap-2 bg-white text-black hover:bg-gray-100 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors active:scale-95"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-            Imprimir guías
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Cambio masivo de estado */}
+            <select
+              value={bulkStatus}
+              onChange={e => setBulkStatus(e.target.value as OrderStatus | '')}
+              disabled={isBulkChanging}
+              className="text-xs border border-white/20 bg-white/10 text-white rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-white/50 disabled:opacity-50"
+            >
+              <option value="">Cambiar estado a...</option>
+              <option value="NUEVO PEDIDO">Nuevo pedido</option>
+              <option value="PAGO PENDIENTE">Pago pendiente</option>
+              <option value="CONFIRMADO">Confirmado</option>
+              <option value="EN PREPARACIÓN">En preparación</option>
+              <option value="ENVIADO">Enviado</option>
+              <option value="ENTREGADO">Entregado</option>
+              <option value="CANCELADO">Cancelado</option>
+            </select>
+            <button
+              onClick={handleBulkStatusChange}
+              disabled={!bulkStatus || isBulkChanging}
+              className="bg-white text-black hover:bg-gray-100 disabled:opacity-40 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors active:scale-95 cursor-pointer"
+            >
+              {isBulkChanging ? 'Aplicando...' : 'Aplicar'}
+            </button>
+            <span className="text-white/20 text-xs">|</span>
+            <button
+              onClick={handlePrintGuides}
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors active:scale-95"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Imprimir guías
+            </button>
+          </div>
         </div>
       )}
 
@@ -1092,6 +1204,14 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                     <span className="text-xs text-gray-400 border-l border-gray-200 pl-4">
                       Canal: <strong className="text-black font-semibold">{order.salesChannel || 'Otros'}</strong>
                     </span>
+                    {(() => {
+                      const pm = normalizePM(order.paymentMethod as string | undefined);
+                      return (
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PM_COLORS[pm]}`}>
+                          {pm}
+                        </span>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -1235,24 +1355,11 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   </div>
                 </div>
 
-                {/* Detalles de transacción de Bold.co o WhatsApp */}
+                {/* Transacción Bold */}
                 {order.transactionDetails && (
-                  <div className="bg-gray-50/50 border-t border-gray-100 px-6 py-2.5 flex flex-wrap gap-x-6 text-[10px] text-gray-400 font-mono">
-                    <span>ID PAGO BOLD: {order.transactionDetails.paymentId}</span>
-                    <span>TIPO NOTIFICACIÓN: {order.transactionDetails.payloadType}</span>
-                    {order.transactionDetails.time && (
-                      <span>NANO-TIMESTAMP: {order.transactionDetails.time}</span>
-                    )}
-                  </div>
-                )}
-                {order.paymentMethod === 'WHATSAPP' && (
-                  <div className="bg-gray-50/50 border-t border-gray-100 px-6 py-2.5 flex flex-wrap gap-x-6 text-[10px] text-blue-600 font-mono">
-                    <span>MÉTODO DE PAGO: WHATSAPP (SOLICITUD CHAT DIRECTO)</span>
-                  </div>
-                )}
-                {order.paymentMethod === 'MANUAL' && (
-                  <div className="bg-gray-50/50 border-t border-gray-100 px-6 py-2.5 flex flex-wrap gap-x-6 text-[10px] text-red-600 font-mono">
-                    <span>MÉTODO DE PAGO: CREACIÓN MANUAL (ADMINISTRADOR)</span>
+                  <div className="bg-blue-50/30 border-t border-blue-100 px-6 py-2.5 flex flex-wrap gap-x-6 text-[10px] text-blue-500 font-mono">
+                    <span>TX BOLD: {order.transactionDetails.paymentId}</span>
+                    <span>TIPO: {order.transactionDetails.payloadType}</span>
                   </div>
                 )}
                 
@@ -1429,7 +1536,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 </select>
               </div>
 
-              {/* Formulario de Canal */}
+              {/* Canal de Venta */}
               <div>
                 <label className="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">
                   Canal de Venta
@@ -1447,7 +1554,24 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 </select>
               </div>
 
-              {/* Formulario de Notas */}
+              {/* Método de Pago */}
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">
+                  Método de Pago
+                </label>
+                <select
+                  value={editPaymentMethod}
+                  onChange={(e) => setEditPaymentMethod(e.target.value as PaymentMethod)}
+                  disabled={isSaving || isDeleting}
+                  className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                >
+                  {PAYMENT_METHODS.map(pm => (
+                    <option key={pm} value={pm}>{PM_LABELS[pm]}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Notas */}
               <div>
                 <label className="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">
                   Notas de Envío / Guía de Transporte
@@ -1946,6 +2070,21 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       <option value="Tienda Online">Tienda Online</option>
                       <option value="Redes sociales">Redes sociales</option>
                       <option value="Otros">Otros</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1.5">
+                      Método de Pago
+                    </label>
+                    <select
+                      value={newOrderPaymentMethod}
+                      onChange={(e) => setNewOrderPaymentMethod(e.target.value as PaymentMethod)}
+                      disabled={isCreating}
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                    >
+                      {PAYMENT_METHODS.map(pm => (
+                        <option key={pm} value={pm}>{PM_LABELS[pm]}</option>
+                      ))}
                     </select>
                   </div>
                   <div>

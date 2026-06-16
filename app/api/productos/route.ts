@@ -2,7 +2,7 @@ import { getDb } from '@/lib/mongodb';
 
 export async function GET() {
   const db = await getDb();
-  const docs = await db.collection('products').find({}).sort({ createdAt: -1 }).toArray();
+  const docs = await db.collection('products').find({}).sort({ position: 1, createdAt: -1 }).toArray();
   const products = docs.map(({ _id, ...rest }) => ({ ...rest, id: _id.toString() }));
   return Response.json(products);
 }

@@ -160,6 +160,9 @@ export default function ProductForm({ initial }: ProductFormProps) {
   const [uploadingPopup, setUploadingPopup] = useState(false);
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [dragImgIndex, setDragImgIndex] = useState<number | null>(null);
+  const [dragImgOver, setDragImgOver] = useState<number | null>(null);
+  const [rotatingIndex, setRotatingIndex] = useState<number | null>(null);
 
   const formErrors = validateForm(form);
   const groupErrors = getGroupErrors(groupInputs);
@@ -215,6 +218,26 @@ export default function ProductForm({ initial }: ProductFormProps) {
   function removeImage(index: number) {
     setField('images', form.images.filter((_, i) => i !== index));
     touch('images');
+  }
+
+  async function rotateImage(index: number, direction: 'left' | 'right') {
+    setRotatingIndex(index);
+    try {
+      const res = await fetch('/api/rotate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: form.images[index], direction }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || 'Error rotando imagen');
+      const newImages = [...form.images];
+      newImages[index] = data.url;
+      setField('images', newImages);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'Error rotando imagen');
+    } finally {
+      setRotatingIndex(null);
+    }
   }
 
   function moveImage(from: number, to: number) {
@@ -487,24 +510,57 @@ export default function ProductForm({ initial }: ProductFormProps) {
 
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
           {form.images.map((url, i) => (
-            <div key={url + i} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
-              <Image src={url} alt={`imagen ${i + 1}`} fill sizes="25vw" className="object-cover" />
+            <div
+              key={url + i}
+              draggable
+              onDragStart={() => setDragImgIndex(i)}
+              onDragEnter={() => setDragImgOver(i)}
+              onDragOver={e => e.preventDefault()}
+              onDrop={() => {
+                if (dragImgIndex !== null && dragImgIndex !== i) moveImage(dragImgIndex, i);
+                setDragImgIndex(null);
+                setDragImgOver(null);
+              }}
+              onDragEnd={() => { setDragImgIndex(null); setDragImgOver(null); }}
+              className={`relative group aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-grab active:cursor-grabbing transition-all ${
+                dragImgIndex === i
+                  ? 'opacity-40 ring-2 ring-red-300'
+                  : dragImgOver === i && dragImgIndex !== null
+                  ? 'ring-2 ring-red-500'
+                  : ''
+              }`}
+            >
+              <Image src={url} alt={`imagen ${i + 1}`} fill sizes="25vw" className="object-cover pointer-events-none" />
               {i === 0 && (
-                <span className="absolute top-1.5 left-1.5 bg-red-600 text-white text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-semibold">
+                <span className="absolute top-1.5 left-1.5 bg-red-600 text-white text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-semibold pointer-events-none">
                   Principal
                 </span>
               )}
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
-                {i > 0 && (
-                  <button type="button" onClick={() => moveImage(i, i - 1)} title="Mover izquierda"
-                    className="w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors">←</button>
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
+                {rotatingIndex === i ? (
+                  <span className="text-white text-xs">Rotando...</span>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => rotateImage(i, 'left')} title="Girar izquierda"
+                        className="w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors text-base">↺</button>
+                      <button type="button" onClick={() => rotateImage(i, 'right')} title="Girar derecha"
+                        className="w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors text-base">↻</button>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {i > 0 && (
+                        <button type="button" onClick={() => moveImage(i, i - 1)} title="Mover izquierda"
+                          className="w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors">←</button>
+                      )}
+                      {i < form.images.length - 1 && (
+                        <button type="button" onClick={() => moveImage(i, i + 1)} title="Mover derecha"
+                          className="w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors">→</button>
+                      )}
+                      <button type="button" onClick={() => removeImage(i)} title="Eliminar"
+                        className="w-7 h-7 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white transition-colors">×</button>
+                    </div>
+                  </>
                 )}
-                {i < form.images.length - 1 && (
-                  <button type="button" onClick={() => moveImage(i, i + 1)} title="Mover derecha"
-                    className="w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors">→</button>
-                )}
-                <button type="button" onClick={() => removeImage(i)} title="Eliminar"
-                  className="w-7 h-7 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white transition-colors">×</button>
               </div>
             </div>
           ))}

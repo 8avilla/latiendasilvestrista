@@ -23,14 +23,27 @@ export async function PUT(request: Request, { params }: Context) {
   return Response.json({ ok: true });
 }
 
+export async function GET(_request: Request, { params }: Context) {
+  const { id } = await params;
+  const db = await getDb();
+  const doc = await db.collection('products').findOne({ _id: new ObjectId(id) });
+  if (!doc) return Response.json({ error: 'Not found' }, { status: 404 });
+  const { _id, ...rest } = doc;
+  return Response.json({ ...rest, id: _id.toString() });
+}
+
 export async function PATCH(request: Request, { params }: Context) {
   const { id } = await params;
   const db = await getDb();
-  const { active } = await request.json();
+  const data = await request.json();
+
+  const update: Record<string, unknown> = { updatedAt: new Date() };
+  if (typeof data.active === 'boolean') update.active = data.active;
+  if (typeof data.price === 'number' && data.price > 0) update.price = data.price;
 
   await db.collection('products').updateOne(
     { _id: new ObjectId(id) },
-    { $set: { active: Boolean(active), updatedAt: new Date() } }
+    { $set: update }
   );
 
   return Response.json({ ok: true });

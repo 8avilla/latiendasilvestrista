@@ -3,6 +3,7 @@ import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { CategoryDoc } from '@/types';
 import CategoryForm from '@/components/admin/CategoryForm';
+import AdminBackLink from '@/components/admin/AdminBackLink';
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -28,6 +29,7 @@ export default async function EditCategoriaPage({ params }: Props) {
 
   return (
     <div>
+      <AdminBackLink href="/admin/categorias" label="Volver a categorías" />
       <h1 className="text-2xl font-serif italic text-black mb-8">Editar categoría</h1>
       <CategoryForm initial={category} />
     </div>

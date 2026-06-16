@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { getDb } from '@/lib/mongodb';
 import { Order, OrderItem, Product, OrderStatus, SalesChannel } from '@/types';
 import OrdersList from './OrdersList';
@@ -91,7 +92,9 @@ export default async function PedidosPage() {
         </span>
       </div>
 
-      <OrdersList orders={orders} products={products} />
+      <Suspense fallback={<div className="text-sm text-gray-400 py-8 text-center">Cargando pedidos...</div>}>
+        <OrdersList orders={orders} products={products} />
+      </Suspense>
     </div>
   );
 }

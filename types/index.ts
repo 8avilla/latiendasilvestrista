@@ -44,6 +44,7 @@ export interface OrderItem {
 
 export type OrderStatus = 'NUEVO PEDIDO' | 'PAGO PENDIENTE' | 'CONFIRMADO' | 'EN PREPARACIÓN' | 'ENVIADO' | 'ENTREGADO' | 'CANCELADO';
 export type SalesChannel = 'Whatsapp' | 'Tienda Online' | 'Redes sociales' | 'Otros';
+export type PaymentMethod = 'Bold' | 'Efectivo' | 'Nequi' | 'Bancolombia' | 'Daviplata' | 'Otros';
 
 export interface Order {
   _id: string;
@@ -60,7 +61,7 @@ export interface Order {
     email: string;
   };
   status: OrderStatus;
-  paymentMethod?: string;
+  paymentMethod?: PaymentMethod | string;
   salesChannel?: SalesChannel;
   notes?: string;
   deleted?: boolean;

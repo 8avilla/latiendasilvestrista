@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import ProductForm from '@/components/admin/ProductForm';
+import AdminBackLink from '@/components/admin/AdminBackLink';
 import { Product } from '@/types';
 
 type Props = { params: Promise<{ id: string }> };
@@ -36,6 +37,7 @@ export default async function EditProductoPage({ params }: Props) {
 
   return (
     <div>
+      <AdminBackLink href="/admin/productos" label="Volver a productos" />
       <h1 className="text-2xl font-serif italic text-black mb-8">Editar producto</h1>
       <ProductForm initial={product} />
     </div>
