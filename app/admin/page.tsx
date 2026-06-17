@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { ClientDateTime } from '@/components/ClientDateTime';
 import DashboardCharts from './DashboardCharts';
 
+export const dynamic = 'force-dynamic';
+
 const PAID   = ['CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO'];
 const ACTIVE = ['NUEVO PEDIDO', 'PAGO PENDIENTE', 'CONFIRMADO', 'EN PREPARACIÓN'];
 
