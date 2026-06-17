@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: Request) {
   try {
     const db = await getDb();
-    const { orderId, status, salesChannel, paymentMethod, notes, deleted, shippingDetails } = await request.json();
+    const { orderId, status, salesChannel, paymentMethod, notes, deleted, shippingDetails, items, totalPrice } = await request.json();
 
     if (!orderId) {
       return Response.json({ error: 'Falta el ID del pedido' }, { status: 400 });
@@ -132,6 +132,8 @@ export async function PUT(request: Request) {
     if (paymentMethod !== undefined) updateFields.paymentMethod = paymentMethod;
     if (notes !== undefined) updateFields.notes = notes;
     if (shippingDetails !== undefined) updateFields.shippingDetails = shippingDetails;
+    if (items !== undefined) updateFields.items = items;
+    if (totalPrice !== undefined) updateFields.totalPrice = totalPrice;
     if (deleted !== undefined) {
       updateFields.deleted = deleted;
       if (!deleted) updateFields.deletedAt = null;

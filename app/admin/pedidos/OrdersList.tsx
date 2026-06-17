@@ -66,6 +66,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('Bold');
   const [editNotes, setEditNotes] = useState('');
   const [editShipping, setEditShipping] = useState<Order['shippingDetails'] | null>(null);
+  const [editItems, setEditItems] = useState<Order['items']>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -366,6 +367,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     setEditPaymentMethod(normalizePM(order.paymentMethod as string | undefined));
     setEditNotes(order.notes || '');
     setEditShipping({ ...order.shippingDetails });
+    setEditItems(JSON.parse(JSON.stringify(order.items || [])));
     setConfirmDelete(false);
     setIsDrawerOpen(true);
   }
@@ -406,6 +408,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   async function handleSave() {
     if (!editingOrder) return;
     setIsSaving(true);
+    const newTotalPrice = editItems.reduce((s, i) => s + i.product.price * i.quantity, 0) + (editingOrder.shippingPrice ?? 0);
     try {
       const response = await fetch('/api/orders', {
         method: 'PUT',
@@ -419,6 +422,8 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           paymentMethod: editPaymentMethod,
           notes: editNotes,
           shippingDetails: editShipping,
+          items: editItems,
+          totalPrice: newTotalPrice,
         }),
       });
 
@@ -429,7 +434,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       setLocalOrders((prev) =>
         prev.map((o) =>
           o.orderId === editingOrder.orderId
-            ? { ...o, status: editStatus, salesChannel: editChannel, paymentMethod: editPaymentMethod, notes: editNotes, shippingDetails: editShipping!, updatedAt: new Date().toISOString() }
+            ? { ...o, status: editStatus, salesChannel: editChannel, paymentMethod: editPaymentMethod, notes: editNotes, shippingDetails: editShipping!, items: editItems, totalPrice: newTotalPrice, updatedAt: new Date().toISOString() }
             : o
         )
       );
@@ -1771,22 +1776,112 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 <h3 className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">
                   Artículos Facturados
                 </h3>
-                <ul className="divide-y divide-gray-100 max-h-48 overflow-y-auto border border-gray-100 rounded-xl p-4 bg-gray-50/50">
-                  {editingOrder.items.map((item, idx) => {
-                    const selections = item.selections
-                      ? Object.entries(item.selections).map(([k, v]) => `${k}: ${v}`).join(', ')
-                      : '';
+                <ul className="divide-y divide-gray-100 max-h-64 overflow-y-auto border border-gray-100 rounded-xl p-4 bg-gray-50/50">
+                  {editItems.map((item, idx) => {
                     return (
-                      <li key={idx} className="py-2.5 flex justify-between text-xs first:pt-0 last:pb-0">
-                        <div className="pr-4 min-w-0">
-                          <span className="font-semibold text-black block truncate">{item.quantity}x {item.product.name}</span>
-                          {selections && (
-                            <span className="text-gray-400 block mt-0.5 truncate">{selections}</span>
-                          )}
+                      <li key={idx} className="py-2.5 flex flex-col text-xs first:pt-0 last:pb-0">
+                        <div className="flex justify-between items-center w-full mb-1">
+                          <div className="flex gap-2 items-center flex-1 pr-2">
+                            <input
+                              type="number"
+                              className="w-12 border border-gray-200 rounded px-1 py-1 text-xs focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/20 bg-white"
+                              value={item.quantity}
+                              min={1}
+                              onChange={(e) => {
+                                const newItems = [...editItems];
+                                newItems[idx].quantity = Number(e.target.value) || 1;
+                                setEditItems(newItems);
+                              }}
+                            />
+                            <span className="text-gray-400 font-semibold">x</span>
+                            <input
+                              type="text"
+                              className="flex-1 font-semibold text-black border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/20 bg-white"
+                              value={item.product.name}
+                              onChange={(e) => {
+                                const newItems = [...editItems];
+                                newItems[idx].product.name = e.target.value;
+                                setEditItems(newItems);
+                              }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-gray-500">$</span>
+                            <input
+                              type="number"
+                              className="w-24 text-black font-semibold border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/20 bg-white text-right"
+                              value={item.product.price}
+                              onChange={(e) => {
+                                const newItems = [...editItems];
+                                newItems[idx].product.price = Number(e.target.value) || 0;
+                                setEditItems(newItems);
+                              }}
+                            />
+                          </div>
                         </div>
-                        <span className="text-black font-semibold shrink-0">
-                          ${(item.product.price * item.quantity).toLocaleString('es-CO')}
-                        </span>
+
+                        <div className="mt-1.5 flex flex-col gap-1.5 pl-6">
+                          {item.selections && Object.entries(item.selections).map(([k, v], selIdx) => (
+                            <div key={selIdx} className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                className="border border-gray-200 rounded px-2 py-1 text-xs w-24 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/20 bg-white text-gray-600 uppercase tracking-wider"
+                                value={k}
+                                placeholder="Propiedad"
+                                onChange={(e) => {
+                                  const newItems = [...editItems];
+                                  const oldSelections = newItems[idx].selections || {};
+                                  const entries = Object.entries(oldSelections);
+                                  entries[selIdx][0] = e.target.value;
+                                  newItems[idx].selections = Object.fromEntries(entries);
+                                  setEditItems(newItems);
+                                }}
+                              />
+                              <span className="text-gray-500 font-medium text-[11px] uppercase tracking-wider">:</span>
+                              <input
+                                type="text"
+                                className="border border-gray-200 rounded px-2 py-1 text-xs flex-1 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/20 bg-white"
+                                value={v}
+                                placeholder="Valor"
+                                onChange={(e) => {
+                                  const newItems = [...editItems];
+                                  const entries = Object.entries(newItems[idx].selections || {});
+                                  entries[selIdx][1] = e.target.value;
+                                  newItems[idx].selections = Object.fromEntries(entries);
+                                  setEditItems(newItems);
+                                }}
+                              />
+                              <button
+                                type="button"
+                                className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded"
+                                onClick={() => {
+                                  const newItems = [...editItems];
+                                  const entries = Object.entries(newItems[idx].selections || {});
+                                  entries.splice(selIdx, 1);
+                                  newItems[idx].selections = Object.fromEntries(entries);
+                                  setEditItems(newItems);
+                                }}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            className="text-[10px] uppercase font-bold text-blue-600 hover:text-blue-800 self-start mt-1 flex items-center gap-1"
+                            onClick={() => {
+                              const newItems = [...editItems];
+                              if (!newItems[idx].selections) newItems[idx].selections = {};
+                              let num = 1;
+                              while (newItems[idx].selections[`Propiedad ${num}`] !== undefined) num++;
+                              newItems[idx].selections[`Propiedad ${num}`] = '';
+                              setEditItems(newItems);
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Añadir Característica
+                          </button>
+                        </div>
                       </li>
                     );
                   })}
@@ -1797,7 +1892,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   <div className="flex justify-between items-center px-4 py-2.5 text-xs text-gray-500">
                     <span>Subtotal productos</span>
                     <span className="font-medium text-black">
-                      ${editingOrder.items.reduce((s, i) => s + i.product.price * i.quantity, 0).toLocaleString('es-CO')}
+                      ${editItems.reduce((s, i) => s + i.product.price * i.quantity, 0).toLocaleString('es-CO')}
                     </span>
                   </div>
                   <div className="flex justify-between items-center px-4 py-2.5 text-xs text-gray-500 border-t border-gray-100">
@@ -1811,7 +1906,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t border-gray-200">
                     <span className="text-xs font-bold uppercase tracking-wider text-black">Total</span>
                     <span className="text-base font-bold text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
-                      ${editingOrder.totalPrice.toLocaleString('es-CO')}
+                      ${(editItems.reduce((s, i) => s + i.product.price * i.quantity, 0) + (editingOrder.shippingPrice ?? 0)).toLocaleString('es-CO')}
                     </span>
                   </div>
                 </div>
