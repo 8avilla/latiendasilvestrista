@@ -1,6 +1,6 @@
 import { getDb } from '@/lib/mongodb';
 import { NextRequest } from 'next/server';
-import { sendOrderConfirmedEmail, sendOrderReceivedEmail } from '@/lib/mail';
+import { sendOrderConfirmedEmail, sendOrderReceivedEmail, sendOrderInPreparationEmail } from '@/lib/mail';
 import { Order } from '@/types';
 
 export async function POST(request: Request) {
@@ -152,6 +152,13 @@ export async function PUT(request: Request) {
       const updatedOrder = { ...prevOrder, ...updateFields } as unknown as Order;
       sendOrderConfirmedEmail(updatedOrder).catch(err =>
         console.error('Error enviando email de confirmación:', err)
+      );
+    }
+
+    if (status === 'EN PREPARACIÓN' && prevOrder.status !== 'EN PREPARACIÓN' && prevOrder.shippingDetails?.email) {
+      const updatedOrder = { ...prevOrder, ...updateFields } as unknown as Order;
+      sendOrderInPreparationEmail(updatedOrder).catch(err =>
+        console.error('Error enviando email de en preparación:', err)
       );
     }
 

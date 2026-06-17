@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Order, Product, OrderStatus, SalesChannel, PaymentMethod } from '@/types';
+import * as XLSX from 'xlsx';
 
 const PAYMENT_METHODS: PaymentMethod[] = ['Bold', 'Efectivo', 'Nequi', 'Bancolombia', 'Daviplata', 'Otros'];
 
@@ -810,51 +811,66 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     }
   }
 
-  function handleExportCSV() {
-    const headers = [
-      'ID Pedido', 'Fecha', 'Estado', 'Canal',
-      'Cliente', 'Teléfono', 'Email', 'Departamento', 'Ciudad', 'Dirección',
-      'Artículos', 'Subtotal', 'Domicilio', 'Total', 'Notas',
-    ];
 
-    const rows = filteredOrders.map(o => {
-      const subtotal = o.items.reduce((s, i) => s + i.product.price * i.quantity, 0);
-      const items = o.items
-        .map(i => {
-          const vars = i.selections ? Object.values(i.selections).join('/') : '';
-          return `${i.quantity}x ${i.product.name}${vars ? ` (${vars})` : ''}`;
-        })
-        .join(' | ');
-      return [
-        o.orderId,
-        new Date(o.createdAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' }),
-        o.status,
-        o.salesChannel || '',
-        o.shippingDetails.name,
-        o.shippingDetails.phone,
-        o.shippingDetails.email || '',
-        o.shippingDetails.department || '',
-        o.shippingDetails.city,
-        o.shippingDetails.address,
-        items,
-        subtotal,
-        o.shippingPrice ?? 0,
-        o.totalPrice,
-        (o.notes || '').replace(/\n/g, ' '),
-      ];
+
+  function handleExportExcel() {
+    const targetOrders = localOrders.filter(o => 
+      !o.deleted && (o.status === 'CONFIRMADO' || o.status === 'EN PREPARACIÓN')
+    );
+
+    if (targetOrders.length === 0) {
+      alert('No hay pedidos Confirmados o En Preparación para exportar.');
+      return;
+    }
+
+    const rawData: Record<string, unknown>[] = [];
+    const summaryMap = new Map<string, Record<string, unknown>>();
+
+    targetOrders.forEach(order => {
+      order.items.forEach(item => {
+        const variantsStr = item.selections ? Object.entries(item.selections).map(([k, v]) => `${k}: ${v}`).join(', ') : 'N/A';
+        
+        rawData.push({
+          'ID Pedido': order.orderId,
+          'Fecha': new Date(order.createdAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' }),
+          'Cliente': order.shippingDetails.name,
+          'Teléfono': order.shippingDetails.phone,
+          'Departamento': order.shippingDetails.department || '',
+          'Ciudad': order.shippingDetails.city,
+          'Dirección': order.shippingDetails.address,
+          'Producto': item.product.name,
+          'Variantes': variantsStr,
+          'Cantidad': item.quantity,
+          'Precio Und': item.product.price,
+          'Estado': order.status
+        });
+
+        const summaryKey = `${item.product.id}|${variantsStr}`;
+        if (!summaryMap.has(summaryKey)) {
+          summaryMap.set(summaryKey, {
+            'Producto': item.product.name,
+            'Variantes': variantsStr,
+            'Cantidad Total': 0
+          });
+        }
+        (summaryMap.get(summaryKey) as any)['Cantidad Total'] += item.quantity;
+      });
     });
 
-    const csv = [headers, ...rows]
-      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
+    const summaryData = Array.from(summaryMap.values()).sort((a, b) => String(a['Producto']).localeCompare(String(b['Producto'])));
 
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pedidos-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.json_to_sheet(summaryData);
+    const ws2 = XLSX.utils.json_to_sheet(rawData);
+
+    // Ajustar anchos de columna básicos
+    ws1['!cols'] = [{ wch: 40 }, { wch: 25 }, { wch: 15 }];
+    ws2['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 30 }, { wch: 30 }, { wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 15 }];
+
+    XLSX.utils.book_append_sheet(wb, ws1, 'Resumen Empaque');
+    XLSX.utils.book_append_sheet(wb, ws2, 'Detalle Pedidos');
+
+    XLSX.writeFile(wb, `Empaque_Pedidos_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   // Manejar Escape para cerrar paneles
@@ -1254,16 +1270,16 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           )}
         </div>
         <div className="flex items-center gap-2">
+
           <button
-            onClick={handleExportCSV}
-            disabled={filteredOrders.length === 0}
-            title="Exportar pedidos visibles a CSV"
-            className="flex items-center gap-1.5 border border-gray-200 hover:border-black text-gray-600 hover:text-black disabled:opacity-40 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer active:scale-95"
+            onClick={handleExportExcel}
+            title="Exportar Excel de Preparación"
+            className="flex items-center gap-1.5 border border-green-600 hover:bg-green-600 text-green-700 hover:text-white px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer active:scale-95"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            CSV
+            Excel Empaque
           </button>
           <button
             onClick={handleRefresh}
