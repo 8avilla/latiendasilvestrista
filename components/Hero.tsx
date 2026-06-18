@@ -75,7 +75,7 @@ export default function Hero() {
       {/* ── Columna imagen ── */}
       <div className="relative order-1 lg:order-2 w-full rounded-2xl overflow-hidden min-h-[280px] lg:min-h-0">
         <Image
-          src="/images/hero.jpg"
+          src="/images/portada.jpeg"
           alt="Tienda Silvestrista"
           fill
           className="object-cover"
