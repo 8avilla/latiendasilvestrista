@@ -142,6 +142,25 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState('');
+  const [shippingRates, setShippingRates] = useState<{ defaultPrice: number; rates: Record<string, number> } | null>(null);
+  const [newOrderShippingPrice, setNewOrderShippingPrice] = useState<number>(0);
+  const [manualShippingPrice, setManualShippingPrice] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch('/api/shipping-rates')
+      .then(r => r.json())
+      .then(setShippingRates)
+      .catch(() => {});
+  }, []);
+
+  const calculatedShippingPrice = useMemo(() => {
+    const hasFreeShipping = newOrderItems.some(item => item.product.freeShipping);
+    if (hasFreeShipping) return 0;
+    if (!newOrderShipping.city || !shippingRates) return 0;
+    return shippingRates.rates[newOrderShipping.city] ?? shippingRates.defaultPrice;
+  }, [newOrderShipping.city, newOrderItems, shippingRates]);
+
+  const effectiveShippingPrice = manualShippingPrice ? newOrderShippingPrice : calculatedShippingPrice;
 
   // Obtener producto seleccionado para añadir en pedido manual
   const selectedProduct = useMemo(() => {
@@ -397,6 +416,8 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     setNewOrderChannel('Whatsapp');
     setNewOrderPaymentMethod('Efectivo');
     setNewOrderNotes('');
+    setNewOrderShippingPrice(0);
+    setManualShippingPrice(false);
     setIsCreateDrawerOpen(true);
   }
 
@@ -593,11 +614,38 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         syncMap.has(o.orderId) ? { ...o, status: syncMap.get(o.orderId) as Order['status'] } : o
       );
 
-      setLocalOrders(merged);
+      let canceledCount = 0;
+      const nowMs = Date.now();
+      const finalMerged = await Promise.all(merged.map(async (o) => {
+        if (o.status === 'PAGO PENDIENTE') {
+          const createdMs = new Date(o.createdAt).getTime();
+          const hoursPassed = (nowMs - createdMs) / (1000 * 60 * 60);
+          if (hoursPassed > 24) {
+            try {
+              await fetch('/api/orders', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId: o.orderId, status: 'CANCELADO' }),
+              });
+              canceledCount++;
+              return { ...o, status: 'CANCELADO' as Order['status'] };
+            } catch (e) {
+              console.error('Error auto-canceling order', o.orderId, e);
+            }
+          }
+        }
+        return o;
+      }));
+
+      setLocalOrders(finalMerged);
       setLastRefresh(new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }));
 
-      if (syncData.updated > 0) {
-        alert(`Actualización completa. ${syncData.updated} pedido(s) actualizados desde Bold.`);
+      let msg = '';
+      if (syncData.updated > 0) msg += `${syncData.updated} pedido(s) actualizados desde Bold. `;
+      if (canceledCount > 0) msg += `${canceledCount} pedido(s) cancelados automáticamente (>24h sin pago).`;
+      
+      if (msg) {
+        alert(`Actualización completa. ${msg}`);
       }
     } catch (err) {
       alert('Error al actualizar los pedidos. Intenta de nuevo.');
@@ -642,7 +690,8 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         },
         body: JSON.stringify({
           items: formattedItems,
-          totalPrice: newOrderTotal,
+          totalPrice: newOrderTotal + effectiveShippingPrice,
+          shippingPrice: effectiveShippingPrice,
           shippingDetails: newOrderShipping,
           paymentMethod: newOrderPaymentMethod,
           status: newOrderStatus,
@@ -824,7 +873,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     }
 
     const rawData: Record<string, unknown>[] = [];
-    const summaryMap = new Map<string, Record<string, unknown>>();
+    const summaryMap = new Map<string, { Producto: string; Variantes: string; 'Cantidad Total': number }>();
 
     targetOrders.forEach(order => {
       order.items.forEach(item => {
@@ -853,7 +902,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
             'Cantidad Total': 0
           });
         }
-        (summaryMap.get(summaryKey) as any)['Cantidad Total'] += item.quantity;
+        summaryMap.get(summaryKey)!['Cantidad Total'] += item.quantity;
       });
     });
 
@@ -2380,10 +2429,26 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   </div>
                   <div>
                     <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1.5">
+                      Valor de Domicilio
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={manualShippingPrice ? newOrderShippingPrice : effectiveShippingPrice}
+                      onChange={(e) => {
+                        setNewOrderShippingPrice(Number(e.target.value));
+                        setManualShippingPrice(true);
+                      }}
+                      disabled={isCreating}
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1.5">
                       Total de la Orden
                     </label>
                     <div className="h-9 flex items-center text-base font-bold text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
-                      ${newOrderTotal.toLocaleString('es-CO')}
+                      ${(newOrderTotal + effectiveShippingPrice).toLocaleString('es-CO')}
                     </div>
                   </div>
                   <div className="col-span-2">
