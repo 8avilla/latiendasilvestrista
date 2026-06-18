@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 
 const CHIPS = [
   'Movimiento Silvestrista',
@@ -73,14 +74,12 @@ export default function Hero() {
 
       {/* ── Columna imagen ── */}
       <div className="relative order-1 lg:order-2 w-full rounded-2xl overflow-hidden min-h-[280px] lg:min-h-0">
-        <video
-          src="/video/camiseta-colombia-tienda.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="none"
-          className="absolute inset-0 w-full h-full object-cover"
+        <Image
+          src="/images/hero.jpg"
+          alt="Tienda Silvestrista"
+          fill
+          className="object-cover"
+          priority
         />
       </div>
 
