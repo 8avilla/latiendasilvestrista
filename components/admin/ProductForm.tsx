@@ -538,28 +538,31 @@ export default function ProductForm({ initial }: ProductFormProps) {
                   Principal
                 </span>
               )}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
+              <div className="absolute inset-0 bg-black/10 sm:bg-black/50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 {rotatingIndex === i ? (
-                  <span className="text-white text-xs">Rotando...</span>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                    <span className="text-white text-xs">Rotando...</span>
+                  </div>
                 ) : (
                   <>
-                    <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => rotateImage(i, 'left')} title="Girar izquierda"
-                        className="w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors text-base">↺</button>
-                      <button type="button" onClick={() => rotateImage(i, 'right')} title="Girar derecha"
-                        className="w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors text-base">↻</button>
-                    </div>
-                    <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => removeImage(i)} title="Eliminar"
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white transition-colors text-xs shadow z-10">×</button>
+                    
+                    <button type="button" onClick={() => rotateImage(i, 'left')} title="Girar izquierda"
+                      className="absolute bottom-1 left-1 w-6 h-6 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors text-xs shadow z-10">↺</button>
+                    
+                    <button type="button" onClick={() => rotateImage(i, 'right')} title="Girar derecha"
+                      className="absolute bottom-1 right-1 w-6 h-6 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors text-xs shadow z-10">↻</button>
+
+                    <div className="absolute inset-0 flex items-center justify-center gap-1 pointer-events-none">
                       {i > 0 && (
                         <button type="button" onClick={() => moveImage(i, i - 1)} title="Mover izquierda"
-                          className="w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors">←</button>
+                          className="w-6 h-6 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors pointer-events-auto shadow text-xs">←</button>
                       )}
                       {i < form.images.length - 1 && (
                         <button type="button" onClick={() => moveImage(i, i + 1)} title="Mover derecha"
-                          className="w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors">→</button>
+                          className="w-6 h-6 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors pointer-events-auto shadow text-xs">→</button>
                       )}
-                      <button type="button" onClick={() => removeImage(i)} title="Eliminar"
-                        className="w-7 h-7 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white transition-colors">×</button>
                     </div>
                   </>
                 )}

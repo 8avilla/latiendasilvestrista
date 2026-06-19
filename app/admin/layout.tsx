@@ -16,7 +16,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <AdminNav />
       {/* Desktop: offset for sidebar. Mobile: offset for top bar */}
       <main className="lg:ml-56 pt-14 lg:pt-0">
-        <div className="max-w-[1600px] mx-auto px-6 py-10">
+        <div className="max-w-[1600px] mx-auto px-4 py-6 md:px-6 md:py-10">
           {children}
         </div>
       </main>

@@ -283,7 +283,7 @@ export default async function DashboardPage() {
           <span className="text-lg leading-none">+</span>
           Añadir Producto
         </Link>
-        <Link href="/admin/configuracion" className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-black px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm ml-auto">
+        <Link href="/admin/configuracion" className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-black px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm sm:ml-auto">
           <span>⚙️</span>
           Configuración
         </Link>
@@ -337,13 +337,13 @@ export default async function DashboardPage() {
             ) : d.recentOrders.map(order => {
               const meta = STATUS_META[order.status as string] ?? { label: order.status, color: 'text-gray-500', bar: '' };
               return (
-                <div key={order._id.toString()} className="px-5 py-3 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
+                <div key={order._id.toString()} className="px-5 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <div className="flex-1 min-w-0 w-full">
                     <p className="text-sm font-medium text-black truncate">{order.shippingDetails?.name ?? '—'}</p>
                     <p className="text-[10px] text-gray-400 font-mono">{order.orderId}</p>
                   </div>
                   <span className={`text-[10px] font-semibold shrink-0 ${meta.color}`}>{meta.label}</span>
-                  <div className="text-right shrink-0">
+                  <div className="w-full sm:w-auto text-left sm:text-right shrink-0 mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-gray-50 flex sm:block justify-between items-center">
                     <p className="text-sm font-semibold text-black">${(order.totalPrice as number).toLocaleString('es-CO')}</p>
                     <p className="text-[10px] text-gray-400">
                       <ClientDateTime date={order.createdAt instanceof Date ? order.createdAt.toISOString() : new Date(order.createdAt).toISOString()} />
@@ -382,14 +382,14 @@ export default async function DashboardPage() {
 
           {/* Top productos */}
           <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
+            <div className="px-4 sm:px-5 py-4 border-b border-gray-100">
               <h2 className="text-sm font-semibold text-black">Más vendidos</h2>
             </div>
             <div className="divide-y divide-gray-50">
               {d.topProducts.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-4">Sin ventas aún</p>
               ) : d.topProducts.map((p, i) => (
-                <div key={p._id} className="px-5 py-2.5 flex items-center gap-3">
+                <div key={p._id} className="px-4 sm:px-5 py-2.5 flex items-center gap-3">
                   <span className="text-[11px] font-bold text-gray-300 w-4 shrink-0">{i + 1}</span>
                   <p className="text-xs text-black flex-1 truncate">{p._id}</p>
                   <div className="text-right shrink-0">

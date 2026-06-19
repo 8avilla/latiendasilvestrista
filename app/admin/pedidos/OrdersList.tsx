@@ -1013,7 +1013,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <select
               className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
               value={sortBy}
@@ -1158,8 +1158,8 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         )}
 
         {/* Fila inferior: Filtros de Estado */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 overflow-hidden">
+          <div className="flex flex-nowrap md:flex-wrap gap-2 overflow-x-auto pb-2 scrollbar-hide -mb-2 w-full md:w-auto">
             {(['ALL', 'NUEVO PEDIDO', 'PAGO PENDIENTE', 'CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO', 'CANCELADO'] as const).map((st) => {
               const label = {
                 ALL: 'Todos',
@@ -1296,7 +1296,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       )}
 
       {/* Resultados de Pedidos y Botones de acción */}
-      <div className="flex items-center justify-between mb-6 px-1">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 px-1">
         <div className="flex items-center gap-3">
           {filteredOrders.length > 0 && (
             <label className="flex items-center gap-1.5 cursor-pointer group">
@@ -1318,7 +1318,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
 
           <button
             onClick={handleExportExcel}
@@ -1380,8 +1380,8 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
             return (
               <div key={order._id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 {/* Header del pedido */}
-                <div className="bg-gray-50 border-b border-gray-100 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
+                <div className="bg-gray-50 border-b border-gray-100 px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center gap-3 md:gap-4">
                     <input
                       type="checkbox"
                       checked={selectedIds.has(order.orderId)}
@@ -1389,26 +1389,26 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       onClick={e => e.stopPropagation()}
                       className="w-4 h-4 accent-black cursor-pointer shrink-0"
                     />
-                    <span className="text-xs font-mono bg-white border border-gray-200 px-2.5 py-1 text-black font-semibold rounded">
+                    <span className="text-xs font-mono bg-white border border-gray-200 px-2.5 py-1 text-black font-semibold rounded whitespace-nowrap">
                       {order.orderId}
                     </span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400 whitespace-nowrap">
                       <ClientDateTime date={order.createdAt} />
                     </span>
-                    <span className="text-xs text-gray-400 border-l border-gray-200 pl-4">
+                    <span className="text-xs text-gray-400 border-l sm:border-l-0 md:border-l border-gray-200 pl-4 sm:pl-0 md:pl-4 whitespace-nowrap">
                       Canal: <strong className="text-black font-semibold">{order.salesChannel || 'Otros'}</strong>
                     </span>
                     {(() => {
                       const pm = normalizePM(order.paymentMethod as string | undefined);
                       return (
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PM_COLORS[pm]}`}>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${PM_COLORS[pm]}`}>
                           {pm}
                         </span>
                       );
                     })()}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 mt-2 md:mt-0">
                     {order.deleted && (
                       <span className="text-[11px] uppercase tracking-wider font-semibold bg-red-50 text-red-500 border border-red-200 px-3 py-1 rounded-full line-through opacity-70">
                         Eliminado
@@ -1458,7 +1458,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 </div>
 
                 {/* Detalles */}
-                <div className="p-6 grid md:grid-cols-3 gap-6">
+                <div className="p-4 md:p-6 grid md:grid-cols-3 gap-6">
                   {/* Columna 1: Cliente y Envío */}
                   <div>
                     <h3 className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3">
@@ -1566,7 +1566,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 )}
 
                 {/* Acciones del Administrador */}
-                <div className="bg-gray-50/30 border-t border-gray-100 px-6 py-3.5 flex items-center justify-between gap-3">
+                <div className="bg-gray-50/30 border-t border-gray-100 px-4 md:px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   {showTrash ? (
                     /* Vista papelera: solo restaurar */
                     <button
@@ -1582,7 +1582,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   ) : (
                     /* Vista activos: eliminar (soft) + gestionar */
                     <>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
                         {isConfirmed && (
                           <button
                             onClick={() => handleQuickTaken(order.orderId)}
@@ -1629,7 +1629,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
 
                       <button
                         onClick={() => openDrawer(order)}
-                        className="border border-gray-300 hover:border-black text-black hover:bg-black hover:text-white px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer"
+                        className="border border-gray-300 hover:border-black text-black hover:bg-black hover:text-white px-4 py-2 sm:py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer w-full sm:w-auto mt-2 sm:mt-0"
                       >
                         Gestionar Pedido
                       </button>
