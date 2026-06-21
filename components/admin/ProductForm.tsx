@@ -4,6 +4,15 @@ import Image from 'next/image';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Product, CategoryDoc, VariantGroup } from '@/types';
+import Swal from 'sweetalert2';
+
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 3000,
+  timerProgressBar: true,
+});
 
 type FormProduct = Omit<Product, 'id'>;
 
@@ -140,6 +149,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
     name: initial?.name ?? '',
     category: initial?.category ?? '',
     price: initial?.price ?? 0,
+    purchaseCost: initial?.purchaseCost ?? undefined,
     description: initial?.description ?? '',
     images: initial?.images ?? [],
     variantGroups: initial?.variantGroups ?? [],
@@ -217,7 +227,17 @@ export default function ProductForm({ initial }: ProductFormProps) {
     }
   }
 
-  function removeImage(index: number) {
+  async function removeImage(index: number) {
+    const result = await Swal.fire({
+      title: '¿Eliminar imagen?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!result.isConfirmed) return;
     setField('images', form.images.filter((_, i) => i !== index));
     touch('images');
   }
@@ -309,9 +329,15 @@ export default function ProductForm({ initial }: ProductFormProps) {
       const res = await fetch(isEdit ? `/api/productos/${initial!.id}` : '/api/productos', {
         method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, price: Number(form.price), variantGroups: parseGroups() }),
+        body: JSON.stringify({
+          ...form,
+          price: Number(form.price),
+          purchaseCost: form.purchaseCost ? Number(form.purchaseCost) : null,
+          variantGroups: parseGroups(),
+        }),
       });
       if (!res.ok) throw new Error('Error guardando producto');
+      Toast.fire({ icon: 'success', title: 'Producto guardado correctamente' });
       router.push('/admin/productos');
       router.refresh();
     } catch (err: unknown) {
@@ -347,7 +373,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
         {showError('name') && <FieldError msg={formErrors.name} />}
       </div>
 
-      {/* Categoría + Precio */}
+      {/* Categoría + Precio + Costo */}
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
           <label className="text-xs uppercase tracking-widest text-gray-500 font-medium">Categoría</label>
@@ -376,6 +402,30 @@ export default function ProductForm({ initial }: ProductFormProps) {
           />
           {showError('price') && <FieldError msg={formErrors.price} />}
         </div>
+      </div>
+
+      {/* Costo de compra */}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-baseline justify-between">
+          <label className="text-xs uppercase tracking-widest text-gray-500 font-medium">Costo de compra — Proveedor (COP)</label>
+          <span className="text-[10px] text-gray-300">opcional · solo visible en el admin</span>
+        </div>
+        <div className="relative">
+          <input
+            type="number"
+            min={0}
+            value={form.purchaseCost ?? ''}
+            onChange={e => setField('purchaseCost', e.target.value === '' ? undefined : Number(e.target.value))}
+            className="border border-gray-200 focus:border-green-400 rounded-lg px-4 py-2.5 text-sm focus:outline-none transition-colors w-full max-w-xs"
+            placeholder="Ej: 28000"
+          />
+          {form.purchaseCost && form.price > 0 && (
+            <span className="ml-3 text-xs text-green-600 font-semibold">
+              Margen: {Math.round(((form.price - form.purchaseCost) / form.price) * 100)}% · Ganancia: ${(form.price - form.purchaseCost).toLocaleString('es-CO')}
+            </span>
+          )}
+        </div>
+        <p className="text-[10px] text-gray-400">Usado para calcular la rentabilidad en el dashboard</p>
       </div>
 
       {/* Descripción */}

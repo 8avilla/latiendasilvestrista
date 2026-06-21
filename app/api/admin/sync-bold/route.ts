@@ -31,14 +31,14 @@ export async function POST() {
 
   const pendingOrders = await db
     .collection('orders')
-    .find({ status: 'PAGO PENDIENTE', deleted: { $ne: true } })
+    .find({ paymentMethod: 'Bold', status: 'PAGO PENDIENTE', deleted: { $ne: true } })
     .toArray();
 
   if (pendingOrders.length === 0) {
     return Response.json({ synced: 0, updated: 0, results: [] });
   }
 
-  const results: { orderId: string; boldStatus: string | null; newStatus: string | null; error?: string }[] = [];
+  const results: { orderId: string; boldStatus: string | null; newStatus: string | null; paymentId?: string; error?: string }[] = [];
   let updated = 0;
 
   await Promise.all(
@@ -54,7 +54,6 @@ export async function POST() {
         });
 
         if (res.status === 404) {
-          // Transaction not found yet or not created
           results.push({ orderId: order.orderId, boldStatus: 'NOT_FOUND', newStatus: null });
           return;
         }
@@ -97,7 +96,7 @@ export async function POST() {
           }
 
           updated++;
-          results.push({ orderId: order.orderId, boldStatus, newStatus });
+          results.push({ orderId: order.orderId, boldStatus, newStatus, ...(data.id ? { paymentId: data.id } : {}) });
         } else {
           results.push({ orderId: order.orderId, boldStatus, newStatus: null });
         }

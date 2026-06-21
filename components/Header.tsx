@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useCart } from '@/components/CartProvider';
 
@@ -42,22 +43,16 @@ export default function Header() {
         <Link
           href="/"
           onClick={e => { if (isHome) { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}
-          className="flex items-center gap-2.5 shrink-0 group/logo cursor-pointer select-none"
+          className="flex items-center shrink-0 cursor-pointer select-none hover:opacity-75 transition-opacity duration-200"
         >
-          <div className="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center shrink-0 group-hover/logo:rotate-[15deg] group-hover/logo:border-red-600 transition-all duration-300">
-            <span className="text-[11px] font-black tracking-tighter text-black group-hover/logo:text-red-600 transition-colors">SD</span>
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span
-              className="text-sm sm:text-base text-black leading-none whitespace-nowrap group-hover/logo:text-red-600 transition-colors duration-300"
-              style={{ fontFamily: 'var(--font-dm-serif)', fontStyle: 'italic' }}
-            >
-              La Tienda Silvestrista
-            </span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-red-600 font-semibold hidden sm:block">
-              Silvestre Dangond
-            </span>
-          </div>
+          <Image
+            src="/images/logo-la-tienda-silvestrista.png"
+            alt="La Tienda Silvestrista"
+            height={38}
+            width={190}
+            style={{ height: '38px', width: 'auto' }}
+            priority
+          />
         </Link>
 
         {/* Nav — desktop */}

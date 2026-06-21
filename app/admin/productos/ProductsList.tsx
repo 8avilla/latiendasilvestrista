@@ -262,7 +262,7 @@ export default function ProductsList({ initial, categories }: Props) {
       {/* Info bar */}
       <div className="flex items-center justify-between mt-2">
         <p className="text-xs text-gray-400">
-          {saving ? 'Guardando orden...' : reorderError ? <span className="text-red-500">{reorderError}</span> : filtersActive ? `${filteredItems.length} de ${items.length} productos` : `${items.length} productos · arrastra ⠿ para reordenar`}
+          {saving ? 'Guardando orden...' : reorderError ? <span className="text-red-500">{reorderError}</span> : filtersActive ? <span>{filteredItems.length} de {items.length} productos <span className="text-gray-300">· limpia los filtros para reordenar</span></span> : `${items.length} productos · arrastra ⠿ para reordenar`}
         </p>
         {filtersActive && (
           <button onClick={() => {

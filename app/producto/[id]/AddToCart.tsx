@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Product } from '@/types';
 import { useCart } from '@/components/CartProvider';
 import { usePopup } from '@/components/PopupProvider';
+import { trackEvent } from '@/lib/sessionId';
 
 export default function AddToCart({ product }: { product: Product }) {
   const { addItem, openSidebar } = useCart();
@@ -23,6 +24,7 @@ export default function AddToCart({ product }: { product: Product }) {
       openSidebar();
       setAdded(true);
       setTimeout(() => setAdded(false), 1500);
+      trackEvent('add_to_cart', { productId: product.id, productName: product.name, price: product.price });
     };
     if (product.showPopup && product.popupImage) {
       openPopup(doAdd, product.popupImage);

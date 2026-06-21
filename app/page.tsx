@@ -6,6 +6,7 @@ import TrustBand from '@/components/TrustBand';
 import ProductGrid from '@/components/ProductGrid';
 import FAQ from '@/components/FAQ';
 import SizeGuide from '@/components/SizeGuide';
+import PageviewTracker from '@/components/PageviewTracker';
 
 export const metadata: Metadata = {
   title: 'La Tienda Silvestrista — Silvestre Dangond',
@@ -61,6 +62,7 @@ export default async function Home() {
 
   return (
     <main className="flex-1 w-full">
+      <PageviewTracker />
       <Hero />
 
       <TrustBand />

@@ -2,6 +2,7 @@ import { getDb } from '@/lib/mongodb';
 import Link from 'next/link';
 import { ClientDateTime } from '@/components/ClientDateTime';
 import DashboardCharts from './DashboardCharts';
+import RefreshDashboardButton from './RefreshDashboardButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,7 +58,10 @@ async function getData() {
     stalePrepCount, stalePendingCount, newCount,
     totalProducts,
     lowStockProducts, outOfStockProducts,
-    abandonedAgg, dispatchTimeAgg, staleProducts
+    abandonedAgg, dispatchTimeAgg, staleProducts,
+    profitAgg, prevProfitAgg,
+    funnelAgg,
+    convThisWeekAgg, convPrevWeekAgg
   ] = await Promise.all([
     // Ventas hoy
     db.collection('orders').aggregate([
@@ -180,7 +184,7 @@ async function getData() {
       const recentSoldProducts = await db.collection('orders').distinct('items.product.id', { createdAt: { $gte: thirtyDaysAgo }, status: { $in: PAID } });
       const recentSoldProductsAlt = await db.collection('orders').distinct('items.product._id', { createdAt: { $gte: thirtyDaysAgo }, status: { $in: PAID } });
       const activeSoldIds = [...new Set([...recentSoldProducts, ...recentSoldProductsAlt])];
-      
+
       return db.collection('products').find({
         $and: [
           { $or: [{ id: { $nin: activeSoldIds } }, { id: { $exists: false } }] },
@@ -191,6 +195,51 @@ async function getData() {
         stock: { $gt: 0 }
       }).limit(5).toArray();
     })(),
+
+    // Ganancia neta este mes (precio - costo de compra) * cantidad
+    db.collection('orders').aggregate([
+      { $match: { status: { $in: PAID }, createdAt: { $gte: startMonth }, deleted: { $ne: true } } },
+      { $unwind: '$items' },
+      { $match: { 'items.product.purchaseCost': { $exists: true, $ne: null } } },
+      { $group: {
+        _id: null,
+        profit: { $sum: { $multiply: [{ $subtract: ['$items.product.price', '$items.product.purchaseCost'] }, '$items.quantity'] } },
+        revenue: { $sum: { $multiply: ['$items.product.price', '$items.quantity'] } },
+      }},
+    ]).toArray(),
+
+    // Conversión esta semana (para alerta de caída)
+    db.collection('analytics').aggregate([
+      { $match: { date: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, event: { $in: ['checkout_start', 'order_completed'] } } },
+      { $group: { _id: '$event', count: { $sum: 1 } } },
+    ]).toArray(),
+
+    // Conversión semana anterior
+    db.collection('analytics').aggregate([
+      { $match: {
+        date: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), $lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        event: { $in: ['checkout_start', 'order_completed'] },
+      }},
+      { $group: { _id: '$event', count: { $sum: 1 } } },
+    ]).toArray(),
+
+    // Embudo de conversión (mes actual)
+    db.collection('analytics').aggregate([
+      { $match: { date: { $gte: startMonth } } },
+      { $group: { _id: '$event', count: { $sum: 1 } } },
+    ]).toArray(),
+
+    // Ganancia neta mes pasado
+    db.collection('orders').aggregate([
+      { $match: { status: { $in: PAID }, createdAt: { $gte: startLastMonth, $lt: startMonth }, deleted: { $ne: true } } },
+      { $unwind: '$items' },
+      { $match: { 'items.product.purchaseCost': { $exists: true, $ne: null } } },
+      { $group: {
+        _id: null,
+        profit: { $sum: { $multiply: [{ $subtract: ['$items.product.price', '$items.product.purchaseCost'] }, '$items.quantity'] } },
+        revenue: { $sum: { $multiply: ['$items.product.price', '$items.quantity'] } },
+      }},
+    ]).toArray(),
   ]);
 
   // Construir array de 7 días
@@ -220,6 +269,26 @@ async function getData() {
   const maxStatus     = Math.max(...statusAgg.map(s => s.count), 1);
   const abandonedTotal = abandonedAgg[0]?.total ?? 0;
   const dispatchAvgHours = dispatchTimeAgg[0]?.avgHours ?? 0;
+  // Alerta de caída de conversión checkout→pago
+  const thisWeekConv = Object.fromEntries((convThisWeekAgg as { _id: string; count: number }[]).map(e => [e._id, e.count]));
+  const prevWeekConv = Object.fromEntries((convPrevWeekAgg as { _id: string; count: number }[]).map(e => [e._id, e.count]));
+  const thisConvRate = (thisWeekConv['checkout_start'] ?? 0) > 0 ? (thisWeekConv['order_completed'] ?? 0) / thisWeekConv['checkout_start'] : null;
+  const prevConvRate = (prevWeekConv['checkout_start'] ?? 0) > 0 ? (prevWeekConv['order_completed'] ?? 0) / prevWeekConv['checkout_start'] : null;
+  const convDropPct = thisConvRate !== null && prevConvRate !== null && prevConvRate > 0
+    ? Math.round(((thisConvRate - prevConvRate) / prevConvRate) * 100) : null;
+
+  const funnelMap = Object.fromEntries((funnelAgg as { _id: string; count: number }[]).map(e => [e._id, e.count]));
+  const funnelData = [
+    { stage: 'Visitas', value: funnelMap['pageview'] ?? 0 },
+    { stage: 'Al carrito', value: funnelMap['add_to_cart'] ?? 0 },
+    { stage: 'Checkout', value: funnelMap['checkout_start'] ?? 0 },
+    { stage: 'Pagaron', value: funnelMap['order_completed'] ?? 0 },
+  ];
+
+  const monthProfit   = profitAgg[0]?.profit ?? null;
+  const prevMonthProfit = prevProfitAgg[0]?.profit ?? null;
+  const profitRevenue = profitAgg[0]?.revenue ?? 0;
+  const profitMargin  = profitRevenue > 0 && monthProfit !== null ? Math.round((monthProfit / profitRevenue) * 100) : null;
 
   const alerts: { level: 'warn' | 'info'; text: string; href?: string }[] = [];
   if (abandonedTotal > 0)
@@ -232,6 +301,8 @@ async function getData() {
     alerts.push({ level: 'warn', text: `${stalePrepCount} pedido${stalePrepCount > 1 ? 's' : ''} en preparación lleva${stalePrepCount > 1 ? 'n' : ''} más de 48h sin actualizar` });
   if (outOfStockProducts > 0)
     alerts.push({ level: 'warn', text: `${outOfStockProducts} producto${outOfStockProducts > 1 ? 's' : ''} sin stock — revisar inventario` });
+  if (convDropPct !== null && convDropPct <= -20)
+    alerts.push({ level: 'warn', text: `Conversión checkout→pago cayó ${Math.abs(convDropPct)}% esta semana vs la anterior — posibles errores de pago`, href: '/admin/analiticas' });
   if (lowStockProducts.length > 0) {
     const names = lowStockProducts.map((p) => `${p.name as string} (${p.stock as number})`).join(', ');
     alerts.push({ level: 'info', text: `Stock bajo: ${names}` });
@@ -246,10 +317,13 @@ async function getData() {
     channelAgg, totalChannel,
     geoAgg,
     alerts, totalProducts, abandonedTotal, dispatchAvgHours, staleProducts,
+    monthProfit, prevMonthProfit, profitMargin,
+    funnelData,
     deltaToday: pct(todaySales, ydaySales),
     deltaMonth: pct(monthSales, prevMonthSales),
     deltaCount: pct(monthCount, prevMonthCount),
     deltaAvg:   pct(Math.round(avgTicket), Math.round(prevAvgTicket)),
+    deltaProfit: monthProfit !== null && prevMonthProfit !== null ? pct(Math.round(monthProfit), Math.round(prevMonthProfit)) : null,
   };
 }
 
@@ -259,6 +333,7 @@ export default async function DashboardPage() {
   const metrics = [
     { label: 'Ventas hoy',      value: `$${d.todaySales.toLocaleString('es-CO')}`,          sub: `${d.todaySales === 0 && d.ydaySales === 0 ? '—' : d.ydaySales > 0 ? `Ayer: $${d.ydaySales.toLocaleString('es-CO')}` : 'Sin ventas ayer'}`, delta: d.deltaToday, deltaText: 'vs ayer', accent: 'text-red-600' },
     { label: 'Ventas del mes',  value: `$${d.monthSales.toLocaleString('es-CO')}`,          sub: `${d.monthCount} pedidos`,                delta: d.deltaMonth, deltaText: 'vs mes pasado', accent: 'text-red-600' },
+    { label: 'Ganancia neta',   value: d.monthProfit !== null ? `$${Math.round(d.monthProfit).toLocaleString('es-CO')}` : '—', sub: d.profitMargin !== null ? `Margen ${d.profitMargin}% este mes` : 'Agrega costos a tus productos', delta: d.deltaProfit, deltaText: 'vs mes pasado', accent: 'text-green-600' },
     { label: 'Tiempo despacho', value: d.dispatchAvgHours > 0 ? `${Math.round(d.dispatchAvgHours)}h` : '—', sub: 'promedio (30 días)',      delta: null, deltaText: '',        accent: 'text-indigo-600' },
     { label: 'Pedidos activos', value: String(d.activeOrders),                               sub: 'por gestionar',                          delta: null, deltaText: '',        accent: d.activeOrders > 0 ? 'text-orange-500' : 'text-gray-400' },
     { label: 'Ticket promedio', value: `$${Math.round(d.avgTicket).toLocaleString('es-CO')}`, sub: 'este mes',                               delta: d.deltaAvg, deltaText: 'vs mes pasado',   accent: 'text-gray-700' },
@@ -283,32 +358,17 @@ export default async function DashboardPage() {
           <span className="text-lg leading-none">+</span>
           Añadir Producto
         </Link>
+        <RefreshDashboardButton />
         <Link href="/admin/configuracion" className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-black px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm sm:ml-auto">
           <span>⚙️</span>
           Configuración
         </Link>
       </div>
 
-      {/* Alertas */}
-      {d.alerts.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {d.alerts.map((alert, i) => (
-            <Link key={i} href={alert.href || "/admin/pedidos"}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-opacity hover:opacity-80 ${
-                alert.level === 'warn'
-                  ? 'bg-amber-50 border-amber-200 text-amber-800'
-                  : 'bg-blue-50 border-blue-200 text-blue-800'
-              }`}>
-              <span className="shrink-0 text-base">{alert.level === 'warn' ? '⚠️' : 'ℹ️'}</span>
-              {alert.text}
-              <span className="ml-auto text-xs opacity-60">{alert.href ? 'Ver detalles →' : 'Ver pedidos →'}</span>
-            </Link>
-          ))}
-        </div>
-      )}
+
 
       {/* Métricas */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {metrics.map(m => (
           <div key={m.label} className="bg-white border border-gray-100 rounded-xl px-5 py-4 flex flex-col gap-1">
             <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">{m.label}</p>
@@ -320,7 +380,12 @@ export default async function DashboardPage() {
       </div>
 
       {/* Gráficos Avanzados (Recharts) */}
-      <DashboardCharts days={d.days} channels={d.channelAgg as Array<{ _id: string; total: number; count: number }>} geo={d.geoAgg as Array<{ _id: string; total: number; count: number }>} />
+      <DashboardCharts
+        days={d.days}
+        channels={d.channelAgg as Array<{ _id: string; total: number; count: number }>}
+        geo={d.geoAgg as Array<{ _id: string; total: number; count: number }>}
+        funnel={d.funnelData}
+      />
 
       {/* Pedidos recientes + lateral */}
       <div className="grid lg:grid-cols-3 gap-4">
@@ -405,7 +470,7 @@ export default async function DashboardPage() {
           {d.staleProducts.length > 0 && (
             <div className="bg-white border border-gray-100 rounded-xl overflow-hidden mt-4">
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-black">Productos "Hueso"</h2>
+                <h2 className="text-sm font-semibold text-black">Productos &quot;Hueso&quot;</h2>
                 <span className="text-[10px] text-gray-400">+30 días sin ventas</span>
               </div>
               <div className="divide-y divide-gray-50">

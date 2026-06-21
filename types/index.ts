@@ -14,6 +14,7 @@ export interface Product {
   name: string;
   category: string;
   price: number;
+  purchaseCost?: number;
   description: string;
   images: string[];
   variantGroups?: VariantGroup[];
@@ -38,6 +39,7 @@ export interface OrderItem {
     name: string;
     category: string;
     price: number;
+    purchaseCost?: number;
     images?: string[];
   };
   quantity: number;
@@ -66,6 +68,8 @@ export interface Order {
   paymentMethod?: PaymentMethod | string;
   salesChannel?: SalesChannel;
   notes?: string;
+  trackingNumber?: string;
+  carrier?: string;
   deleted?: boolean;
   createdAt: string; // Serialized date
   updatedAt: string; // Serialized date

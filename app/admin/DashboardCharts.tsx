@@ -3,7 +3,8 @@
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
-  BarChart, Bar
+  BarChart, Bar,
+  FunnelChart, Funnel, LabelList,
 } from 'recharts';
 
 interface DayData {
@@ -19,15 +20,28 @@ interface AggData {
   count: number;
 }
 
+interface FunnelStage {
+  stage: string;
+  value: number;
+}
+
 interface Props {
   days: DayData[];
   channels: AggData[];
   geo: AggData[];
+  funnel: FunnelStage[];
 }
 
 const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#6366f1', '#ec4899', '#8b5cf6'];
+const FUNNEL_COLORS = ['#6366f1', '#3b82f6', '#f59e0b', '#10b981'];
 
-export default function DashboardCharts({ days, channels, geo }: Props) {
+export default function DashboardCharts({ days, channels, geo, funnel }: Props) {
+  const hasAnyFunnelData = funnel.some(s => s.value > 0);
+  const funnelWithColors = funnel.map((s, i) => ({
+    ...s,
+    fill: FUNNEL_COLORS[i],
+    pct: i === 0 || funnel[0].value === 0 ? null : Math.round((s.value / funnel[0].value) * 100),
+  }));
   return (
     <div className="grid lg:grid-cols-3 gap-4">
       {/* Gráfico de Líneas: Ventas 7 días */}
@@ -37,7 +51,7 @@ export default function DashboardCharts({ days, channels, geo }: Props) {
           <span className="text-xs text-gray-400">solo pagos confirmados</span>
         </div>
         <div className="h-[260px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <LineChart data={days} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
               <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dy={10} />
@@ -72,7 +86,7 @@ export default function DashboardCharts({ days, channels, geo }: Props) {
           <p className="text-xs text-gray-400 text-center py-10 flex-1 flex items-center justify-center">Sin datos</p>
         ) : (
           <div className="flex-1 min-h-[160px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={channels}
@@ -112,6 +126,55 @@ export default function DashboardCharts({ days, channels, geo }: Props) {
         </div>
       </div>
 
+      {/* Embudo de Conversión */}
+      <div className="lg:col-span-3 bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-black">Embudo de Conversión (este mes)</h2>
+          <span className="text-xs text-gray-400">visitas → carrito → checkout → pago</span>
+        </div>
+        {!hasAnyFunnelData ? (
+          <p className="text-xs text-gray-400 text-center py-10">Los datos se acumularán con las próximas visitas</p>
+        ) : (
+          <div className="flex items-stretch gap-0">
+            {/* Barras horizontales */}
+            <div className="flex flex-col justify-around flex-1 gap-2 py-1">
+              {funnelWithColors.map((s) => {
+                const pct = funnel[0].value > 0 ? Math.round((s.value / funnel[0].value) * 100) : 0;
+                return (
+                  <div key={s.stage} className="flex items-center gap-3">
+                    <span className="text-xs text-gray-500 w-20 shrink-0 text-right">{s.stage}</span>
+                    <div className="flex-1 h-7 bg-gray-100 rounded-lg overflow-hidden relative">
+                      <div
+                        className="h-full rounded-lg transition-all"
+                        style={{ width: `${Math.max(pct, 1)}%`, backgroundColor: s.fill }}
+                      />
+                    </div>
+                    <div className="text-right shrink-0 w-24">
+                      <span className="text-sm font-bold text-black">{s.value.toLocaleString('es-CO')}</span>
+                      {s.pct !== null && (
+                        <span className="text-[10px] text-gray-400 ml-1.5">{s.pct}%</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Mini funnel visual */}
+            <div className="w-32 shrink-0 hidden sm:block">
+              <ResponsiveContainer width="100%" height={160} minWidth={0}>
+                <FunnelChart>
+                  <Funnel dataKey="value" data={funnelWithColors} isAnimationActive={false}>
+                    <LabelList position="center" fill="#fff" fontSize={10} dataKey="stage" />
+                  </Funnel>
+                  <Tooltip formatter={(v: unknown) => [Number(v).toLocaleString('es-CO'), 'Eventos']} contentStyle={{ borderRadius: '8px', border: '1px solid #f3f4f6', fontSize: 12 }} />
+                </FunnelChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Gráfico de Barras: Top Geográfico */}
       <div className="lg:col-span-3 bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-black mb-4">Top Municipios (Cantidad de Pedidos)</h2>
@@ -119,7 +182,7 @@ export default function DashboardCharts({ days, channels, geo }: Props) {
           {geo.length === 0 ? (
             <p className="text-xs text-gray-400 text-center py-10">Faltan datos geográficos</p>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={geo} layout="vertical" margin={{ top: 0, right: 10, left: 40, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f3f4f6" />
                 <XAxis type="number" hide />

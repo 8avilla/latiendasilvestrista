@@ -1,12 +1,12 @@
 import { getDb } from '@/lib/mongodb';
 import { NextRequest } from 'next/server';
-import { sendOrderConfirmedEmail, sendOrderReceivedEmail, sendOrderInPreparationEmail } from '@/lib/mail';
+import { sendOrderConfirmedEmail, sendOrderReceivedEmail, sendOrderInPreparationEmail, sendOrderShippedEmail } from '@/lib/mail';
 import { Order } from '@/types';
 
 export async function POST(request: Request) {
   try {
     const db = await getDb();
-    const { items, totalPrice, shippingPrice = 0, shippingDetails, paymentMethod = 'BOLD', status, salesChannel, notes } = await request.json();
+    const { items, totalPrice, shippingPrice = 0, shippingDetails, paymentMethod = 'BOLD', status, salesChannel, notes, analyticsSessionId } = await request.json();
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return Response.json({ error: 'El carrito está vacío' }, { status: 400 });
@@ -50,6 +50,12 @@ export async function POST(request: Request) {
     };
 
     await db.collection('orders').insertOne(orderDoc);
+
+    db.collection('analytics').insertOne({
+      event: 'order_completed',
+      sessionId: analyticsSessionId || null,
+      date: now,
+    }).catch(() => {});
 
     if (paymentMethod === 'WHATSAPP' && shippingDetails.email) {
       sendOrderReceivedEmail(orderDoc as unknown as Order).catch(err =>
@@ -114,7 +120,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: Request) {
   try {
     const db = await getDb();
-    const { orderId, status, salesChannel, paymentMethod, notes, deleted, shippingDetails, items, totalPrice } = await request.json();
+    const { orderId, status, salesChannel, paymentMethod, notes, trackingNumber, carrier, deleted, shippingDetails, items, totalPrice } = await request.json();
 
     if (!orderId) {
       return Response.json({ error: 'Falta el ID del pedido' }, { status: 400 });
@@ -131,6 +137,8 @@ export async function PUT(request: Request) {
     if (salesChannel !== undefined) updateFields.salesChannel = salesChannel;
     if (paymentMethod !== undefined) updateFields.paymentMethod = paymentMethod;
     if (notes !== undefined) updateFields.notes = notes;
+    if (trackingNumber !== undefined) updateFields.trackingNumber = trackingNumber;
+    if (carrier !== undefined) updateFields.carrier = carrier;
     if (shippingDetails !== undefined) updateFields.shippingDetails = shippingDetails;
     if (items !== undefined) updateFields.items = items;
     if (totalPrice !== undefined) updateFields.totalPrice = totalPrice;
@@ -159,6 +167,13 @@ export async function PUT(request: Request) {
       const updatedOrder = { ...prevOrder, ...updateFields } as unknown as Order;
       sendOrderInPreparationEmail(updatedOrder).catch(err =>
         console.error('Error enviando email de en preparación:', err)
+      );
+    }
+
+    if (status === 'ENVIADO' && prevOrder.status !== 'ENVIADO' && prevOrder.shippingDetails?.email) {
+      const updatedOrder = { ...prevOrder, ...updateFields } as unknown as Order;
+      sendOrderShippedEmail(updatedOrder).catch(err =>
+        console.error('Error enviando email de envío:', err)
       );
     }
 

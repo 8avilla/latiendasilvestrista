@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
         hostname: "ridus.blob.core.windows.net",
         pathname: "/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "interrapidisimo.com",
+        pathname: "/wp-content/uploads/**",
+      },
     ],
   },
 };

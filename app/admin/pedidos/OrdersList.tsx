@@ -5,6 +5,18 @@ import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Order, Product, OrderStatus, SalesChannel, PaymentMethod } from '@/types';
 import * as XLSX from 'xlsx';
+import Swal from 'sweetalert2';
+
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 3000,
+  timerProgressBar: true,
+});
+
+const showErrorToast = (msg: string) => Toast.fire({ icon: 'error', title: msg });
+const showSuccessToast = (msg: string) => Toast.fire({ icon: 'success', title: msg });
 
 const PAYMENT_METHODS: PaymentMethod[] = ['Bold', 'Efectivo', 'Nequi', 'Bancolombia', 'Daviplata', 'Otros'];
 
@@ -54,7 +66,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   }
 
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | OrderStatus>('ALL');
+  const [statusFilter, setStatusFilter] = useState<Set<OrderStatus>>(new Set());
   const [channelFilter, setChannelFilter] = useState<'ALL' | SalesChannel>('ALL');
   const [paymentFilter, setPaymentFilter] = useState<'ALL' | PaymentMethod>('ALL');
   const [sortBy, setSortBy] = useState<'NEWEST' | 'OLDEST' | 'PRICE_DESC' | 'PRICE_ASC'>('NEWEST');
@@ -66,6 +78,8 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   const [editChannel, setEditChannel] = useState<SalesChannel>('Tienda Online');
   const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('Bold');
   const [editNotes, setEditNotes] = useState('');
+  const [editTrackingNumber, setEditTrackingNumber] = useState('');
+  const [editCarrier, setEditCarrier] = useState('');
   const [editShipping, setEditShipping] = useState<Order['shippingDetails'] | null>(null);
   const [editItems, setEditItems] = useState<Order['items']>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -76,10 +90,13 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   const [quickDeleteId, setQuickDeleteId] = useState<string | null>(null);
   const [quickDeleting, setQuickDeleting] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
+  const [showPagoPendiente, setShowPagoPendiente] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [takingId, setTakingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<string | null>(null);
+  const [isSyncingTx, setIsSyncingTx] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -274,17 +291,19 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   // Calcular conteos de cada estado (solo pedidos activos)
   const counts = useMemo(() => {
     const active = localOrders.filter(o => !o.deleted);
+    const pagoPendienteCount = active.filter((o) => o.status === 'PAGO PENDIENTE').length;
+    const visibleCount = showPagoPendiente ? active.length : active.length - pagoPendienteCount;
     return {
-      ALL: active.length,
+      ALL: visibleCount,
       'NUEVO PEDIDO': active.filter((o) => o.status === 'NUEVO PEDIDO').length,
-      'PAGO PENDIENTE': active.filter((o) => o.status === 'PAGO PENDIENTE').length,
+      'PAGO PENDIENTE': pagoPendienteCount,
       CONFIRMADO: active.filter((o) => o.status === 'CONFIRMADO').length,
       'EN PREPARACIÓN': active.filter((o) => o.status === 'EN PREPARACIÓN').length,
       ENVIADO: active.filter((o) => o.status === 'ENVIADO').length,
       ENTREGADO: active.filter((o) => o.status === 'ENTREGADO').length,
       CANCELADO: active.filter((o) => o.status === 'CANCELADO').length,
     };
-  }, [localOrders]);
+  }, [localOrders, showPagoPendiente]);
 
   // Filtrado y ordenamiento de pedidos
   const sourceOrders = showTrash
@@ -293,8 +312,13 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
 
   const filteredOrders = sourceOrders
     .filter((order) => {
+      // Ocultar PAGO PENDIENTE por defecto
+      if (!showPagoPendiente && order.status === 'PAGO PENDIENTE') {
+        return false;
+      }
+
       // Filtro por Estado
-      if (statusFilter !== 'ALL' && order.status !== statusFilter) {
+      if (statusFilter.size > 0 && !statusFilter.has(order.status)) {
         return false;
       }
 
@@ -386,6 +410,8 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     setEditChannel(order.salesChannel || 'Tienda Online');
     setEditPaymentMethod(normalizePM(order.paymentMethod as string | undefined));
     setEditNotes(order.notes || '');
+    setEditTrackingNumber(order.trackingNumber || '');
+    setEditCarrier(order.carrier || 'Interrapidísimo');
     setEditShipping({ ...order.shippingDetails });
     setEditItems(JSON.parse(JSON.stringify(order.items || [])));
     setConfirmDelete(false);
@@ -443,6 +469,8 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           salesChannel: editChannel,
           paymentMethod: editPaymentMethod,
           notes: editNotes,
+          trackingNumber: editTrackingNumber || '',
+          carrier: editCarrier || '',
           shippingDetails: editShipping,
           items: editItems,
           totalPrice: newTotalPrice,
@@ -456,13 +484,13 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       setLocalOrders((prev) =>
         prev.map((o) =>
           o.orderId === editingOrder.orderId
-            ? { ...o, status: editStatus, salesChannel: editChannel, paymentMethod: editPaymentMethod, notes: editNotes, shippingDetails: editShipping!, items: editItems, totalPrice: newTotalPrice, updatedAt: new Date().toISOString() }
+            ? { ...o, status: editStatus, salesChannel: editChannel, paymentMethod: editPaymentMethod, notes: editNotes, trackingNumber: editTrackingNumber, carrier: editCarrier, shippingDetails: editShipping!, items: editItems, totalPrice: newTotalPrice, updatedAt: new Date().toISOString() }
             : o
         )
       );
       closeDrawer();
     } catch (err) {
-      alert('Error al guardar los cambios del pedido. Intente de nuevo.');
+      showErrorToast('Error al guardar los cambios del pedido. Intente de nuevo.');
       console.error(err);
     } finally {
       setIsSaving(false);
@@ -492,20 +520,31 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       setSelectedIds(new Set());
       setBulkStatus('');
     } catch {
-      alert('Error al cambiar el estado. Intenta de nuevo.');
+      showErrorToast('Error al cambiar el estado. Intenta de nuevo.');
     } finally {
       setIsBulkChanging(false);
     }
   }
 
   async function handleQuickDelete(orderId: string) {
+    const result = await Swal.fire({
+      title: '¿Mover a papelera?',
+      text: "El pedido se ocultará de la lista principal",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, mover',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!result.isConfirmed) return;
     setQuickDeleting(true);
     try {
       const res = await fetch(`/api/orders?orderId=${orderId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
       setLocalOrders(prev => prev.map(o => o.orderId === orderId ? { ...o, deleted: true } : o));
     } catch {
-      alert('Error al mover el pedido a la papelera.');
+      showErrorToast('Error al mover el pedido a la papelera.');
     } finally {
       setQuickDeleting(false);
       setQuickDeleteId(null);
@@ -515,6 +554,17 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   // Mover pedido a la papelera
   async function handleDelete() {
     if (!editingOrder) return;
+    const result = await Swal.fire({
+      title: '¿Mover a papelera?',
+      text: "El pedido se ocultará de la lista principal",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, mover',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!result.isConfirmed) return;
     setIsDeleting(true);
     try {
       const response = await fetch(`/api/orders?orderId=${editingOrder.orderId}`, {
@@ -530,7 +580,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       ));
       closeDrawer();
     } catch (err) {
-      alert('Error al mover el pedido a la papelera. Intente de nuevo.');
+      showErrorToast('Error al mover el pedido a la papelera. Intente de nuevo.');
       console.error(err);
     } finally {
       setIsDeleting(false);
@@ -550,7 +600,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         o.orderId === orderId ? { ...o, status: 'EN PREPARACIÓN' as const } : o
       ));
     } catch {
-      alert('Error al actualizar el pedido.');
+      showErrorToast('Error al actualizar el pedido.');
     } finally {
       setTakingId(null);
     }
@@ -567,7 +617,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       if (!res.ok) throw new Error();
       setLocalOrders(prev => prev.map(o => o.orderId === orderId ? { ...o, deleted: false } : o));
     } catch {
-      alert('Error al restaurar el pedido.');
+      showErrorToast('Error al restaurar el pedido.');
     } finally {
       setRestoringId(null);
     }
@@ -593,6 +643,8 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         status: doc.status as Order['status'],
         salesChannel: (doc.salesChannel as Order['salesChannel']) ?? 'Tienda Online',
         notes: (doc.notes as string) ?? '',
+        trackingNumber: (doc.trackingNumber as string) ?? '',
+        carrier: (doc.carrier as string) ?? '',
         transactionDetails: doc.transactionDetails as Order['transactionDetails'],
         createdAt: doc.createdAt as string,
         updatedAt: doc.updatedAt as string,
@@ -610,9 +662,25 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           .map((r: { orderId: string; newStatus: string }) => [r.orderId, r.newStatus])
       );
 
-      const merged = fresh.map((o) =>
-        syncMap.has(o.orderId) ? { ...o, status: syncMap.get(o.orderId) as Order['status'] } : o
+      const txMap = new Map<string, string>(
+        (syncData.results ?? [])
+          .filter((r: { orderId: string; paymentId?: string }) => r.paymentId)
+          .map((r: { orderId: string; paymentId: string }) => [r.orderId, r.paymentId])
       );
+
+      const merged = fresh.map((o) => {
+        let result = syncMap.has(o.orderId) ? { ...o, status: syncMap.get(o.orderId) as Order['status'] } : o;
+        if (txMap.has(o.orderId)) {
+          result = {
+            ...result,
+            transactionDetails: {
+              ...result.transactionDetails,
+              paymentId: txMap.get(o.orderId) as string,
+            } as Order['transactionDetails'],
+          };
+        }
+        return result;
+      });
 
       let canceledCount = 0;
       const nowMs = Date.now();
@@ -645,13 +713,45 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       if (canceledCount > 0) msg += `${canceledCount} pedido(s) cancelados automáticamente (>24h sin pago).`;
       
       if (msg) {
-        alert(`Actualización completa. ${msg}`);
+        showSuccessToast(`Actualización completa. ${msg}`);
       }
     } catch (err) {
-      alert('Error al actualizar los pedidos. Intenta de nuevo.');
+      showErrorToast('Error al actualizar los pedidos. Intenta de nuevo.');
       console.error(err);
     } finally {
       setIsRefreshing(false);
+    }
+  }
+
+  async function handleSyncTx() {
+    setIsSyncingTx(true);
+    try {
+      const res = await fetch('/api/admin/sync-bold-tx', { method: 'POST' });
+      if (!res.ok) throw new Error('Error al sincronizar');
+      const data = await res.json();
+
+      if (data.updated > 0) {
+        const txMap = new Map<string, string>(
+          (data.results as { orderId: string; paymentId: string | null }[])
+            .filter(r => r.paymentId)
+            .map(r => [r.orderId, r.paymentId as string])
+        );
+        setLocalOrders(prev =>
+          prev.map(o =>
+            txMap.has(o.orderId)
+              ? { ...o, transactionDetails: { ...o.transactionDetails, paymentId: txMap.get(o.orderId) as string } as Order['transactionDetails'] }
+              : o
+          )
+        );
+        showSuccessToast(`${data.updated} ID(s) de transacción Bold guardados.`);
+      } else {
+        showSuccessToast(`Se verificaron ${data.checked} pedido(s). Ninguno nuevo por actualizar.`);
+      }
+    } catch (err) {
+      showErrorToast('Error al sincronizar IDs de Bold.');
+      console.error(err);
+    } finally {
+      setIsSyncingTx(false);
     }
   }
 
@@ -660,12 +760,12 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     e.preventDefault();
     const { name, phone, address, department, city } = newOrderShipping;
     if (!name.trim() || !phone.trim() || !address.trim() || !department.trim() || !city.trim()) {
-      alert('Por favor completa los campos de envío obligatorios (Nombre, Celular, Dirección, Departamento, Ciudad).');
+      showErrorToast('Por favor completa los campos de envío obligatorios (Nombre, Celular, Dirección, Departamento, Ciudad).');
       return;
     }
 
     if (newOrderItems.length === 0) {
-      alert('Por favor agrega al menos un producto al pedido.');
+      showErrorToast('Por favor agrega al menos un producto al pedido.');
       return;
     }
 
@@ -710,10 +810,32 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       setLocalOrders((prev) => [newOrder, ...prev]);
       closeCreateDrawer();
     } catch (err) {
-      alert('Error al registrar el pedido. Intente de nuevo.');
+      showErrorToast('Error al registrar el pedido. Intente de nuevo.');
       console.error(err);
     } finally {
       setIsCreating(false);
+    }
+  }
+
+  async function handleSendTrackingEmails(orderIds: string[]) {
+    if (orderIds.length === 0) return;
+    setIsSendingEmail(true);
+    try {
+      const res = await fetch('/api/admin/orders/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderIds }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showSuccessToast(`Correos enviados: ${data.sent}. Fallidos: ${data.failed}.`);
+      } else {
+        showErrorToast(data.error || 'Error al enviar correos.');
+      }
+    } catch {
+      showErrorToast('Error de conexión al enviar correos.');
+    } finally {
+      setIsSendingEmail(false);
     }
   }
 
@@ -763,6 +885,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
             <div class="totals-row total-row"><span>Total</span><span>$${order.totalPrice.toLocaleString('es-CO')} COP</span></div>
           </div>
 
+          ${order.trackingNumber ? `<div class="tracking"><span class="tracking-label">${order.carrier ? order.carrier + ' · ' : ''}Guía:</span> <span class="tracking-num">${order.trackingNumber}</span></div>` : ''}
           ${order.notes ? `<div class="notes"><strong>Notas:</strong> ${order.notes}</div>` : ''}
         </div>
       `;
@@ -839,6 +962,15 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       padding-top: 1.5mm;
       margin-top: 0.5mm;
     }
+    .tracking {
+      font-size: 10px;
+      background: #f3f0ff;
+      border: 1px solid #c4b5fd;
+      border-radius: 3px;
+      padding: 2mm 3mm;
+    }
+    .tracking-label { color: #6d28d9; font-weight: bold; }
+    .tracking-num { font-family: monospace; font-size: 12px; font-weight: bold; letter-spacing: 0.05em; }
     .notes {
       font-size: 9px;
       color: #555;
@@ -868,7 +1000,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     );
 
     if (targetOrders.length === 0) {
-      alert('No hay pedidos Confirmados o En Preparación para exportar.');
+      showErrorToast('No hay pedidos Confirmados o En Preparación para exportar.');
       return;
     }
 
@@ -920,6 +1052,52 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
     XLSX.utils.book_append_sheet(wb, ws2, 'Detalle Pedidos');
 
     XLSX.writeFile(wb, `Empaque_Pedidos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
+  function handleExportOrdersExcel() {
+    if (filteredOrders.length === 0) {
+      showErrorToast('No hay pedidos para exportar con los filtros actuales.');
+      return;
+    }
+
+    const data = filteredOrders.map(order => {
+      const productsSummary = order.items.map(item => {
+        const vars = item.selections ? ` (${Object.values(item.selections).join(' / ')})` : '';
+        return `${item.quantity}× ${item.product.name}${vars}`;
+      }).join(' | ');
+
+      return {
+        'ID Pedido': order.orderId,
+        'Fecha': new Date(order.createdAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' }),
+        'Estado': order.status,
+        'Canal': order.salesChannel || '',
+        'Pago': order.paymentMethod || '',
+        'Cliente': order.shippingDetails?.name || '',
+        'Celular': order.shippingDetails?.phone || '',
+        'Email': order.shippingDetails?.email || '',
+        'Departamento': order.shippingDetails?.department || '',
+        'Ciudad': order.shippingDetails?.city || '',
+        'Dirección': order.shippingDetails?.address || '',
+        'Productos': productsSummary,
+        'Subtotal': order.items.reduce((s, i) => s + i.product.price * i.quantity, 0),
+        'Domicilio': order.shippingPrice ?? 0,
+        'Total': order.totalPrice,
+        'Transportadora': order.carrier || '',
+        'Guía': order.trackingNumber || '',
+        'Notas': order.notes || '',
+      };
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws['!cols'] = [
+      { wch: 18 }, { wch: 12 }, { wch: 16 }, { wch: 14 }, { wch: 12 },
+      { wch: 25 }, { wch: 13 }, { wch: 28 }, { wch: 16 }, { wch: 18 },
+      { wch: 35 }, { wch: 50 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
+      { wch: 14 }, { wch: 16 }, { wch: 30 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'Pedidos');
+    XLSX.writeFile(wb, `Pedidos_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   // Manejar Escape para cerrar paneles
@@ -1160,11 +1338,55 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         {/* Fila inferior: Filtros de Estado */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 overflow-hidden">
           <div className="flex flex-nowrap md:flex-wrap gap-2 overflow-x-auto pb-2 scrollbar-hide -mb-2 w-full md:w-auto">
-            {(['ALL', 'NUEVO PEDIDO', 'PAGO PENDIENTE', 'CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO', 'CANCELADO'] as const).map((st) => {
+            {/* Botón "Todos" — limpia la selección */}
+            <button
+              onClick={() => setStatusFilter(new Set())}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                statusFilter.size === 0
+                  ? 'bg-black text-white border-black'
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'
+              }`}
+            >
+              <span>Todos</span>
+              <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] ${
+                statusFilter.size === 0 ? 'bg-white/20 text-white' : 'bg-gray-200/50 text-gray-600'
+              }`}>
+                {counts.ALL}
+              </span>
+            </button>
+
+            {/* Pill especial: Pago Pendiente — oculto por defecto */}
+            <button
+              onClick={() => setShowPagoPendiente(v => !v)}
+              title={showPagoPendiente ? 'Ocultar pagos pendientes' : 'Mostrar pagos pendientes'}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                showPagoPendiente
+                  ? 'bg-yellow-500 text-white border-yellow-500'
+                  : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300 hover:text-gray-500'
+              }`}
+            >
+              {showPagoPendiente ? (
+                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              ) : (
+                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              )}
+              <span>Pago pendiente</span>
+              <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] ${
+                showPagoPendiente ? 'bg-white/20 text-white' : 'bg-gray-200/50 text-gray-400'
+              }`}>
+                {counts['PAGO PENDIENTE']}
+              </span>
+            </button>
+
+            {/* Pills de estado — multi-selección */}
+            {(['NUEVO PEDIDO', 'CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO', 'CANCELADO'] as const).map((st) => {
               const label = {
-                ALL: 'Todos',
                 'NUEVO PEDIDO': 'Nuevo pedido',
-                'PAGO PENDIENTE': 'Pago pendiente',
                 CONFIRMADO: 'Confirmados',
                 'EN PREPARACIÓN': 'En preparación',
                 ENVIADO: 'Enviados',
@@ -1173,9 +1395,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               }[st];
 
               const activeStyles = {
-                ALL: 'bg-black text-white border-black',
                 'NUEVO PEDIDO': 'bg-blue-600 text-white border-blue-600',
-                'PAGO PENDIENTE': 'bg-yellow-500 text-white border-yellow-500',
                 CONFIRMADO: 'bg-green-600 text-white border-green-600',
                 'EN PREPARACIÓN': 'bg-orange-500 text-white border-orange-500',
                 ENVIADO: 'bg-purple-600 text-white border-purple-600',
@@ -1184,9 +1404,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               }[st];
 
               const inactiveStyles = {
-                ALL: 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200',
                 'NUEVO PEDIDO': 'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-100',
-                'PAGO PENDIENTE': 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-100',
                 CONFIRMADO: 'bg-green-50 text-green-700 hover:bg-green-100 border-green-100',
                 'EN PREPARACIÓN': 'bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-100',
                 ENVIADO: 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-100',
@@ -1194,22 +1412,29 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 CANCELADO: 'bg-red-50 text-red-700 hover:bg-red-100 border-red-100',
               }[st];
 
-              const isActive = statusFilter === st;
+              const isActive = statusFilter.has(st);
 
               return (
                 <button
                   key={st}
-                  onClick={() => setStatusFilter(st)}
+                  onClick={() => setStatusFilter(prev => {
+                    const next = new Set(prev);
+                    if (next.has(st)) { next.delete(st); } else { next.add(st); }
+                    return next;
+                  })}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                     isActive ? activeStyles : inactiveStyles
                   }`}
                 >
+                  {isActive && (
+                    <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
                   <span>{label}</span>
-                  <span
-                    className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-gray-200/50 text-gray-600'
-                    }`}
-                  >
+                  <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-gray-200/50 text-gray-600'
+                  }`}>
                     {counts[st]}
                   </span>
                 </button>
@@ -1217,11 +1442,11 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
             })}
           </div>
 
-          {(search.trim() !== '' || statusFilter !== 'ALL' || channelFilter !== 'ALL' || paymentFilter !== 'ALL' || dateFrom || dateTo || categoryFilter || departmentFilter || cityFilter || productFilter) && (
+          {(search.trim() !== '' || statusFilter.size > 0 || channelFilter !== 'ALL' || paymentFilter !== 'ALL' || dateFrom || dateTo || categoryFilter || departmentFilter || cityFilter || productFilter) && (
             <button
               onClick={() => {
                 setSearch('');
-                setStatusFilter('ALL');
+                setStatusFilter(new Set());
                 setChannelFilter('ALL');
                 setPaymentFilter('ALL');
                 setSortBy('NEWEST');
@@ -1291,6 +1516,27 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               </svg>
               Imprimir guías
             </button>
+            {(() => {
+              const selectedOrders = localOrders.filter(o => selectedIds.has(o.orderId));
+              const validForEmail = selectedOrders.filter(o => ['CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO'].includes(o.status));
+              if (validForEmail.length === 0) return null;
+              return (
+                <>
+                  <span className="text-white/20 text-xs">|</span>
+                  <button
+                    onClick={() => handleSendTrackingEmails(validForEmail.map(o => o.orderId))}
+                    disabled={isSendingEmail}
+                    className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 border border-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors active:scale-95 disabled:opacity-50"
+                    title={`Enviar correo a ${validForEmail.length} pedido(s)`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    {isSendingEmail ? 'Enviando...' : `Enviar correos (${validForEmail.length})`}
+                  </button>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -1321,14 +1567,40 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         <div className="flex flex-wrap items-center gap-2">
 
           <button
-            onClick={handleExportExcel}
-            title="Exportar Excel de Preparación"
+            onClick={handleExportOrdersExcel}
+            title={`Exportar ${filteredOrders.length} pedido(s) visibles a Excel`}
             className="flex items-center gap-1.5 border border-green-600 hover:bg-green-600 text-green-700 hover:text-white px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer active:scale-95"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
+            Excel pedidos
+          </button>
+          <button
+            onClick={handleExportExcel}
+            title="Exportar Excel de Preparación (Confirmados + En Preparación)"
+            className="flex items-center gap-1.5 border border-emerald-700 hover:bg-emerald-700 text-emerald-700 hover:text-white px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer active:scale-95"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
             Excel Empaque
+          </button>
+          <button
+            onClick={handleSyncTx}
+            disabled={isSyncingTx}
+            title="Buscar y guardar ID de transacción Bold para pedidos Confirmados y En Preparación"
+            className="flex items-center gap-1.5 border border-blue-200 hover:border-blue-500 text-blue-600 hover:text-blue-700 disabled:opacity-50 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer active:scale-95"
+          >
+            <svg
+              className={`w-3.5 h-3.5 ${isSyncingTx ? 'animate-spin' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            {isSyncingTx ? 'Sincronizando...' : 'Sincronizar IDs Bold'}
           </button>
           <button
             onClick={handleRefresh}
@@ -1550,17 +1822,42 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 </div>
 
                 {/* Transacción Bold */}
-                {order.transactionDetails && (
-                  <div className="bg-blue-50/30 border-t border-blue-100 px-6 py-2.5 flex flex-wrap gap-x-6 text-[10px] text-blue-500 font-mono">
-                    <span>TX BOLD: {order.transactionDetails.paymentId}</span>
-                    <span>TIPO: {order.transactionDetails.payloadType}</span>
+                {order.transactionDetails?.paymentId && (
+                  <div className="bg-blue-50/30 border-t border-blue-100 px-6 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-blue-500 font-mono">
+                    <span>TX: {order.transactionDetails.paymentId}</span>
+                    {order.transactionDetails.payloadType && (
+                      <span>TIPO: {order.transactionDetails.payloadType}</span>
+                    )}
+                    <a
+                      href={`https://panel.bold.co/misventas/historial-de-transacciones/${order.transactionDetails.paymentId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold px-2 py-0.5 rounded transition-colors"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Ver en Bold
+                    </a>
                   </div>
                 )}
                 
-                {/* Notas internas / Guía de envío */}
+                {/* Guía de transporte */}
+                {order.trackingNumber && (
+                  <div className="bg-purple-50/60 border-t border-purple-100 px-6 py-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-purple-700">
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l1.04-.346M13 16H9m4 0h5.5M13 6h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16h-1" />
+                    </svg>
+                    {order.carrier && <span className="font-semibold">{order.carrier}</span>}
+                    <span className="font-mono font-bold tracking-wider text-purple-900">{order.trackingNumber}</span>
+                  </div>
+                )}
+
+                {/* Notas internas */}
                 {order.notes && (
                   <div className="bg-red-50/20 border-t border-gray-100 px-6 py-3 text-xs text-gray-700">
-                    <strong className="text-black">Notas internas / Guía de envío:</strong>
+                    <strong className="text-black">Notas internas:</strong>
                     <p className="mt-1 whitespace-pre-wrap font-light text-gray-600 leading-relaxed">{order.notes}</p>
                   </div>
                 )}
@@ -1627,12 +1924,27 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                         )}
                       </div>
 
-                      <button
-                        onClick={() => openDrawer(order)}
-                        className="border border-gray-300 hover:border-black text-black hover:bg-black hover:text-white px-4 py-2 sm:py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer w-full sm:w-auto mt-2 sm:mt-0"
-                      >
-                        Gestionar Pedido
-                      </button>
+                      <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                        {['CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO'].includes(order.status) && (
+                          <button
+                            onClick={() => handleSendTrackingEmails([order.orderId])}
+                            disabled={isSendingEmail}
+                            className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 flex items-center justify-center flex-1 sm:flex-none"
+                            title="Enviar correo de seguimiento"
+                          >
+                            <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Enviar correo
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openDrawer(order)}
+                          className="border border-gray-300 hover:border-black text-black hover:bg-black hover:text-white px-4 py-2 sm:py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer w-full sm:w-auto flex-1 sm:flex-none"
+                        >
+                          Gestionar Pedido
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>
@@ -1786,6 +2098,49 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 </select>
               </div>
 
+              {/* Guía de Transporte — visible cuando el pedido está ENVIADO */}
+              {editStatus === 'ENVIADO' && (
+                <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
+                  <h3 className="text-xs uppercase tracking-wider text-purple-700 font-bold flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Guía de Transporte
+                  </h3>
+                  <div>
+                    <label className="block text-xs text-purple-700 font-semibold mb-1">Transportadora</label>
+                    <select
+                      value={editCarrier}
+                      onChange={(e) => setEditCarrier(e.target.value)}
+                      disabled={isSaving || isDeleting}
+                      className="block w-full px-3 py-2 border border-purple-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-400/30 focus:border-purple-500 transition-all text-black"
+                    >
+                      <option value="">— Seleccionar transportadora —</option>
+                      <option value="Coordinadora">Coordinadora</option>
+                      <option value="Servientrega">Servientrega</option>
+                      <option value="TCC">TCC</option>
+                      <option value="Deprisa">Deprisa</option>
+                      <option value="Interrapidísimo">Interrapidísimo</option>
+                      <option value="472">472</option>
+                      <option value="Envia">Envia</option>
+                      <option value="Otros">Otros</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-purple-700 font-semibold mb-1">Número de guía</label>
+                    <input
+                      type="text"
+                      value={editTrackingNumber}
+                      onChange={(e) => setEditTrackingNumber(e.target.value)}
+                      disabled={isSaving || isDeleting}
+                      placeholder="Ej: 12345678901"
+                      className="block w-full px-3 py-2 border border-purple-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-400/30 focus:border-purple-500 transition-all text-black font-mono tracking-wider"
+                    />
+                    <p className="text-[10px] text-purple-500 mt-1">Se incluirá en el email al cliente.</p>
+                  </div>
+                </div>
+              )}
+
               {/* Canal de Venta */}
               <div>
                 <label className="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">
@@ -1821,17 +2176,17 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 </select>
               </div>
 
-              {/* Notas */}
+              {/* Notas internas */}
               <div>
                 <label className="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">
-                  Notas de Envío / Guía de Transporte
+                  Notas internas
                 </label>
                 <textarea
-                  rows={4}
+                  rows={3}
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
                   disabled={isSaving || isDeleting}
-                  placeholder="Escribe la transportadora, número de guía de envío u observaciones internas de este pedido..."
+                  placeholder="Observaciones internas sobre este pedido..."
                   className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black resize-none"
                 />
               </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -84,6 +85,16 @@ const NAV = [
       <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
           d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+    ),
+  },
+  {
+    href: '/admin/analiticas',
+    label: 'Embudo',
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M3 4h18M5 4l2 4h10l2-4M7 8l1.5 4h7L17 8M8.5 12l1 4h5l1-4M9.5 16l.75 4h4.5L15.5 16" />
       </svg>
     ),
   },
@@ -176,16 +187,14 @@ export default function AdminNav() {
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/10">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full border-2 border-red-500 flex items-center justify-center shrink-0">
-            <span className="text-[10px] font-black text-red-500">SD</span>
-          </div>
-          <div>
-            <p className="text-xs font-bold text-white leading-tight">La Tienda</p>
-            <p className="text-[10px] text-gray-400 leading-tight">Silvestrista</p>
-          </div>
-        </div>
+      <div className="px-5 py-4 border-b border-white/10">
+        <Image
+          src="/images/logo-la-tienda-silvestrista.png"
+          alt="La Tienda Silvestrista"
+          height={30}
+          width={150}
+          style={{ height: '30px', width: 'auto', filter: 'brightness(0) invert(1)' }}
+        />
       </div>
 
       {/* Nav items */}
@@ -283,11 +292,14 @@ export default function AdminNav() {
 
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-[#111] px-4 py-3 flex items-center justify-between border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full border-2 border-red-500 flex items-center justify-center">
-            <span className="text-[10px] font-black text-red-500">SD</span>
-          </div>
-          <span className="text-sm font-semibold text-white">Admin</span>
+        <div className="flex items-center">
+          <Image
+            src="/images/logo-la-tienda-silvestrista.png"
+            alt="La Tienda Silvestrista"
+            height={26}
+            width={130}
+            style={{ height: '26px', width: 'auto', filter: 'brightness(0) invert(1)' }}
+          />
         </div>
 
         <div className="flex items-center gap-3">

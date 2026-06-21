@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCart, buildSelectionsKey } from '@/components/CartProvider';
 import { DEPARTMENTS } from '@/lib/colombia';
+import { trackEvent, getSessionId } from '@/lib/sessionId';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -56,6 +57,14 @@ export default function CarritoPage() {
       .then(setShippingRates)
       .catch(() => {});
   }, []);
+
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (items.length > 0 && !checkoutTracked.current) {
+      checkoutTracked.current = true;
+      trackEvent('checkout_start');
+    }
+  }, [items]);
 
   // Track cart abandonment: post to /api/abandonos when email is filled and items exist
   useEffect(() => {
@@ -117,6 +126,7 @@ export default function CarritoPage() {
           paymentMethod: 'BOLD',
           status: 'PAGO PENDIENTE',
           salesChannel: 'Tienda Online',
+          analyticsSessionId: getSessionId(),
         }),
       });
 
@@ -170,6 +180,7 @@ export default function CarritoPage() {
       console.error('Error al procesar checkout:', error);
       const message = error instanceof Error ? error.message : 'Error inesperado al iniciar el pago digital.';
       setSubmitError(message);
+      trackEvent('payment_error');
     } finally {
       setIsSubmitting(false);
     }

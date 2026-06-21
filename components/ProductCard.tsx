@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { useCart } from '@/components/CartProvider';
 import { usePopup } from '@/components/PopupProvider';
+import { trackEvent } from '@/lib/sessionId';
 
 interface ProductCardProps {
   product: Product;
@@ -74,6 +75,7 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
       openSidebar();
       setAdded(true);
       setTimeout(() => setAdded(false), 1500);
+      trackEvent('add_to_cart', { productId: product.id, productName: product.name, price: product.price });
     };
     if (product.showPopup && product.popupImage) {
       openPopup(doAdd, product.popupImage);

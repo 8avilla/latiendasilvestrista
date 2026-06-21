@@ -29,22 +29,67 @@ function formatPrice(n: number) {
   return `$${n.toLocaleString('es-CO')}`;
 }
 
+function logoHtml() {
+  return `<img src="${SITE_URL}/images/logo-la-tienda-silvestrista.png" alt="La Tienda Silvestrista" width="220" height="57" style="display:block;height:57px;width:auto;max-width:220px;border:0;" />`;
+}
+
 function itemsHtml(order: Order) {
   return order.items.map(item => {
     const sel = item.selections
-      ? `<br/><span style="color:#6b7280;font-size:12px;">${Object.entries(item.selections).map(([k, v]) => `${k}: ${v}`).join(' · ')}</span>`
+      ? `<br/><span style="color:#9ca3af;font-size:11px;font-style:italic;">${Object.entries(item.selections).map(([k, v]) => `${k}: ${v}`).join(' · ')}</span>`
       : '';
     const subtotal = item.product.price * item.quantity;
     return `
       <tr>
-        <td style="padding:12px 0;border-bottom:1px solid #f3f4f6;">
-          <span style="font-size:14px;color:#111827;font-weight:600;">${item.quantity}× ${item.product.name}</span>${sel}
+        <td style="padding:13px 0;border-bottom:1px solid #f3f4f6;font-size:14px;color:#111827;">
+          <span style="font-weight:600;">${item.quantity}&times; ${item.product.name}</span>${sel}
         </td>
-        <td style="padding:12px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-size:14px;font-weight:700;color:#111827;white-space:nowrap;">
+        <td style="padding:13px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-size:14px;font-weight:700;color:#111827;white-space:nowrap;">
           ${formatPrice(subtotal)}
         </td>
       </tr>`;
   }).join('');
+}
+
+function divider() {
+  return `<div style="height:1px;background:linear-gradient(to right,#dc2626,#111827);margin:28px 0;opacity:0.15;"></div>`;
+}
+
+function sectionLabel(text: string) {
+  return `<p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:800;color:#9ca3af;letter-spacing:3px;text-transform:uppercase;">${text}</p>`;
+}
+
+function referenceBox(orderId: string, accentColor = '#dc2626') {
+  return `
+    <div style="background:#111827;border-radius:10px;padding:22px 28px;margin-bottom:28px;text-align:center;">
+      <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:700;color:#6b7280;letter-spacing:3px;text-transform:uppercase;">Referencia del pedido</p>
+      <p style="margin:0;font-family:'Courier New',Courier,monospace;font-size:22px;font-weight:800;letter-spacing:2px;color:${accentColor};">${orderId}</p>
+    </div>`;
+}
+
+function ctaButton(href: string, text: string, color = '#dc2626') {
+  return `
+    <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+      <tr>
+        <td style="background:${color};border-radius:50px;text-align:center;">
+          <a href="${href}" style="display:inline-block;padding:15px 38px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;color:#ffffff;text-decoration:none;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;">${text}</a>
+        </td>
+      </tr>
+    </table>`;
+}
+
+function addressBlock(shippingDetails: Order['shippingDetails']) {
+  return `
+    <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#fafafa;border:1px solid #e5e7eb;border-left:4px solid #dc2626;border-radius:8px;">
+      <tr>
+        <td style="padding:18px 20px;font-size:13px;color:#374151;line-height:1.8;">
+          <strong style="color:#111827;font-size:15px;display:block;margin-bottom:6px;">${shippingDetails.name}</strong>
+          ${shippingDetails.address}<br/>
+          ${shippingDetails.city}${shippingDetails.department ? ', ' + shippingDetails.department : ''}<br/>
+          ${shippingDetails.phone}
+        </td>
+      </tr>
+    </table>`;
 }
 
 function baseTemplate(content: string) {
@@ -55,27 +100,28 @@ function baseTemplate(content: string) {
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>La Tienda Silvestrista</title>
 </head>
-<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:32px 16px;">
+<body style="margin:0;padding:0;background:#efefef;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#efefef;padding:36px 16px;">
     <tr><td align="center">
-      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
 
-        <!-- Header -->
-        <tr><td style="background:#000;padding:24px 32px;text-align:center;border-radius:12px 12px 0 0;">
-          <span style="color:#fff;font-size:11px;letter-spacing:4px;font-weight:700;text-transform:uppercase;">La Tienda Silvestrista</span>
-          <div style="width:32px;height:2px;background:#dc2626;margin:8px auto 0;"></div>
+        <!-- Header con logo -->
+        <tr><td style="background:#ffffff;padding:26px 32px;text-align:center;border-radius:12px 12px 0 0;border:1px solid #e5e7eb;border-bottom:3px solid #dc2626;">
+          ${logoHtml()}
         </td></tr>
 
         <!-- Body -->
-        <tr><td style="background:#fff;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:0;">
+        <tr><td style="background:#ffffff;padding:36px 32px;border:1px solid #e5e7eb;border-top:0;border-radius:0 0 12px 12px;">
           ${content}
         </td></tr>
 
         <!-- Footer -->
-        <tr><td style="padding:24px 0;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#9ca3af;">
-            © ${new Date().getFullYear()} La Tienda Silvestrista · El Rey del Vallenato<br/>
-            <a href="${SITE_URL}" style="color:#9ca3af;text-decoration:none;">latiendasilvestrista.com</a>
+        <tr><td style="padding:28px 0;text-align:center;">
+          <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;font-family:Arial,Helvetica,sans-serif;">
+            &copy; ${new Date().getFullYear()} La Tienda Silvestrista &middot; Silvestre Dangond
+          </p>
+          <p style="margin:0;font-size:11px;font-family:Arial,Helvetica,sans-serif;">
+            <a href="${SITE_URL}" style="color:#dc2626;text-decoration:none;font-weight:700;">latiendasilvestrista.com</a>
           </p>
         </td></tr>
 
@@ -91,73 +137,62 @@ export async function sendOrderConfirmedEmail(order: Order): Promise<void> {
   const trackingUrl = `${SITE_URL}/seguimiento?id=${order.orderId}`;
 
   const html = baseTemplate(`
-    <!-- Header Image/Banner -->
-    <div style="text-align:center;margin-bottom:32px;">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:#fee2e2;color:#dc2626;font-size:36px;box-shadow: 0 4px 14px rgba(220, 38, 38, 0.15);">
-        🎉
-      </div>
+    <!-- Icono estado -->
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="display:inline-block;width:64px;height:64px;border-radius:50%;background:#fee2e2;line-height:64px;font-size:30px;text-align:center;">&#x1F389;</div>
     </div>
 
-    <h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#111827;text-align:center;letter-spacing:-0.5px;">¡Tu pago está confirmado!</h1>
-    <p style="margin:0 0 32px;font-size:16px;color:#4b5563;text-align:center;line-height:1.6;">
-      Hola <strong>${shippingDetails.name.split(' ')[0]}</strong>,<br/>
-      Gracias por tu compra. Estamos preparando todo con mucho cariño para enviártelo lo antes posible.
+    <h1 style="margin:0 0 10px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;font-style:italic;color:#111827;text-align:center;">&#161;Pago confirmado!</h1>
+    <p style="margin:0 0 28px;font-size:15px;color:#6b7280;text-align:center;line-height:1.7;">
+      Hola <strong style="color:#111827;">${shippingDetails.name.split(' ')[0]}</strong>, gracias por tu compra.<br/>
+      Estamos preparando todo con cuidado para enviarte tu pedido lo antes posible.
     </p>
 
-    <!-- Reference Box -->
-    <div style="background:linear-gradient(145deg, #111827, #1f2937);border-radius:12px;padding:24px;margin-bottom:32px;text-align:center;color:#fff;box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-      <span style="font-size:12px;letter-spacing:3px;color:#9ca3af;text-transform:uppercase;display:block;margin-bottom:8px;">Referencia de tu pedido</span>
-      <span style="font-size:24px;font-weight:800;letter-spacing:1px;font-family:'Courier New', monospace;color:#f87171;">${order.orderId}</span>
-    </div>
+    ${referenceBox(order.orderId, '#f87171')}
 
-    <h2 style="font-size:14px;letter-spacing:1px;color:#111827;text-transform:uppercase;border-bottom:2px solid #f3f4f6;padding-bottom:12px;margin-bottom:16px;">Resumen de tu compra</h2>
-
-    <!-- Items -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+    ${sectionLabel('Resumen de tu compra')}
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
       ${itemsHtml(order)}
     </table>
 
-    <!-- Totals -->
-    <div style="background:#f9fafb;border-radius:8px;padding:20px;margin-bottom:32px;">
-      ${order.shippingPrice != null ? `
-      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;color:#4b5563;">
-        <span>Subtotal</span>
-        <span style="font-weight:600;">${formatPrice(order.totalPrice - order.shippingPrice)}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;color:#4b5563;">
-        <span>Envío</span>
-        <span style="font-weight:600;">${order.shippingPrice === 0 ? 'Gratis' : formatPrice(order.shippingPrice)}</span>
-      </div>` : ''}
-      <div style="display:flex;justify-content:space-between;padding-top:16px;margin-top:12px;border-top:1px solid #e5e7eb;">
-        <span style="font-size:16px;font-weight:800;color:#111827;">Total pagado</span>
-        <span style="font-size:20px;font-weight:800;color:#dc2626;">${formatPrice(order.totalPrice)}</span>
-      </div>
-    </div>
+    <!-- Totales -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:8px;margin-bottom:28px;">
+      <tr><td style="padding:18px 20px;">
+        ${order.shippingPrice != null ? `
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="font-size:13px;color:#6b7280;padding-bottom:8px;">Subtotal</td>
+            <td style="font-size:13px;color:#374151;font-weight:600;text-align:right;padding-bottom:8px;">${formatPrice(order.totalPrice - order.shippingPrice)}</td>
+          </tr>
+          <tr>
+            <td style="font-size:13px;color:#6b7280;padding-bottom:14px;">Envío</td>
+            <td style="font-size:13px;color:#374151;font-weight:600;text-align:right;padding-bottom:14px;">${order.shippingPrice === 0 ? 'Gratis' : formatPrice(order.shippingPrice)}</td>
+          </tr>
+        </table>
+        <div style="height:1px;background:#e5e7eb;margin-bottom:14px;"></div>` : ''}
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="font-size:15px;font-weight:800;color:#111827;">Total pagado</td>
+            <td style="font-size:20px;font-weight:800;color:#dc2626;text-align:right;">${formatPrice(order.totalPrice)}</td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
 
-    <!-- Shipping -->
-    <h2 style="font-size:14px;letter-spacing:1px;color:#111827;text-transform:uppercase;border-bottom:2px solid #f3f4f6;padding-bottom:12px;margin-bottom:16px;">¿A dónde llegará?</h2>
-    <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #dc2626;border-radius:8px;padding:20px;margin-bottom:36px;box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
-      <div style="font-size:14px;color:#374151;line-height:1.7;">
-        <strong style="color:#111827;font-size:15px;">${shippingDetails.name}</strong><br/>
-        📍 ${shippingDetails.address}<br/>
-        🏙️ ${shippingDetails.city}${shippingDetails.department ? `, ${shippingDetails.department}` : ''}<br/>
-        📞 ${shippingDetails.phone}
-      </div>
-    </div>
+    ${divider()}
+    ${sectionLabel('Dirección de entrega')}
+    ${addressBlock(shippingDetails)}
 
-    <!-- CTA -->
-    <div style="text-align:center;padding:12px 0;">
-      <a href="${trackingUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;padding:16px 36px;border-radius:50px;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);">
-        Rastrear mi pedido
-      </a>
-      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.5;">
-        Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:<br/>
-        <a href="${trackingUrl}" style="color:#dc2626;text-decoration:underline;word-break:break-all;">${trackingUrl}</a>
+    <div style="margin-top:32px;text-align:center;">
+      ${ctaButton(trackingUrl, 'Rastrear mi pedido')}
+      <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;">
+        O copia este enlace en tu navegador:<br/>
+        <a href="${trackingUrl}" style="color:#dc2626;text-decoration:underline;word-break:break-all;font-size:11px;">${trackingUrl}</a>
       </p>
     </div>
   `);
 
-  await sendMail(shippingDetails.email, `¡Pago confirmado! Preparando tu pedido ${order.orderId} 🚀`, html);
+  await sendMail(shippingDetails.email, `Pago confirmado · Pedido ${order.orderId}`, html);
 }
 
 export async function sendOrderReceivedEmail(order: Order): Promise<void> {
@@ -165,49 +200,37 @@ export async function sendOrderReceivedEmail(order: Order): Promise<void> {
   const trackingUrl = `${SITE_URL}/seguimiento?id=${order.orderId}`;
 
   const html = baseTemplate(`
-    <!-- Icon -->
+    <!-- Icono estado -->
     <div style="text-align:center;margin-bottom:24px;">
-      <div style="display:inline-block;width:56px;height:56px;border-radius:50%;background:#eff6ff;line-height:56px;text-align:center;font-size:28px;">📋</div>
+      <div style="display:inline-block;width:64px;height:64px;border-radius:50%;background:#eff6ff;line-height:64px;font-size:30px;text-align:center;">&#x1F4CB;</div>
     </div>
 
-    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;text-align:center;">Pedido Recibido</h1>
-    <p style="margin:0 0 28px;font-size:14px;color:#6b7280;text-align:center;">
-      Hola <strong>${shippingDetails.name.split(' ')[0]}</strong>, recibimos tu pedido.<br/>
-      Un asesor te contactará por WhatsApp para coordinar el pago y el envío.
+    <h1 style="margin:0 0 10px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;font-style:italic;color:#111827;text-align:center;">Pedido recibido</h1>
+    <p style="margin:0 0 28px;font-size:15px;color:#6b7280;text-align:center;line-height:1.7;">
+      Hola <strong style="color:#111827;">${shippingDetails.name.split(' ')[0]}</strong>, recibimos tu pedido.<br/>
+      Un asesor te contactar&aacute; pronto por WhatsApp para coordinar el pago y el env&iacute;o.
     </p>
 
-    <!-- Reference -->
-    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;">
-      <span style="font-size:11px;letter-spacing:2px;color:#6b7280;text-transform:uppercase;">Referencia del pedido</span><br/>
-      <span style="font-size:18px;font-weight:700;color:#111827;font-family:monospace;">${order.orderId}</span>
-    </div>
+    ${referenceBox(order.orderId, '#93c5fd')}
 
-    <!-- Items -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+    ${sectionLabel('Productos solicitados')}
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
       ${itemsHtml(order)}
     </table>
 
-    <div style="display:flex;justify-content:space-between;padding:12px 0;border-top:2px solid #111827;margin-bottom:24px;">
-      <span style="font-size:14px;font-weight:700;color:#111827;">Total estimado</span>
-      <span style="font-size:18px;font-weight:700;color:#dc2626;">${formatPrice(order.totalPrice)}</span>
-    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+      <tr>
+        <td style="font-size:15px;font-weight:800;color:#111827;border-top:2px solid #111827;padding-top:14px;">Total estimado</td>
+        <td style="font-size:20px;font-weight:800;color:#dc2626;text-align:right;border-top:2px solid #111827;padding-top:14px;">${formatPrice(order.totalPrice)}</td>
+      </tr>
+    </table>
 
-    <!-- Shipping -->
-    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:28px;">
-      <div style="font-size:11px;letter-spacing:2px;color:#6b7280;text-transform:uppercase;margin-bottom:12px;">Datos de envío</div>
-      <div style="font-size:13px;color:#374151;line-height:1.8;">
-        <strong>${shippingDetails.name}</strong><br/>
-        ${shippingDetails.address}<br/>
-        ${shippingDetails.city}${shippingDetails.department ? `, ${shippingDetails.department}` : ''}<br/>
-        ${shippingDetails.phone}
-      </div>
-    </div>
+    ${divider()}
+    ${sectionLabel('Dirección de entrega')}
+    ${addressBlock(shippingDetails)}
 
-    <!-- CTA -->
-    <div style="text-align:center;">
-      <a href="${trackingUrl}" style="display:inline-block;background:#111827;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
-        Ver estado del pedido →
-      </a>
+    <div style="margin-top:32px;text-align:center;">
+      ${ctaButton(trackingUrl, 'Ver estado del pedido', '#111827')}
     </div>
   `);
 
@@ -219,36 +242,99 @@ export async function sendOrderInPreparationEmail(order: Order): Promise<void> {
   const trackingUrl = `${SITE_URL}/seguimiento?id=${order.orderId}`;
 
   const html = baseTemplate(`
-    <!-- Header Image/Banner -->
-    <div style="text-align:center;margin-bottom:32px;">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:#fef3c7;color:#d97706;font-size:36px;box-shadow: 0 4px 14px rgba(217, 119, 6, 0.15);">
-        📦
-      </div>
+    <!-- Icono estado -->
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="display:inline-block;width:64px;height:64px;border-radius:50%;background:#fef3c7;line-height:64px;font-size:30px;text-align:center;">&#x1F4E6;</div>
     </div>
 
-    <h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#111827;text-align:center;letter-spacing:-0.5px;">¡Tu pedido está en preparación!</h1>
-    <p style="margin:0 0 32px;font-size:16px;color:#4b5563;text-align:center;line-height:1.6;">
-      Hola <strong>${shippingDetails.name.split(' ')[0]}</strong>,<br/>
-      ¡Buenas noticias! Hemos empezado a empacar tu pedido y pronto estará listo para ser despachado.
+    <h1 style="margin:0 0 10px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;font-style:italic;color:#111827;text-align:center;">&#161;Tu pedido est&aacute; en preparaci&oacute;n!</h1>
+    <p style="margin:0 0 28px;font-size:15px;color:#6b7280;text-align:center;line-height:1.7;">
+      Hola <strong style="color:#111827;">${shippingDetails.name.split(' ')[0]}</strong>,<br/>
+      ya estamos empacando tu pedido con todo el cuidado que se merece. &#x1F3B5;
     </p>
 
-    <!-- Reference Box -->
-    <div style="background:linear-gradient(145deg, #111827, #1f2937);border-radius:12px;padding:24px;margin-bottom:32px;text-align:center;color:#fff;box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-      <span style="font-size:12px;letter-spacing:3px;color:#9ca3af;text-transform:uppercase;display:block;margin-bottom:8px;">Referencia de tu pedido</span>
-      <span style="font-size:24px;font-weight:800;letter-spacing:1px;font-family:'Courier New', monospace;color:#fbbf24;">${order.orderId}</span>
-    </div>
+    ${referenceBox(order.orderId, '#fbbf24')}
 
-    <!-- CTA -->
-    <div style="text-align:center;padding:12px 0;">
-      <a href="${trackingUrl}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:16px 36px;border-radius:50px;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;box-shadow: 0 4px 14px rgba(17, 24, 39, 0.4);">
-        Ver seguimiento
-      </a>
-      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.5;">
-        Podrás rastrear el envío desde nuestra página copiando y pegando este enlace:<br/>
-        <a href="${trackingUrl}" style="color:#d97706;text-decoration:underline;word-break:break-all;">${trackingUrl}</a>
+    <!-- Pasos del proceso -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+      <tr>
+        <td style="text-align:center;width:33%;padding:0 6px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#111827;margin:0 auto 8px;line-height:36px;text-align:center;font-size:14px;font-weight:800;color:#fff;font-family:Arial,Helvetica,sans-serif;">&#10003;</div>
+          <p style="margin:0;font-size:11px;font-weight:700;color:#111827;font-family:Arial,Helvetica,sans-serif;">Confirmado</p>
+        </td>
+        <td style="text-align:center;padding:0 6px;padding-top:14px;">
+          <div style="height:2px;background:linear-gradient(to right,#111827,#dc2626);border-radius:2px;"></div>
+        </td>
+        <td style="text-align:center;width:33%;padding:0 6px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#dc2626;margin:0 auto 8px;line-height:36px;text-align:center;font-size:14px;font-weight:800;color:#fff;font-family:Arial,Helvetica,sans-serif;">2</div>
+          <p style="margin:0;font-size:11px;font-weight:700;color:#dc2626;font-family:Arial,Helvetica,sans-serif;">En preparaci&oacute;n</p>
+        </td>
+        <td style="text-align:center;padding:0 6px;padding-top:14px;">
+          <div style="height:2px;background:#e5e7eb;border-radius:2px;"></div>
+        </td>
+        <td style="text-align:center;width:33%;padding:0 6px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#e5e7eb;margin:0 auto 8px;line-height:36px;text-align:center;font-size:14px;font-weight:800;color:#9ca3af;font-family:Arial,Helvetica,sans-serif;">3</div>
+          <p style="margin:0;font-size:11px;font-weight:700;color:#9ca3af;font-family:Arial,Helvetica,sans-serif;">Enviado</p>
+        </td>
+      </tr>
+    </table>
+
+    ${divider()}
+
+    <div style="text-align:center;">
+      ${ctaButton(trackingUrl, 'Ver seguimiento', '#111827')}
+      <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;">
+        <a href="${trackingUrl}" style="color:#dc2626;text-decoration:underline;word-break:break-all;font-size:11px;">${trackingUrl}</a>
       </p>
     </div>
   `);
 
-  await sendMail(shippingDetails.email, `📦 Tu pedido está en preparación · ${order.orderId}`, html);
+  await sendMail(shippingDetails.email, `Tu pedido está en preparación · ${order.orderId}`, html);
+}
+
+export async function sendOrderShippedEmail(order: Order): Promise<void> {
+  const { shippingDetails } = order;
+  const trackingUrl = `${SITE_URL}/seguimiento?id=${order.orderId}`;
+
+  const html = baseTemplate(`
+    <!-- Icono estado -->
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="display:inline-block;width:64px;height:64px;border-radius:50%;background:#ede9fe;line-height:64px;font-size:30px;text-align:center;">&#x1F69A;</div>
+    </div>
+
+    <h1 style="margin:0 0 10px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;font-style:italic;color:#111827;text-align:center;">&#161;Tu pedido va en camino!</h1>
+    <p style="margin:0 0 28px;font-size:15px;color:#6b7280;text-align:center;line-height:1.7;">
+      Hola <strong style="color:#111827;">${shippingDetails.name.split(' ')[0]}</strong>,<br/>
+      tu paquete ya est&aacute; en manos de la transportadora y va rumbo a tu direcci&oacute;n.
+    </p>
+
+    ${referenceBox(order.orderId, '#a78bfa')}
+
+    <!-- Datos de guía -->
+    ${(order.carrier || order.trackingNumber) ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;background:#f5f3ff;border:1px solid #ddd6fe;border-left:4px solid #7c3aed;border-radius:8px;">
+      <tr><td style="padding:18px 20px;">
+        <p style="margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:800;color:#7c3aed;letter-spacing:3px;text-transform:uppercase;">Datos de tu gu&iacute;a de env&iacute;o</p>
+        ${order.carrier ? `<p style="margin:0 0 8px;font-size:13px;color:#374151;"><strong style="color:#111827;">Transportadora:</strong> ${order.carrier}</p>` : ''}
+        ${order.trackingNumber ? `
+        <p style="margin:4px 0 0;font-size:10px;color:#6b7280;font-family:Arial,Helvetica,sans-serif;">N&uacute;mero de gu&iacute;a</p>
+        <p style="margin:4px 0 0;font-family:'Courier New',Courier,monospace;font-size:20px;font-weight:800;color:#111827;letter-spacing:2px;">${order.trackingNumber}</p>
+        ` : ''}
+      </td></tr>
+    </table>
+    ` : ''}
+
+    ${divider()}
+    ${sectionLabel('Dirección de entrega')}
+    ${addressBlock(shippingDetails)}
+
+    <div style="margin-top:32px;text-align:center;">
+      ${ctaButton(trackingUrl, 'Rastrear env&iacute;o')}
+      <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;">
+        <a href="${trackingUrl}" style="color:#dc2626;text-decoration:underline;word-break:break-all;font-size:11px;">${trackingUrl}</a>
+      </p>
+    </div>
+  `);
+
+  await sendMail(shippingDetails.email, `Tu pedido va en camino · ${order.orderId}`, html);
 }

@@ -8,6 +8,7 @@ import AddToCart from './AddToCart';
 import ProductGallery from './ProductGallery';
 import ProductTabs from './ProductTabs';
 import StickyAddToCart from './StickyAddToCart';
+import ProductViewTracker from './ProductViewTracker';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://latiendasilvestrista.com';
 
@@ -100,6 +101,7 @@ export default async function ProductoPage({ params }: { params: Promise<{ id: s
 
   return (
     <>
+      <ProductViewTracker productId={product.id} productName={product.name} price={product.price} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 

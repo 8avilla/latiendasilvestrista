@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -36,14 +37,16 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-full border-2 border-red-600 flex items-center justify-center">
-            <span className="text-xs font-black text-red-600">SD</span>
-          </div>
-          <div>
-            <p className="font-serif italic text-lg text-black leading-none">La Tienda Silvestrista</p>
-            <p className="text-xs uppercase tracking-widest text-red-600 font-semibold">Panel Admin</p>
-          </div>
+        <div className="mb-8">
+          <Image
+            src="/images/logo-la-tienda-silvestrista.png"
+            alt="La Tienda Silvestrista"
+            height={46}
+            width={230}
+            style={{ height: '46px', width: 'auto' }}
+            priority
+          />
+          <p className="text-xs uppercase tracking-widest text-red-600 font-semibold mt-3">Panel Admin</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
