@@ -5,7 +5,6 @@ import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
 import { PopupProvider } from "@/components/PopupProvider";
 import StoreShell from "@/components/StoreShell";
-import Script from "next/script";
 import { getDb } from "@/lib/mongodb";
 
 const geistSans = Geist({
@@ -117,10 +116,6 @@ export default async function RootLayout({
             </StoreShell>
           </PopupProvider>
         </CartProvider>
-        <Script
-          src="https://checkout.bold.co/library/boldPaymentButton.js"
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );

@@ -370,7 +370,7 @@ export default function AnaliticasClient({
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#9ca3af' }} allowDecimals={false} />
                       <Tooltip
                         contentStyle={{ borderRadius: '8px', border: '1px solid #f3f4f6', fontSize: 11 }}
-                        formatter={(v: number) => [`${v} pedidos`, 'Pedidos']}
+                        formatter={(v) => [`${v ?? 0} pedidos`, 'Pedidos']}
                       />
                       <Bar dataKey="count" radius={[3, 3, 0, 0]}>
                         {hourlyData.map((h) => (

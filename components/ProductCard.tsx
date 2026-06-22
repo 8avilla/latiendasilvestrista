@@ -90,7 +90,7 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
     <article
       ref={cardRef}
       style={{ animationDelay: `${delay}ms` }}
-      className={`group flex flex-col h-full rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-2xl transition-all duration-500 ${
+      className={`group flex flex-col h-full rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-xl transition-shadow duration-300 ${
         visible ? 'animate-fade-up' : 'opacity-0'
       }`}
     >
@@ -113,7 +113,7 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
         <div className="absolute inset-0 bg-black/0 lg:group-hover:bg-black/15 transition-colors duration-500" />
 
         {/* Badge de precio */}
-        <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
+        <div className="absolute bottom-3 left-3 bg-white px-3 py-1.5 rounded-full shadow-md">
           <span
             className="text-sm font-bold text-black leading-none"
             style={{ fontFamily: 'var(--font-dm-serif)' }}

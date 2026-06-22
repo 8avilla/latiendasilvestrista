@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Script from 'next/script';
 import { useCart, buildSelectionsKey } from '@/components/CartProvider';
 import { DEPARTMENTS } from '@/lib/colombia';
 import { trackEvent, getSessionId } from '@/lib/sessionId';
@@ -533,6 +534,10 @@ export default function CarritoPage() {
           </div>
         )}
       </div>
+      <Script
+        src="https://checkout.bold.co/library/boldPaymentButton.js"
+        strategy="afterInteractive"
+      />
     </main>
   );
 }
