@@ -4,8 +4,9 @@ import React, { Suspense, useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/components/CartProvider';
 import Link from 'next/link';
+import Image from 'next/image';
 
-import { Order } from '@/types';
+import { Order, Product } from '@/types';
 import { formatDateCO } from '@/lib/dates';
 
 function CheckoutSuccessContent() {
@@ -16,6 +17,7 @@ function CheckoutSuccessContent() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(!!orderId);
   const [error, setError] = useState(orderId ? '' : 'ID de pedido no especificado');
+  const [upsellProducts, setUpsellProducts] = useState<Product[]>([]);
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -41,6 +43,19 @@ function CheckoutSuccessContent() {
         if (data.status === 'CONFIRMADO' || data.status === 'PAGO PENDIENTE' || data.status === 'NUEVO PEDIDO' || data.status === 'EN PREPARACIÓN' || data.status === 'ENVIADO' || data.status === 'ENTREGADO') {
           clearCart();
         }
+
+        // Cargar productos de upsell: misma categoría, excluyendo los ya comprados
+        const purchasedIds = new Set(data.items.map((i: Order['items'][0]) => i.product.id));
+        const categories = [...new Set(data.items.map((i: Order['items'][0]) => i.product.category))];
+        fetch('/api/productos')
+          .then(r => r.json())
+          .then((all: Product[]) => {
+            const suggestions = all.filter(
+              p => p.active !== false && !p.soldOut && !purchasedIds.has(p.id) && categories.includes(p.category)
+            ).slice(0, 3);
+            setUpsellProducts(suggestions.length >= 2 ? suggestions : all.filter(p => p.active !== false && !p.soldOut && !purchasedIds.has(p.id)).slice(0, 3));
+          })
+          .catch(() => {});
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error al cargar los detalles del pedido.');
       } finally {
@@ -225,6 +240,48 @@ function CheckoutSuccessContent() {
             </div>
           </div>
         </div>
+        {/* Upsell */}
+        {upsellProducts.length > 0 && (
+          <div className="mt-10">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-px flex-1 bg-gray-200" />
+              <h2 className="text-xs uppercase tracking-[0.2em] text-gray-400 font-bold shrink-0">
+                Completa el look
+              </h2>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {upsellProducts.map(product => (
+                <Link
+                  key={product.id}
+                  href={`/producto/${product.id}`}
+                  className="group bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="relative aspect-[3/4] bg-gray-50 overflow-hidden">
+                    {product.images?.[0] ? (
+                      <Image
+                        src={product.images[0]}
+                        alt={product.name}
+                        fill
+                        sizes="(max-width: 768px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100" />
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-[9px] uppercase tracking-widest text-red-600 font-semibold mb-0.5">{product.category}</p>
+                    <p className="text-xs font-medium text-black leading-snug line-clamp-2">{product.name}</p>
+                    <p className="text-sm font-bold text-black mt-1.5" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+                      ${product.price.toLocaleString('es-CO')}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  LineChart, Line, BarChart, Bar, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 
 interface FunnelStage {
@@ -30,6 +31,12 @@ interface TopProduct {
   price: number;
 }
 
+interface HourData {
+  hour: number;
+  label: string;
+  count: number;
+}
+
 interface Props {
   periodo: string;
   periodoLabel: string;
@@ -40,6 +47,12 @@ interface Props {
   abandonadosCount: number;
   convDrop: number | null;
   hasUniqueData: boolean;
+  revenue: number;
+  avgTicket: number;
+  confirmedCount: number;
+  paymentErrors: number;
+  paymentErrorRate: number | null;
+  hourlyData: HourData[];
 }
 
 const PERIODOS = [
@@ -58,6 +71,7 @@ function pct(value: number, base: number): number | null {
 export default function AnaliticasClient({
   periodo, periodoLabel, funnel, daily, topProducts,
   abandonadosTotal, abandonadosCount, convDrop, hasUniqueData,
+  revenue, avgTicket, confirmedCount, paymentErrors, paymentErrorRate, hourlyData,
 }: Props) {
   const top = funnel[0].value;
   const hasData = funnel.some(s => s.value > 0);
@@ -97,6 +111,42 @@ export default function AnaliticasClient({
             <p className="text-xs text-red-600 mt-0.5">
               La tasa checkout→pago bajó <strong>{Math.abs(convDrop)}%</strong> esta semana vs la semana anterior. Revisa si hay errores de pago o fricciones en el checkout.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Ingresos reales */}
+      {(revenue > 0 || confirmedCount > 0) && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white border border-gray-100 rounded-xl px-4 py-4 flex flex-col gap-1 md:col-span-1">
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Ingresos</p>
+            <p className="text-2xl font-bold text-green-600">${revenue.toLocaleString('es-CO')}</p>
+            <p className="text-[10px] text-gray-400">{confirmedCount} pedido{confirmedCount !== 1 ? 's' : ''} confirmado{confirmedCount !== 1 ? 's' : ''}</p>
+          </div>
+          <div className="bg-white border border-gray-100 rounded-xl px-4 py-4 flex flex-col gap-1">
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Ticket promedio</p>
+            <p className="text-2xl font-bold text-black">${avgTicket.toLocaleString('es-CO')}</p>
+            <p className="text-[10px] text-gray-400">por pedido confirmado</p>
+          </div>
+          <div className={`bg-white border rounded-xl px-4 py-4 flex flex-col gap-1 ${
+            paymentErrorRate !== null && paymentErrorRate >= 10 ? 'border-red-200' : 'border-gray-100'
+          }`}>
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Errores de pago</p>
+            <p className={`text-2xl font-bold ${paymentErrorRate !== null && paymentErrorRate >= 10 ? 'text-red-600' : 'text-black'}`}>
+              {paymentErrors}
+            </p>
+            <p className="text-[10px] text-gray-400">
+              {paymentErrorRate !== null ? `${paymentErrorRate}% del checkout` : 'sin datos de checkout'}
+            </p>
+          </div>
+          <div className="bg-white border border-gray-100 rounded-xl px-4 py-4 flex flex-col gap-1">
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Abandono real</p>
+            <p className="text-2xl font-bold text-amber-600">
+              {paymentErrorRate !== null
+                ? `${Math.max(0, (pct(funnel[funnel.length - 1].value, funnel.find(s => s.event === 'checkout_start')?.value ?? 0) ?? 0) - (100 - paymentErrorRate))}%`
+                : '—'}
+            </p>
+            <p className="text-[10px] text-gray-400">checkout sin error ni pago</p>
           </div>
         </div>
       )}
@@ -290,6 +340,49 @@ export default function AnaliticasClient({
               </div>
             </div>
           )}
+
+          {/* Hora pico de ventas */}
+          {hourlyData.some(h => h.count > 0) && (() => {
+            const maxCount = Math.max(...hourlyData.map(h => h.count));
+            return (
+              <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
+                <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
+                  <div>
+                    <h2 className="text-sm font-semibold text-black">Hora pico de ventas</h2>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Hora Colombia en que se confirman más pedidos</p>
+                  </div>
+                  {maxCount > 0 && (() => {
+                    const peakHour = hourlyData.find(h => h.count === maxCount)!;
+                    return (
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-black">{peakHour.label}</p>
+                        <p className="text-[10px] text-gray-400">{peakHour.count} pedido{peakHour.count !== 1 ? 's' : ''} — hora pico</p>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div className="h-[160px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={hourlyData} margin={{ top: 4, right: 4, left: -28, bottom: 0 }} barSize={10}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                      <XAxis dataKey="label" axisLine={false} tickLine={false}
+                        tick={{ fontSize: 9, fill: '#9ca3af' }} interval={2} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#9ca3af' }} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '8px', border: '1px solid #f3f4f6', fontSize: 11 }}
+                        formatter={(v: number) => [`${v} pedidos`, 'Pedidos']}
+                      />
+                      <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+                        {hourlyData.map((h) => (
+                          <Cell key={h.hour} fill={h.count === maxCount ? '#10b981' : h.count >= maxCount * 0.6 ? '#6366f1' : '#e5e7eb'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Evolución diaria */}
           <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">

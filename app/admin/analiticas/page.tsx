@@ -38,6 +38,7 @@ export default async function AnaliticasPage({
   if (start) dateFilter.$gte = start;
   if (end) dateFilter.$lt = end;
   const matchDate = Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {};
+  const matchOrderDate = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
 
   const [
     uniqueSessionsAgg,
@@ -47,6 +48,9 @@ export default async function AnaliticasPage({
     dailyRaw,
     conversionDropAgg,
     conversionDropPrevAgg,
+    revenueAgg,
+    paymentErrorAgg,
+    hourlyAgg,
   ] = await Promise.all([
 
     // Sesiones únicas por evento (eventos con sessionId)
@@ -107,6 +111,36 @@ export default async function AnaliticasPage({
         event: { $in: ['checkout_start', 'order_completed'] },
       }},
       { $group: { _id: '$event', count: { $sum: 1 } } },
+    ]).toArray(),
+
+    // Ingresos de pedidos confirmados en el período
+    db.collection('orders').aggregate([
+      { $match: {
+        ...matchOrderDate,
+        status: { $in: ['CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO'] },
+        deleted: { $ne: true },
+      }},
+      { $group: { _id: null, revenue: { $sum: '$totalPrice' }, count: { $sum: 1 } } },
+    ]).toArray(),
+
+    // Errores de pago en el período
+    db.collection('analytics').aggregate([
+      { $match: { ...matchDate, event: 'payment_error' } },
+      { $group: { _id: null, count: { $sum: 1 } } },
+    ]).toArray(),
+
+    // Distribución horaria de pedidos confirmados (zona Colombia UTC-5)
+    db.collection('orders').aggregate([
+      { $match: {
+        ...matchOrderDate,
+        status: { $in: ['CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO'] },
+        deleted: { $ne: true },
+      }},
+      { $group: {
+        _id: { $hour: { date: '$createdAt', timezone: '-05:00' } },
+        count: { $sum: 1 },
+      }},
+      { $sort: { _id: 1 } },
     ]).toArray(),
   ]);
 
@@ -182,6 +216,27 @@ export default async function AnaliticasPage({
     }
   }
 
+  // Ingresos y ticket promedio
+  const revenueData = (revenueAgg as { _id: null; revenue: number; count: number }[])[0];
+  const revenue = revenueData?.revenue ?? 0;
+  const confirmedCount = revenueData?.count ?? 0;
+  const avgTicket = confirmedCount > 0 ? Math.round(revenue / confirmedCount) : 0;
+
+  // Errores de pago
+  const paymentErrors = (paymentErrorAgg as { _id: null; count: number }[])[0]?.count ?? 0;
+  const checkoutStarts = getValue('checkout_start');
+  const paymentErrorRate = checkoutStarts > 0 ? Math.round((paymentErrors / checkoutStarts) * 100) : null;
+
+  // Distribución horaria: array de 24 horas
+  const hourlyMap: Record<number, number> = Object.fromEntries(
+    (hourlyAgg as { _id: number; count: number }[]).map(e => [e._id, e.count])
+  );
+  const hourlyData = Array.from({ length: 24 }, (_, h) => ({
+    hour: h,
+    label: `${h}h`,
+    count: hourlyMap[h] ?? 0,
+  }));
+
   return (
     <AnaliticasClient
       periodo={periodo}
@@ -193,6 +248,12 @@ export default async function AnaliticasPage({
       abandonadosCount={abandonadosAgg[0]?.count ?? 0}
       convDrop={convDrop}
       hasUniqueData={hasUniqueData}
+      revenue={revenue}
+      avgTicket={avgTicket}
+      confirmedCount={confirmedCount}
+      paymentErrors={paymentErrors}
+      paymentErrorRate={paymentErrorRate}
+      hourlyData={hourlyData}
     />
   );
 }
