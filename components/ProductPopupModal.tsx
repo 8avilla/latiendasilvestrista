@@ -57,7 +57,7 @@ export default function ProductPopupModal({ image, productName, onAccept, onClos
         <div className="p-5">
           <button
             onClick={onAccept}
-            className="w-full bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white py-3.5 text-sm font-semibold uppercase tracking-widest rounded-xl transition-all duration-200"
+            className="w-full bg-black hover:bg-gray-800 active:scale-[0.98] text-white py-3.5 text-sm font-semibold uppercase tracking-widest rounded-xl transition-all duration-200"
           >
             Aceptar y agregar al carrito
           </button>

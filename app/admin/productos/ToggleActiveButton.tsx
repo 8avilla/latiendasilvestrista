@@ -23,7 +23,7 @@ export default function ToggleActiveButton({ id, active }: { id: string; active:
       disabled={loading}
       title={active ? 'Deshabilitar producto' : 'Habilitar producto'}
       className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
-        active ? 'bg-red-600' : 'bg-gray-200'
+        active ? 'bg-black' : 'bg-gray-200'
       }`}
     >
       <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${

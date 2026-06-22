@@ -167,7 +167,7 @@ export default function AdminNav() {
         if (initializedRef.current && newCount > prevNewOrdersRef.current) {
           const diff = newCount - prevNewOrdersRef.current;
           if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            new Notification('La Tienda Silvestrista', {
+            new Notification('Verzus', {
               body: `${diff} nuevo${diff > 1 ? 's' : ''} pedido${diff > 1 ? 's' : ''} recibido${diff > 1 ? 's' : ''}`,
               icon: '/icon.svg',
             });
@@ -189,8 +189,8 @@ export default function AdminNav() {
       {/* Logo */}
       <div className="px-5 py-4 border-b border-white/10">
         <Image
-          src="/images/logo-la-tienda-silvestrista.png"
-          alt="La Tienda Silvestrista"
+          src="/images/logo_verzus.svg"
+          alt="Verzus"
           height={30}
           width={150}
           style={{ height: '30px', width: 'auto', filter: 'brightness(0) invert(1)' }}
@@ -215,12 +215,12 @@ export default function AdminNav() {
               }`}
             >
               {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-red-500 rounded-r-full" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-gray-500 rounded-r-full" />
               )}
               {item.icon}
               <span className="flex-1">{item.label}</span>
               {item.badge && pendingOrders > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-none">
+                <span className="bg-gray-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-none">
                   {pendingOrders > 99 ? '99+' : pendingOrders}
                 </span>
               )}
@@ -246,7 +246,7 @@ export default function AdminNav() {
           }`}
         >
           {pathname.startsWith('/admin/configuracion') && (
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-red-500 rounded-r-full" />
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-gray-500 rounded-r-full" />
           )}
           <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
@@ -271,7 +271,7 @@ export default function AdminNav() {
 
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all w-full text-left"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-gray-400 hover:bg-gray-500/10 transition-all w-full text-left"
         >
           <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
@@ -294,8 +294,8 @@ export default function AdminNav() {
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-[#111] px-4 py-3 flex items-center justify-between border-b border-white/10">
         <div className="flex items-center">
           <Image
-            src="/images/logo-la-tienda-silvestrista.png"
-            alt="La Tienda Silvestrista"
+            src="/images/logo_verzus.svg"
+            alt="Verzus"
             height={26}
             width={130}
             style={{ height: '26px', width: 'auto', filter: 'brightness(0) invert(1)' }}
@@ -304,7 +304,7 @@ export default function AdminNav() {
 
         <div className="flex items-center gap-3">
           {pendingOrders > 0 && (
-            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
               {pendingOrders} pendientes
             </span>
           )}

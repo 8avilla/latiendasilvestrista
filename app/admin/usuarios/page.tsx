@@ -178,7 +178,7 @@ export default function UsuariosPage() {
         </div>
         <button
           onClick={handleOpenCreate}
-          className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
+          className="bg-black hover:bg-gray-800 text-white px-5 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -189,7 +189,7 @@ export default function UsuariosPage() {
 
       {/* Notifications */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+        <div className="bg-gray-50 border border-red-200 text-black text-sm px-4 py-3 rounded-xl">
           {error}
         </div>
       )}
@@ -227,7 +227,7 @@ export default function UsuariosPage() {
                     <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
                     <td className="px-6 py-4 text-sm">
                       {user.role === 'admin' ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-100">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-50 text-black border border-gray-200">
                           Administrador
                         </span>
                       ) : (
@@ -267,7 +267,7 @@ export default function UsuariosPage() {
                       </button>
                       <button
                         onClick={() => handleDelete(user)}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-gray-400 hover:text-black transition-colors"
                         title="Eliminar"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -303,7 +303,7 @@ export default function UsuariosPage() {
 
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
               {formError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-3.5 py-2.5 rounded-lg">
+                <div className="bg-gray-50 border border-red-200 text-black text-xs px-3.5 py-2.5 rounded-lg">
                   {formError}
                 </div>
               )}
@@ -330,7 +330,7 @@ export default function UsuariosPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-black"
-                  placeholder="juan@latiendasilvestrista.com"
+                  placeholder="juan@verzus.com"
                 />
               </div>
 

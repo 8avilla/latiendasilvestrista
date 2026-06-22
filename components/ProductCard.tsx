@@ -134,7 +134,7 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
         {/* Badge stock bajo / últimas unidades */}
         {!product.soldOut && product.stockTracked && product.stock != null && product.stock > 0 && product.stock <= 5 && (
           <div className={`absolute top-3 right-3 text-white text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-full shadow-sm ${
-            product.stock <= 2 ? 'bg-red-500 animate-pulse' : 'bg-orange-400'
+            product.stock <= 2 ? 'bg-gray-500 animate-pulse' : 'bg-orange-400'
           }`}>
             {product.stock <= 2 ? `¡Último${product.stock === 1 ? '' : 's'}! ${product.stock}` : `Solo ${product.stock} disponibles`}
           </div>
@@ -179,10 +179,10 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
 
       {/* Info */}
       <div className="flex-1 flex flex-col p-4 gap-2">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-red-600 font-semibold leading-none">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-black font-semibold leading-none">
           {product.category}
         </p>
-        <Link href={`/producto/${product.id}`} className="hover:text-red-600 transition-colors">
+        <Link href={`/producto/${product.id}`} className="hover:text-black transition-colors">
           <h3 className="text-sm font-medium text-black leading-snug line-clamp-2 min-h-[2.5rem]">
             {product.name}
           </h3>
@@ -223,7 +223,7 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
               ? 'bg-gray-100 text-gray-400'
               : added
                 ? 'bg-black text-white btn-cart-added'
-                : 'bg-red-600 hover:bg-red-700 text-white'
+                : 'bg-black hover:bg-gray-800 text-white'
           }`}
         >
           {product.soldOut ? 'Agotado' : added ? '✓ ¡Añadido!' : '+ Añadir al carrito'}

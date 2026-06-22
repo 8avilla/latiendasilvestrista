@@ -31,7 +31,7 @@ const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573004340482
 export default function SizeGuide() {
   function openWhatsApp() {
     window.open(
-      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola, necesito ayuda para encontrar mi talla en La Tienda Silvestrista.')}`,
+      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola, necesito ayuda para encontrar mi talla en Verzus.')}`,
       '_blank',
       'noopener,noreferrer',
     );
@@ -43,7 +43,7 @@ export default function SizeGuide() {
 
         {/* Header */}
         <div className="text-center">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-red-600 font-semibold mb-4">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-black font-semibold mb-4">
             <span className="mr-2">✦</span>Guía de tallas
           </p>
           <h2 className="text-4xl sm:text-5xl leading-tight text-black mb-4">
@@ -51,7 +51,7 @@ export default function SizeGuide() {
           </h2>
           <p className="text-sm text-gray-500 font-light max-w-md mx-auto leading-relaxed">
             Tres medidas son todo lo que necesitas. Toma tu cinta métrica y sigue
-            estos pasos antes de elegir tu camiseta silvestrista.
+            estos pasos antes de elegir tu camiseta Verzus.
           </p>
         </div>
 
@@ -60,12 +60,12 @@ export default function SizeGuide() {
           {STEPS.map(step => (
             <div 
               key={step.num} 
-              className="bg-white border border-gray-100 hover:border-red-100 hover:shadow-lg hover:-translate-y-1 rounded-xl p-6 flex flex-col gap-3 transition-all duration-350 ease-out group/step"
+              className="bg-white border border-gray-100 hover:border-gray-200 hover:shadow-lg hover:-translate-y-1 rounded-xl p-6 flex flex-col gap-3 transition-all duration-350 ease-out group/step"
             >
-              <span className="text-[10px] uppercase tracking-[0.2em] text-red-600 font-semibold group-hover/step:tracking-[0.25em] transition-all duration-300">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-black font-semibold group-hover/step:tracking-[0.25em] transition-all duration-300">
                 {step.num}
               </span>
-              <p className="text-base font-medium text-black transition-colors duration-300 group-hover/step:text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+              <p className="text-base font-medium text-black transition-colors duration-300 group-hover/step:text-black" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                 {step.title}
               </p>
               <p className="text-xs text-gray-500 font-light leading-relaxed">
@@ -98,11 +98,11 @@ export default function SizeGuide() {
               {SIZES.map((row, i) => (
                 <tr
                   key={row.talla}
-                  className={`border-b border-gray-50 last:border-0 transition-colors duration-200 hover:bg-red-50/20 group/row ${
+                  className={`border-b border-gray-50 last:border-0 transition-colors duration-200 hover:bg-gray-50/20 group/row ${
                     i % 2 === 0 ? '' : 'bg-gray-50/25'
                   }`}
                 >
-                  <td className="px-3 sm:px-5 py-3 sm:py-3.5 font-semibold text-black group-hover/row:text-red-600 transition-colors tracking-wide">
+                  <td className="px-3 sm:px-5 py-3 sm:py-3.5 font-semibold text-black group-hover/row:text-black transition-colors tracking-wide">
                     {row.talla}
                   </td>
                   <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-gray-600 group-hover/row:text-gray-900 transition-colors font-light">{row.pecho}</td>

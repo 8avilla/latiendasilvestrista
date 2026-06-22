@@ -33,7 +33,7 @@ export default function Header() {
     <header className={`sticky top-0 z-30 transition-all duration-300 ${
       scrolled 
         ? 'bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-150' 
-        : 'bg-white border-b-2 border-red-600'
+        : 'bg-white border-b-2 border-black'
     }`}>
       <div className={`relative max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between transition-all duration-300 ${
         scrolled ? 'h-14' : 'h-16'
@@ -46,8 +46,8 @@ export default function Header() {
           className="flex items-center shrink-0 cursor-pointer select-none hover:opacity-75 transition-opacity duration-200"
         >
           <Image
-            src="/images/logo-la-tienda-silvestrista.png"
-            alt="La Tienda Silvestrista"
+            src="/images/logo_verzus.svg"
+            alt="Verzus"
             height={38}
             width={190}
             style={{ height: '38px', width: 'auto' }}
@@ -64,7 +64,7 @@ export default function Header() {
               className="relative text-xs uppercase tracking-widest text-gray-500 hover:text-black transition-colors whitespace-nowrap py-1 group"
             >
               {link.label}
-              <span className="absolute bottom-0 left-0 w-full h-[1px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+              <span className="absolute bottom-0 left-0 w-full h-[1px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
             </a>
           ))}
           <Link
@@ -72,7 +72,7 @@ export default function Header() {
             className="relative text-xs uppercase tracking-widest text-gray-500 hover:text-black transition-colors whitespace-nowrap py-1 group"
           >
             Mi pedido
-            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
           </Link>
         </nav>
 
@@ -94,7 +94,7 @@ export default function Header() {
           {/* Carrito */}
           <button
             onClick={openSidebar}
-            className="relative flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 sm:pl-4 sm:pr-5 py-2 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors shrink-0"
+            className="relative flex items-center gap-2 bg-black hover:bg-gray-800 text-white px-3 sm:pl-4 sm:pr-5 py-2 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors shrink-0"
             aria-label={`Abrir carrito, ${totalItems} ítems`}
           >
             <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@ export default function Header() {
             </svg>
             <span className="hidden sm:inline">Carrito</span>
             {totalItems > 0 && (
-              <span className="bg-white text-red-600 text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+              <span className="bg-white text-black text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
                 {totalItems > 9 ? '9+' : totalItems}
               </span>
             )}

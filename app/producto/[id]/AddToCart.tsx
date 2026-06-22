@@ -73,7 +73,7 @@ export default function AddToCart({ product }: { product: Product }) {
       {!product.soldOut && product.stockTracked && product.stock != null && product.stock > 0 && product.stock <= 5 && (
         <div className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold ${
           product.stock <= 2
-            ? 'bg-red-50 text-red-600 border border-red-200'
+            ? 'bg-gray-50 text-black border border-gray-200'
             : 'bg-orange-50 text-orange-600 border border-orange-200'
         }`}>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,7 +93,7 @@ export default function AddToCart({ product }: { product: Product }) {
             ? 'bg-gray-100 text-gray-400'
             : added
               ? 'bg-black text-white'
-              : 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-black hover:bg-gray-800 text-white'
         }`}
       >
         {product.soldOut ? 'Producto agotado' : added ? '✓ ¡Añadido al carrito!' : '+ Añadir al carrito'}

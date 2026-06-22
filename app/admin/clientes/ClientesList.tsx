@@ -59,14 +59,14 @@ export default function ClientesList({ clientes }: Props) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por nombre, celular o email..."
-            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black placeholder-gray-400"
+            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black placeholder-gray-400"
           />
         </div>
 
         <select
           value={sortBy}
           onChange={e => setSortBy(e.target.value as typeof sortBy)}
-          className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+          className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
         >
           <option value="ORDERS">Más pedidos</option>
           <option value="SPENT">Mayor gasto</option>
@@ -132,7 +132,7 @@ export default function ClientesList({ clientes }: Props) {
                         style={{ width: `${(c.paidOrderCount / maxOrders) * 100}%` }}
                       />
                     </div>
-                    <span className={`text-sm font-bold w-5 text-right shrink-0 ${c.paidOrderCount > 1 ? 'text-red-600' : 'text-gray-400'}`}>
+                    <span className={`text-sm font-bold w-5 text-right shrink-0 ${c.paidOrderCount > 1 ? 'text-black' : 'text-gray-400'}`}>
                       {c.paidOrderCount}
                     </span>
                   </div>
@@ -164,7 +164,7 @@ export default function ClientesList({ clientes }: Props) {
                   <p className="text-xs text-gray-500">{formatDate(c.lastOrderDate)}</p>
                   <Link
                     href={`/admin/pedidos?q=${encodeURIComponent(c.phone)}`}
-                    className="text-[10px] text-gray-400 hover:text-red-600 hover:underline transition-colors"
+                    className="text-[10px] text-gray-400 hover:text-black hover:underline transition-colors"
                   >
                     Ver pedidos →
                   </Link>

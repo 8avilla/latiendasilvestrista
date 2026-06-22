@@ -44,7 +44,7 @@ export default function TrustBand() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-0 lg:divide-x lg:divide-white/10">
         {ITEMS.map((item) => (
           <div key={item.label} className="flex items-center gap-2 lg:gap-3 lg:px-8 first:lg:pl-0 last:lg:pr-0">
-            <span className="text-red-500 shrink-0">{item.icon}</span>
+            <span className="text-white shrink-0">{item.icon}</span>
             <div className="min-w-0">
               <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-tight sm:tracking-[0.12em] text-white leading-tight">
                 {item.label}

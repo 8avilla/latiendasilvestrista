@@ -72,7 +72,7 @@ export default function CategoryForm({ initial }: CategoryFormProps) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-md">
 
       {error && (
-        <p className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+        <p className="bg-gray-50 border border-red-200 text-black text-sm px-4 py-3 rounded-lg">
           {error}
         </p>
       )}
@@ -85,7 +85,7 @@ export default function CategoryForm({ initial }: CategoryFormProps) {
           required
           value={name}
           onChange={e => handleNameChange(e.target.value)}
-          className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-400"
+          className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-400"
           placeholder="Ej: Camisetas"
         />
       </div>
@@ -94,7 +94,7 @@ export default function CategoryForm({ initial }: CategoryFormProps) {
         <label className="text-xs uppercase tracking-widest text-gray-500 font-medium">
           Slug <span className="normal-case text-gray-400">(identificador único)</span>
         </label>
-        <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-red-400">
+        <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-gray-400">
           <span className="px-3 py-2.5 bg-gray-50 text-xs text-gray-400 border-r border-gray-200 shrink-0">
             /categoria/
           </span>
@@ -116,7 +116,7 @@ export default function CategoryForm({ initial }: CategoryFormProps) {
           type="number"
           value={order}
           onChange={e => setOrder(Number(e.target.value))}
-          className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-400 w-24"
+          className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-400 w-24"
         />
       </div>
 
@@ -124,7 +124,7 @@ export default function CategoryForm({ initial }: CategoryFormProps) {
         <button
           type="submit"
           disabled={saving}
-          className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors"
+          className="bg-black hover:bg-gray-800 disabled:opacity-50 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors"
         >
           {saving ? 'Guardando...' : initial?.id ? 'Guardar cambios' : 'Crear categoría'}
         </button>

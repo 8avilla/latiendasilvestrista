@@ -125,7 +125,7 @@ export default function PlantillasList({ initial }: Props) {
       {showForm && (
         <form onSubmit={handleCreate} className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 max-w-xl">
           <h2 className="text-sm font-semibold text-black">Nueva plantilla</h2>
-          {error && <p className="text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">{error}</p>}
+          {error && <p className="text-xs text-black bg-gray-50 border border-red-200 px-3 py-2 rounded-lg">{error}</p>}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase tracking-widest text-gray-400 font-medium">Nombre</label>
             <input
@@ -170,7 +170,7 @@ export default function PlantillasList({ initial }: Props) {
           <div key={t._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
             {editingId === t._id ? (
               <div className="p-4 flex flex-col gap-3 flex-1">
-                {error && <p className="text-xs text-red-600">{error}</p>}
+                {error && <p className="text-xs text-black">{error}</p>}
                 <input
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
@@ -227,7 +227,7 @@ export default function PlantillasList({ initial }: Props) {
                   </button>
                   <button
                     onClick={() => handleDelete(t._id)}
-                    className="text-[10px] font-semibold uppercase tracking-wider py-1.5 px-3 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
+                    className="text-[10px] font-semibold uppercase tracking-wider py-1.5 px-3 rounded-lg border border-red-200 text-red-500 hover:bg-gray-50 transition-colors"
                   >
                     Borrar
                   </button>

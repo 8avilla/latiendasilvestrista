@@ -108,11 +108,11 @@ export default function AnaliticasClient({
 
       {/* Alerta de caída de conversión */}
       {convDrop !== null && convDrop <= -20 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-3 flex items-start gap-3">
+        <div className="bg-gray-50 border border-red-200 rounded-xl px-5 py-3 flex items-start gap-3">
           <span className="text-red-500 text-lg leading-none mt-0.5">↓</span>
           <div>
-            <p className="text-sm font-semibold text-red-700">Caída de conversión detectada</p>
-            <p className="text-xs text-red-600 mt-0.5">
+            <p className="text-sm font-semibold text-black">Caída de conversión detectada</p>
+            <p className="text-xs text-black mt-0.5">
               La tasa checkout→pago bajó <strong>{Math.abs(convDrop)}%</strong> esta semana vs la semana anterior. Revisa si hay errores de pago o fricciones en el checkout.
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function AnaliticasClient({
             paymentErrorRate !== null && paymentErrorRate >= 10 ? 'border-red-200' : 'border-gray-100'
           }`}>
             <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Errores de pago</p>
-            <p className={`text-2xl font-bold ${paymentErrorRate !== null && paymentErrorRate >= 10 ? 'text-red-600' : 'text-black'}`}>
+            <p className={`text-2xl font-bold ${paymentErrorRate !== null && paymentErrorRate >= 10 ? 'text-black' : 'text-black'}`}>
               {paymentErrors}
             </p>
             <p className="text-[10px] text-gray-400">
@@ -220,7 +220,7 @@ export default function AnaliticasClient({
                           </svg>
                           <span className="text-[10px] text-gray-400">
                             {dropped.toLocaleString('es-CO')} no continuaron
-                            {stepConv !== null && <span className="ml-1 text-red-400 font-semibold">−{100 - stepConv}%</span>}
+                            {stepConv !== null && <span className="ml-1 text-gray-400 font-semibold">−{100 - stepConv}%</span>}
                           </span>
                         </div>
                       )}
@@ -299,12 +299,12 @@ export default function AnaliticasClient({
               {/* Alerta de conversión semanal */}
               {convDrop !== null && (
                 <div className={`rounded-xl p-4 border ${
-                  convDrop <= -20 ? 'bg-red-50 border-red-200' :
+                  convDrop <= -20 ? 'bg-gray-50 border-red-200' :
                   convDrop >= 10 ? 'bg-green-50 border-green-200' :
                   'bg-gray-50 border-gray-200'
                 }`}>
                   <p className="text-[10px] uppercase tracking-widest font-semibold mb-1 text-gray-500">Esta semana vs anterior</p>
-                  <p className={`text-xl font-bold ${convDrop <= -20 ? 'text-red-600' : convDrop >= 10 ? 'text-green-600' : 'text-gray-700'}`}>
+                  <p className={`text-xl font-bold ${convDrop <= -20 ? 'text-black' : convDrop >= 10 ? 'text-green-600' : 'text-gray-700'}`}>
                     {convDrop >= 0 ? '+' : ''}{convDrop}%
                   </p>
                   <p className="text-[11px] text-gray-500 mt-0.5">variación en checkout→pago</p>
@@ -344,7 +344,7 @@ export default function AnaliticasClient({
                             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                               conv >= 50 ? 'bg-green-100 text-green-700' :
                               conv >= 20 ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-600'
+                              'bg-gray-100 text-black'
                             }`}>{conv}%</span>
                           ) : <span className="text-xs text-gray-300">—</span>}
                         </div>

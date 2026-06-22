@@ -3,8 +3,8 @@ import { Order } from '@/types';
 const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY!;
 const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN!;
 const MAILGUN_BASE_URL = process.env.MAILGUN_BASE_URL || 'https://api.mailgun.net';
-const FROM = `${process.env.MAILGUN_FROM_NAME || 'La Tienda Silvestrista'} <${process.env.MAILGUN_FROM_EMAIL || `no-responder@${MAILGUN_DOMAIN}`}>`;
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://latiendasilvestrista.com';
+const FROM = `${process.env.MAILGUN_FROM_NAME || 'Verzus'} <${process.env.MAILGUN_FROM_EMAIL || `no-responder@${MAILGUN_DOMAIN}`}>`;
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://verzus.com';
 
 async function sendMail(to: string, subject: string, html: string): Promise<void> {
   const body = new URLSearchParams({ from: FROM, to, subject, html });
@@ -30,7 +30,7 @@ function formatPrice(n: number) {
 }
 
 function logoHtml() {
-  return `<img src="${SITE_URL}/images/logo-la-tienda-silvestrista.png" alt="La Tienda Silvestrista" width="220" height="57" style="display:block;height:57px;width:auto;max-width:220px;border:0;" />`;
+  return `<img src="${SITE_URL}/images/logo_verzus.svg" alt="Verzus" width="220" height="57" style="display:block;height:57px;width:auto;max-width:220px;border:0;" />`;
 }
 
 function itemsHtml(order: Order) {
@@ -52,14 +52,14 @@ function itemsHtml(order: Order) {
 }
 
 function divider() {
-  return `<div style="height:1px;background:linear-gradient(to right,#dc2626,#111827);margin:28px 0;opacity:0.15;"></div>`;
+  return `<div style="height:1px;background:linear-gradient(to right,#000000,#111827);margin:28px 0;opacity:0.15;"></div>`;
 }
 
 function sectionLabel(text: string) {
   return `<p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:800;color:#9ca3af;letter-spacing:3px;text-transform:uppercase;">${text}</p>`;
 }
 
-function referenceBox(orderId: string, accentColor = '#dc2626') {
+function referenceBox(orderId: string, accentColor = '#000000') {
   return `
     <div style="background:#111827;border-radius:10px;padding:22px 28px;margin-bottom:28px;text-align:center;">
       <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:700;color:#6b7280;letter-spacing:3px;text-transform:uppercase;">Referencia del pedido</p>
@@ -67,7 +67,7 @@ function referenceBox(orderId: string, accentColor = '#dc2626') {
     </div>`;
 }
 
-function ctaButton(href: string, text: string, color = '#dc2626') {
+function ctaButton(href: string, text: string, color = '#000000') {
   return `
     <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
       <tr>
@@ -80,7 +80,7 @@ function ctaButton(href: string, text: string, color = '#dc2626') {
 
 function addressBlock(shippingDetails: Order['shippingDetails']) {
   return `
-    <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#fafafa;border:1px solid #e5e7eb;border-left:4px solid #dc2626;border-radius:8px;">
+    <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#fafafa;border:1px solid #e5e7eb;border-left:4px solid #000000;border-radius:8px;">
       <tr>
         <td style="padding:18px 20px;font-size:13px;color:#374151;line-height:1.8;">
           <strong style="color:#111827;font-size:15px;display:block;margin-bottom:6px;">${shippingDetails.name}</strong>
@@ -98,7 +98,7 @@ function baseTemplate(content: string) {
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>La Tienda Silvestrista</title>
+  <title>Verzus</title>
 </head>
 <body style="margin:0;padding:0;background:#efefef;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#efefef;padding:36px 16px;">
@@ -106,7 +106,7 @@ function baseTemplate(content: string) {
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
 
         <!-- Header con logo -->
-        <tr><td style="background:#ffffff;padding:26px 32px;text-align:center;border-radius:12px 12px 0 0;border:1px solid #e5e7eb;border-bottom:3px solid #dc2626;">
+        <tr><td style="background:#ffffff;padding:26px 32px;text-align:center;border-radius:12px 12px 0 0;border:1px solid #e5e7eb;border-bottom:3px solid #000000;">
           ${logoHtml()}
         </td></tr>
 
@@ -118,10 +118,10 @@ function baseTemplate(content: string) {
         <!-- Footer -->
         <tr><td style="padding:28px 0;text-align:center;">
           <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;font-family:Arial,Helvetica,sans-serif;">
-            &copy; ${new Date().getFullYear()} La Tienda Silvestrista &middot; Silvestre Dangond
+            &copy; ${new Date().getFullYear()} Verzus &middot; Ropa para gente como tú
           </p>
           <p style="margin:0;font-size:11px;font-family:Arial,Helvetica,sans-serif;">
-            <a href="${SITE_URL}" style="color:#dc2626;text-decoration:none;font-weight:700;">latiendasilvestrista.com</a>
+            <a href="${SITE_URL}" style="color:#000000;text-decoration:none;font-weight:700;">verzus.com</a>
           </p>
         </td></tr>
 
@@ -173,7 +173,7 @@ export async function sendOrderConfirmedEmail(order: Order): Promise<void> {
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td style="font-size:15px;font-weight:800;color:#111827;">Total pagado</td>
-            <td style="font-size:20px;font-weight:800;color:#dc2626;text-align:right;">${formatPrice(order.totalPrice)}</td>
+            <td style="font-size:20px;font-weight:800;color:#000000;text-align:right;">${formatPrice(order.totalPrice)}</td>
           </tr>
         </table>
       </td></tr>
@@ -187,7 +187,7 @@ export async function sendOrderConfirmedEmail(order: Order): Promise<void> {
       ${ctaButton(trackingUrl, 'Rastrear mi pedido')}
       <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;">
         O copia este enlace en tu navegador:<br/>
-        <a href="${trackingUrl}" style="color:#dc2626;text-decoration:underline;word-break:break-all;font-size:11px;">${trackingUrl}</a>
+        <a href="${trackingUrl}" style="color:#000000;text-decoration:underline;word-break:break-all;font-size:11px;">${trackingUrl}</a>
       </p>
     </div>
   `);
@@ -221,7 +221,7 @@ export async function sendOrderReceivedEmail(order: Order): Promise<void> {
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
       <tr>
         <td style="font-size:15px;font-weight:800;color:#111827;border-top:2px solid #111827;padding-top:14px;">Total estimado</td>
-        <td style="font-size:20px;font-weight:800;color:#dc2626;text-align:right;border-top:2px solid #111827;padding-top:14px;">${formatPrice(order.totalPrice)}</td>
+        <td style="font-size:20px;font-weight:800;color:#000000;text-align:right;border-top:2px solid #111827;padding-top:14px;">${formatPrice(order.totalPrice)}</td>
       </tr>
     </table>
 
@@ -263,11 +263,11 @@ export async function sendOrderInPreparationEmail(order: Order): Promise<void> {
           <p style="margin:0;font-size:11px;font-weight:700;color:#111827;font-family:Arial,Helvetica,sans-serif;">Confirmado</p>
         </td>
         <td style="text-align:center;padding:0 6px;padding-top:14px;">
-          <div style="height:2px;background:linear-gradient(to right,#111827,#dc2626);border-radius:2px;"></div>
+          <div style="height:2px;background:linear-gradient(to right,#111827,#000000);border-radius:2px;"></div>
         </td>
         <td style="text-align:center;width:33%;padding:0 6px;">
-          <div style="width:36px;height:36px;border-radius:50%;background:#dc2626;margin:0 auto 8px;line-height:36px;text-align:center;font-size:14px;font-weight:800;color:#fff;font-family:Arial,Helvetica,sans-serif;">2</div>
-          <p style="margin:0;font-size:11px;font-weight:700;color:#dc2626;font-family:Arial,Helvetica,sans-serif;">En preparaci&oacute;n</p>
+          <div style="width:36px;height:36px;border-radius:50%;background:#000000;margin:0 auto 8px;line-height:36px;text-align:center;font-size:14px;font-weight:800;color:#fff;font-family:Arial,Helvetica,sans-serif;">2</div>
+          <p style="margin:0;font-size:11px;font-weight:700;color:#000000;font-family:Arial,Helvetica,sans-serif;">En preparaci&oacute;n</p>
         </td>
         <td style="text-align:center;padding:0 6px;padding-top:14px;">
           <div style="height:2px;background:#e5e7eb;border-radius:2px;"></div>
@@ -284,7 +284,7 @@ export async function sendOrderInPreparationEmail(order: Order): Promise<void> {
     <div style="text-align:center;">
       ${ctaButton(trackingUrl, 'Ver seguimiento', '#111827')}
       <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;">
-        <a href="${trackingUrl}" style="color:#dc2626;text-decoration:underline;word-break:break-all;font-size:11px;">${trackingUrl}</a>
+        <a href="${trackingUrl}" style="color:#000000;text-decoration:underline;word-break:break-all;font-size:11px;">${trackingUrl}</a>
       </p>
     </div>
   `);
@@ -331,7 +331,7 @@ export async function sendOrderShippedEmail(order: Order): Promise<void> {
     <div style="margin-top:32px;text-align:center;">
       ${ctaButton(trackingUrl, 'Rastrear env&iacute;o')}
       <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;">
-        <a href="${trackingUrl}" style="color:#dc2626;text-decoration:underline;word-break:break-all;font-size:11px;">${trackingUrl}</a>
+        <a href="${trackingUrl}" style="color:#000000;text-decoration:underline;word-break:break-all;font-size:11px;">${trackingUrl}</a>
       </p>
     </div>
   `);

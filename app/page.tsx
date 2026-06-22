@@ -9,12 +9,12 @@ import SizeGuide from '@/components/SizeGuide';
 import PageviewTracker from '@/components/PageviewTracker';
 
 export const metadata: Metadata = {
-  title: 'La Tienda Silvestrista — Silvestre Dangond',
-  description: 'Compra camisetas, gorras, sombreros, manillas y vasos oficiales de Silvestre Dangond. El rey del vallenato. Envíos a toda Colombia.',
+  title: 'Verzus — Ropa para gente como tú',
+  description: 'Verzus es una marca colombiana de ropa con diseños exclusivos. Camisetas, gorras y accesorios que dicen quién eres. Envíos a toda Colombia.',
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'La Tienda Silvestrista — Compra productos oficiales de Silvestre Dangond',
-    description: 'Camisetas, gorras, sombreros y más del movimiento silvestrista. Envíos a toda Colombia.',
+    title: 'Verzus — Ropa para gente como tú',
+    description: 'Marca colombiana con diseños exclusivos. Camisetas, gorras y accesorios. Envíos a toda Colombia.',
     url: '/',
   },
 };
@@ -82,14 +82,14 @@ export default async function Home() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full border-2 border-black flex items-center justify-center shrink-0">
-              <span className="text-[10px] font-black tracking-tighter text-black">SD</span>
+              <span className="text-[10px] font-black tracking-tighter text-black">VZ</span>
             </div>
             <div>
               <p className="text-sm text-black italic" style={{ fontFamily: 'var(--font-dm-serif)' }}>
-                La Tienda Silvestrista
+                Verzus
               </p>
-              <p className="text-[10px] uppercase tracking-widest text-red-600 font-semibold">
-                Silvestre Dangond
+              <p className="text-[10px] uppercase tracking-widest text-black font-semibold">
+                Ropa para gente como tú
               </p>
             </div>
           </div>

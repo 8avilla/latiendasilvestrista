@@ -32,7 +32,7 @@ export default function ProductGrid({ products, categories }: ProductGridProps) 
           01
         </span>
         <div className="relative pt-4">
-          <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-red-600 font-semibold mb-2">
+          <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-black font-semibold mb-2">
             <span>✦</span> Catálogo
           </p>
           <h2 className="text-4xl sm:text-5xl text-black">Colección</h2>

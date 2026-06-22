@@ -69,7 +69,7 @@ function CheckoutSuccessContent() {
   if (loading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center py-24 gap-4 bg-gray-50">
-        <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
         <p className="text-xs uppercase tracking-widest text-gray-500 font-bold animate-pulse">
           Verificando transacción...
         </p>
@@ -81,14 +81,14 @@ function CheckoutSuccessContent() {
     return (
       <div className="flex-1 flex items-center justify-center py-20 px-6 bg-gray-50">
         <div className="max-w-md w-full bg-white border border-gray-100 p-8 rounded-lg shadow-sm text-center">
-          <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 bg-gray-50 text-black rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
           <h1 className="text-xl font-bold text-black mb-2">Error en el pedido</h1>
           <p className="text-gray-500 text-xs mb-8">{error || 'El pedido no pudo ser cargado.'}</p>
-          <Link href="/" className="inline-block w-full bg-red-600 hover:bg-red-700 text-white py-3.5 text-xs font-semibold uppercase tracking-wider transition-colors">
+          <Link href="/" className="inline-block w-full bg-black hover:bg-gray-800 text-white py-3.5 text-xs font-semibold uppercase tracking-wider transition-colors">
             Volver al inicio
           </Link>
         </div>
@@ -140,8 +140,8 @@ function CheckoutSuccessContent() {
 
           {!isPaid && !isPending && (
             <>
-              <div className="absolute top-0 left-0 w-full h-1.5 bg-red-600" />
-              <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5">
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-black" />
+              <div className="w-16 h-16 bg-gray-50 text-black rounded-full flex items-center justify-center mx-auto mb-5">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -193,7 +193,7 @@ function CheckoutSuccessContent() {
 
             <div className="mt-6 pt-6 border-t border-gray-100 flex justify-between items-baseline">
               <span className="text-xs uppercase tracking-widest text-gray-400">Total Facturado</span>
-              <span className="text-2xl text-red-600 font-bold" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+              <span className="text-2xl text-black font-bold" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                 ${order.totalPrice.toLocaleString('es-CO')}
               </span>
             </div>
@@ -271,7 +271,7 @@ function CheckoutSuccessContent() {
                     )}
                   </div>
                   <div className="p-3">
-                    <p className="text-[9px] uppercase tracking-widest text-red-600 font-semibold mb-0.5">{product.category}</p>
+                    <p className="text-[9px] uppercase tracking-widest text-black font-semibold mb-0.5">{product.category}</p>
                     <p className="text-xs font-medium text-black leading-snug line-clamp-2">{product.name}</p>
                     <p className="text-sm font-bold text-black mt-1.5" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                       ${product.price.toLocaleString('es-CO')}
@@ -291,7 +291,7 @@ export default function CheckoutSuccessPage() {
   return (
     <Suspense fallback={
       <div className="flex-1 flex flex-col items-center justify-center py-24 bg-gray-50">
-        <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <CheckoutSuccessContent />

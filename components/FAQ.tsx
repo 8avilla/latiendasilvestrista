@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '573004340482';
-const WA_PAGO_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Hola, tuve un problema con mi pago en La Tienda Silvestrista. ¿Me pueden ayudar?')}`;
+const WA_PAGO_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Hola, tuve un problema con mi pago en Verzus. ¿Me pueden ayudar?')}`;
 
 const FAQS = [
   {
@@ -33,8 +33,8 @@ const FAQS = [
     link: { href: WA_PAGO_URL, label: 'Escribir al WhatsApp' },
   },
   {
-    q: '¿Los productos son oficiales?',
-    a: 'Sí. Todos los artículos de La Tienda Silvestrista son de colección oficial del movimiento silvestrista de Silvestre Dangond. Camisetas, gorras, sombreros y accesorios con diseños exclusivos.',
+    q: '¿De dónde es Verzus?',
+    a: 'Verzus es una marca colombiana de ropa para gente como tú. Diseños exclusivos en camisetas, gorras y accesorios que hablan por sí solos. Hecho en Colombia, para Colombia y el mundo.',
   },
   {
     q: '¿Puedo cambiar la talla o devolver un producto?',
@@ -57,7 +57,7 @@ export default function FAQ() {
       <div className="max-w-3xl mx-auto">
 
         <div className="text-center mb-12">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-red-600 font-semibold mb-4">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-black font-semibold mb-4">
             <span className="mr-2">✦</span>Ayuda
           </p>
           <h2 className="text-4xl sm:text-5xl leading-tight text-black">
@@ -71,7 +71,7 @@ export default function FAQ() {
               key={i} 
               className={`border rounded-xl px-5 py-4 transition-all duration-300 ${
                 open === i 
-                  ? 'bg-red-50/10 border-red-100 shadow-sm' 
+                  ? 'bg-gray-50/10 border-gray-200 shadow-sm' 
                   : 'border-gray-100/80 bg-white hover:bg-gray-50/50 hover:border-gray-200'
               }`}
             >
@@ -81,15 +81,15 @@ export default function FAQ() {
                 aria-expanded={open === i}
               >
                 <span className={`text-sm font-medium transition-colors duration-300 leading-snug ${
-                  open === i ? 'text-red-600' : 'text-black group-hover:text-red-600'
+                  open === i ? 'text-black' : 'text-black group-hover:text-black'
                 }`}>
                   {faq.q}
                 </span>
                 <span
                   className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-full border transition-all duration-300 text-xs font-medium leading-none ${
                     open === i
-                      ? 'rotate-[135deg] border-red-600 bg-red-600 text-white'
-                      : 'border-gray-300 text-gray-400 group-hover:border-red-600 group-hover:text-red-600'
+                      ? 'rotate-[135deg] border-black bg-black text-white'
+                      : 'border-gray-300 text-gray-400 group-hover:border-black group-hover:text-black'
                   }`}
                 >
                   +

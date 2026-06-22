@@ -32,7 +32,7 @@ interface CartContextValue extends CartState {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-const STORAGE_KEY = 'silvestrista-cart';
+const STORAGE_KEY = 'verzus-cart';
 
 export function buildSelectionsKey(selections?: Record<string, string>): string {
   if (!selections || Object.keys(selections).length === 0) return '';

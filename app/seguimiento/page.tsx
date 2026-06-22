@@ -122,7 +122,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string; bg: string; 
   'ENTREGADO':      { label: 'Entregado',          color: 'text-green-700',  bg: 'bg-green-50',  bar: 'bg-green-600' },
   'PAGO PENDIENTE': { label: 'Procesando Pago',   color: 'text-yellow-700', bg: 'bg-yellow-50', bar: 'bg-yellow-400' },
   'NUEVO PEDIDO':   { label: 'Nuevo Pedido',       color: 'text-blue-700',   bg: 'bg-blue-50',   bar: 'bg-blue-400' },
-  'CANCELADO':      { label: 'Cancelado',          color: 'text-red-700',    bg: 'bg-red-50',    bar: 'bg-red-500' },
+  'CANCELADO':      { label: 'Cancelado',          color: 'text-black',    bg: 'bg-gray-50',    bar: 'bg-gray-500' },
 };
 
 function TrackingView({ order }: { order: Order }) {
@@ -215,7 +215,7 @@ function TrackingView({ order }: { order: Order }) {
         </ul>
         <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
           <span className="text-xs uppercase tracking-widest text-gray-400">Total</span>
-          <span className="text-lg font-bold text-red-600">${order.totalPrice.toLocaleString('es-CO')}</span>
+          <span className="text-lg font-bold text-black">${order.totalPrice.toLocaleString('es-CO')}</span>
         </div>
       </div>
 
@@ -345,8 +345,8 @@ function SeguimientoContent() {
   if (error || !order) {
     return (
       <div className="max-w-md mx-auto py-16 px-4 text-center animate-fade-in">
-        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-7 h-7 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>

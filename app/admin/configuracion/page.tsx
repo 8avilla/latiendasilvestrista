@@ -24,14 +24,14 @@ interface Settings {
 }
 
 const DEFAULT: Settings = {
-  announcement: { text: 'Colección Oficial · Envíos a toda Colombia · Pago Seguro con Bold · El Rey del Vallenato · Silvestre Dangond · Productos Originales', enabled: true },
+  announcement: { text: 'Nueva Colección · Envíos a toda Colombia · Pago Seguro con Bold · Diseños Exclusivos · Ropa para gente como tú · Verzus', enabled: true },
   whatsapp: '3004340482',
   instagram: '',
   tiktok: '',
   facebook: '',
   storeInfo: {
-    name: 'La Tienda Silvestrista',
-    description: 'La tienda oficial del Rey del Vallenato.',
+    name: 'Verzus',
+    description: 'Marca colombiana de ropa para gente como tú.',
     logoUrl: '/logo.png',
   },
   shipping: {

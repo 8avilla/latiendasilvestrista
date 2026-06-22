@@ -19,36 +19,36 @@ const dmSerifDisplay = DM_Serif_Display({
   style: ["normal", "italic"],
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://latiendasilvestrista.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://verzus.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'La Tienda Silvestrista — Silvestre Dangond',
-    template: '%s | La Tienda Silvestrista',
+    default: 'Verzus — Ropa para gente como tú',
+    template: '%s | Verzus',
   },
   description:
-    'Tienda oficial del movimiento silvestrista. Camisetas, gorras, sombreros, manillas y vasos de Silvestre Dangond. Envíos a toda Colombia.',
+    'Verzus es una marca colombiana de ropa con diseños exclusivos. Camisetas, gorras y accesorios para gente como tú. Envíos a toda Colombia.',
   keywords: [
-    'Silvestre Dangond', 'tienda silvestrista', 'camisetas Silvestre Dangond',
-    'movimiento silvestrista', 'ropa vallenato', 'gorras Silvestre Dangond',
-    'merchandise Silvestre Dangond', 'tienda oficial Silvestre', 'el rey del vallenato',
+    'Verzus', 'ropa Colombia', 'marca colombiana', 'camisetas exclusivas',
+    'ropa streetwear', 'gorras Colombia', 'moda colombiana',
+    'ropa con diseño', 'tienda ropa online Colombia',
   ],
-  authors: [{ name: 'La Tienda Silvestrista' }],
-  creator: 'La Tienda Silvestrista',
+  authors: [{ name: 'Verzus' }],
+  creator: 'Verzus',
   openGraph: {
     type: 'website',
     locale: 'es_CO',
     url: SITE_URL,
-    siteName: 'La Tienda Silvestrista',
-    title: 'La Tienda Silvestrista — Silvestre Dangond',
-    description: 'Tienda oficial del movimiento silvestrista. Camisetas, gorras, sombreros y más. Envíos a toda Colombia.',
-    images: [{ url: '/images/hero_colombia.jpg', width: 1200, height: 630, alt: 'La Tienda Silvestrista' }],
+    siteName: 'Verzus',
+    title: 'Verzus — Ropa para gente como tú',
+    description: 'Marca colombiana de ropa con diseños exclusivos. Camisetas, gorras y accesorios. Envíos a toda Colombia.',
+    images: [{ url: '/images/hero_colombia.jpg', width: 1200, height: 630, alt: 'Verzus' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'La Tienda Silvestrista — Silvestre Dangond',
-    description: 'Tienda oficial del movimiento silvestrista. Envíos a toda Colombia.',
+    title: 'Verzus — Ropa para gente como tú',
+    description: 'Marca colombiana de ropa con diseños exclusivos. Envíos a toda Colombia.',
     images: ['/images/hero_colombia.jpg'],
   },
   robots: { index: true, follow: true },
@@ -58,10 +58,10 @@ export const metadata: Metadata = {
 const organizationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'La Tienda Silvestrista',
+  name: 'Verzus',
   url: SITE_URL,
   logo: `${SITE_URL}/images/hero_colombia.jpg`,
-  description: 'Tienda oficial del movimiento silvestrista de Silvestre Dangond.',
+  description: 'Marca colombiana de ropa con diseños exclusivos para gente como tú.',
   contactPoint: {
     '@type': 'ContactPoint',
     telephone: '+57-300-434-0482',
@@ -73,7 +73,7 @@ const organizationJsonLd = {
 const websiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: 'La Tienda Silvestrista',
+  name: 'Verzus',
   url: SITE_URL,
 };
 

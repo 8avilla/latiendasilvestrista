@@ -104,7 +104,7 @@ export default function PopupAdminPage() {
             type="button"
             onClick={() => setLocal(prev => ({ ...prev, enabled: !prev.enabled }))}
             className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-              local.enabled ? 'bg-red-600' : 'bg-gray-200'
+              local.enabled ? 'bg-black' : 'bg-gray-200'
             }`}
             aria-label="Toggle popup"
           >
@@ -142,7 +142,7 @@ export default function PopupAdminPage() {
               <button
                 type="button"
                 onClick={() => setLocal(prev => ({ ...prev, image: '' }))}
-                className="text-xs text-red-500 hover:text-red-700 transition-colors"
+                className="text-xs text-red-500 hover:text-black transition-colors"
               >
                 Eliminar imagen
               </button>
@@ -153,7 +153,7 @@ export default function PopupAdminPage() {
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="w-full max-w-xs aspect-[4/3] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-red-400 hover:text-red-400 transition-colors disabled:opacity-50"
+            className="w-full max-w-xs aspect-[4/3] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-gray-400 hover:text-gray-400 transition-colors disabled:opacity-50"
           >
             {uploading ? (
               <>
@@ -205,7 +205,7 @@ export default function PopupAdminPage() {
         <button
           onClick={handleSave}
           disabled={saving || !hasChanges}
-          className="bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors"
+          className="bg-black hover:bg-gray-800 disabled:opacity-40 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors"
         >
           {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>

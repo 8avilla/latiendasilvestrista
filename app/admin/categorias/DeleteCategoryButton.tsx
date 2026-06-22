@@ -18,7 +18,7 @@ export default function DeleteCategoryButton({ id }: { id: string }) {
     <button
       onClick={handleDelete}
       disabled={loading}
-      className="text-xs border border-red-200 hover:border-red-600 text-red-500 hover:text-red-600 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+      className="text-xs border border-red-200 hover:border-black text-red-500 hover:text-black px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
     >
       {loading ? '...' : 'Eliminar'}
     </button>

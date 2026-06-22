@@ -3,7 +3,7 @@ interface Props {
   enabled?: boolean;
 }
 
-const DEFAULT_TEXT = 'Colección Oficial · Envíos a toda Colombia · Pago Seguro con Bold · El Rey del Vallenato · Silvestre Dangond · Productos Originales';
+const DEFAULT_TEXT = 'Nueva Colección · Envíos a toda Colombia · Pago Seguro con Bold · Diseños Exclusivos · Ropa para gente como tú · Verzus';
 
 export default function AnnouncementBar({ text = DEFAULT_TEXT, enabled = true }: Props) {
   if (!enabled) return null;

@@ -859,7 +859,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         <div class="guide">
           <div class="guide-head">
             <div>
-              <div class="store">La Tienda Silvestrista</div>
+              <div class="store">Verzus</div>
               <div class="date">${date}</div>
             </div>
             <div class="order-id">${order.orderId}</div>
@@ -895,7 +895,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Guías de envío — La Tienda Silvestrista</title>
+  <title>Guías de envío — Verzus</title>
   <style>
     @page { margin: 8mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1156,7 +1156,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
         <button
           onClick={() => setShowTrash(true)}
           className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-            showTrash ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+            showTrash ? 'bg-black text-white border-black' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
           }`}
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1165,7 +1165,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           Papelera
           {trashCount > 0 && (
             <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold ${
-              showTrash ? 'bg-white/20 text-white' : 'bg-red-100 text-red-600'
+              showTrash ? 'bg-white/20 text-white' : 'bg-gray-100 text-black'
             }`}>
               {trashCount}
             </span>
@@ -1186,14 +1186,14 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
             <input
               type="text"
               placeholder="Buscar por ID, cliente, celular, ciudad o artículo..."
-              className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black font-normal placeholder-gray-400"
+              className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black font-normal placeholder-gray-400"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <select
-              className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+              className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
             >
@@ -1204,7 +1204,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
             </select>
             
             <select
-              className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+              className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
               value={channelFilter}
               onChange={(e) => setChannelFilter(e.target.value as typeof channelFilter)}
             >
@@ -1215,7 +1215,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               <option value="Otros">Otros</option>
             </select>
             <select
-              className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+              className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value as typeof paymentFilter)}
             >
@@ -1235,7 +1235,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               type="date"
               value={dateFrom}
               onChange={e => setDateFrom(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
             />
             <span className="text-xs text-gray-400">—</span>
             <input
@@ -1243,12 +1243,12 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               value={dateTo}
               min={dateFrom}
               onChange={e => setDateTo(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
             />
             {(dateFrom || dateTo) && (
               <button
                 onClick={() => { setDateFrom(''); setDateTo(''); }}
-                className="text-xs text-gray-400 hover:text-red-600 transition-colors"
+                className="text-xs text-gray-400 hover:text-black transition-colors"
               >
                 ✕ limpiar
               </button>
@@ -1276,7 +1276,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               <select
                 value={departmentFilter}
                 onChange={(e) => { setDepartmentFilter(e.target.value); setCityFilter(''); }}
-                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
               >
                 <option value="">Todos los departamentos</option>
                 {DEPARTMENTS.map(d => (
@@ -1292,7 +1292,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 value={cityFilter}
                 onChange={(e) => setCityFilter(e.target.value)}
                 disabled={!departmentFilter}
-                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black disabled:bg-opacity-50 disabled:text-gray-400"
+                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black disabled:bg-opacity-50 disabled:text-gray-400"
               >
                 <option value="">Todas las ciudades</option>
                 {filterMunicipalities.map(m => (
@@ -1307,7 +1307,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               <select
                 value={categoryFilter}
                 onChange={(e) => { setCategoryFilter(e.target.value); setProductFilter(''); }}
-                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
               >
                 <option value="">Todas las categorías</option>
                 {uniqueCategories.map(c => (
@@ -1322,7 +1322,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               <select
                 value={productFilter}
                 onChange={(e) => setProductFilter(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
               >
                 <option value="">Todos los productos</option>
                 {products
@@ -1409,7 +1409,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 'EN PREPARACIÓN': 'bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-100',
                 ENVIADO: 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-100',
                 ENTREGADO: 'bg-teal-50 text-teal-700 hover:bg-teal-100 border-teal-100',
-                CANCELADO: 'bg-red-50 text-red-700 hover:bg-red-100 border-red-100',
+                CANCELADO: 'bg-gray-50 text-black hover:bg-gray-100 border-gray-200',
               }[st];
 
               const isActive = statusFilter.has(st);
@@ -1457,7 +1457,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 setCityFilter('');
                 setProductFilter('');
               }}
-              className="text-xs text-red-600 hover:underline font-semibold flex items-center gap-1.5 transition-all"
+              className="text-xs text-black hover:underline font-semibold flex items-center gap-1.5 transition-all"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1620,7 +1620,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
           </button>
           <button
             onClick={openCreateDrawer}
-            className="bg-black hover:bg-red-600 text-white px-4 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
+            className="bg-black hover:bg-black text-white px-4 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -1682,7 +1682,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
 
                   <div className="flex flex-wrap items-center gap-2 mt-2 md:mt-0">
                     {order.deleted && (
-                      <span className="text-[11px] uppercase tracking-wider font-semibold bg-red-50 text-red-500 border border-red-200 px-3 py-1 rounded-full line-through opacity-70">
+                      <span className="text-[11px] uppercase tracking-wider font-semibold bg-gray-50 text-red-500 border border-red-200 px-3 py-1 rounded-full line-through opacity-70">
                         Eliminado
                       </span>
                     )}
@@ -1722,7 +1722,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       </span>
                     )}
                     {!isNew && !isPendingPayment && !isConfirmed && !isPreparation && !isShipped && !isDelivered && !isCancelled && (
-                      <span className="text-[11px] uppercase tracking-wider font-semibold bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full">
+                      <span className="text-[11px] uppercase tracking-wider font-semibold bg-gray-50 text-black border border-red-200 px-3 py-1 rounded-full">
                         Desconocido
                       </span>
                     )}
@@ -1813,7 +1813,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       </div>
                       <div className="flex items-center justify-between pt-1.5 border-t border-gray-100 mt-0.5">
                         <span className="text-xs uppercase tracking-wider text-gray-400 font-bold">Total</span>
-                        <span className="text-lg font-bold text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+                        <span className="text-lg font-bold text-black" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                           ${order.totalPrice.toLocaleString('es-CO')}
                         </span>
                       </div>
@@ -1856,7 +1856,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
 
                 {/* Notas internas */}
                 {order.notes && (
-                  <div className="bg-red-50/20 border-t border-gray-100 px-6 py-3 text-xs text-gray-700">
+                  <div className="bg-gray-50/20 border-t border-gray-100 px-6 py-3 text-xs text-gray-700">
                     <strong className="text-black">Notas internas:</strong>
                     <p className="mt-1 whitespace-pre-wrap font-light text-gray-600 leading-relaxed">{order.notes}</p>
                   </div>
@@ -1894,11 +1894,11 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                         )}
                         {quickDeleteId === order.orderId ? (
                           <>
-                            <span className="text-xs text-red-600 font-medium">¿Mover a papelera?</span>
+                            <span className="text-xs text-black font-medium">¿Mover a papelera?</span>
                             <button
                               onClick={() => handleQuickDelete(order.orderId)}
                               disabled={quickDeleting}
-                              className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                              className="bg-black hover:bg-gray-800 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                             >
                               {quickDeleting ? 'Eliminando...' : 'Sí, eliminar'}
                             </button>
@@ -1913,7 +1913,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                         ) : (
                           <button
                             onClick={() => setQuickDeleteId(order.orderId)}
-                            className="flex items-center gap-1.5 text-gray-400 hover:text-red-600 transition-colors text-xs font-medium"
+                            className="flex items-center gap-1.5 text-gray-400 hover:text-black transition-colors text-xs font-medium"
                             title="Mover a papelera"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2021,7 +2021,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                           />
                         </div>
                         <a
-                          href={`https://wa.me/57${editShipping.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${editShipping.name.split(' ')[0]}, te escribimos de La Tienda Silvestrista sobre tu pedido ${editingOrder.orderId}. `)}`}
+                          href={`https://wa.me/57${editShipping.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${editShipping.name.split(' ')[0]}, te escribimos de Verzus sobre tu pedido ${editingOrder.orderId}. `)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 px-3 py-1.5 rounded text-[11px] font-semibold transition-colors h-[34px]"
@@ -2086,7 +2086,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value as OrderStatus)}
                   disabled={isSaving || isDeleting}
-                  className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                  className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                 >
                   <option value="NUEVO PEDIDO">Nuevo pedido</option>
                   <option value="PAGO PENDIENTE">Pago pendiente</option>
@@ -2150,7 +2150,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   value={editChannel}
                   onChange={(e) => setEditChannel(e.target.value as SalesChannel)}
                   disabled={isSaving || isDeleting}
-                  className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                  className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                 >
                   <option value="Whatsapp">WhatsApp</option>
                   <option value="Tienda Online">Tienda Online</option>
@@ -2168,7 +2168,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   value={editPaymentMethod}
                   onChange={(e) => setEditPaymentMethod(e.target.value as PaymentMethod)}
                   disabled={isSaving || isDeleting}
-                  className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                  className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                 >
                   {PAYMENT_METHODS.map(pm => (
                     <option key={pm} value={pm}>{PM_LABELS[pm]}</option>
@@ -2187,7 +2187,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   onChange={(e) => setEditNotes(e.target.value)}
                   disabled={isSaving || isDeleting}
                   placeholder="Observaciones internas sobre este pedido..."
-                  className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black resize-none"
+                  className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black resize-none"
                 />
               </div>
 
@@ -2204,7 +2204,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                           <div className="flex gap-2 items-center flex-1 pr-2">
                             <input
                               type="number"
-                              className="w-12 border border-gray-200 rounded px-1 py-1 text-xs focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/20 bg-white"
+                              className="w-12 border border-gray-200 rounded px-1 py-1 text-xs focus:outline-none focus:border-black focus:ring-1 focus:ring-black/20 bg-white"
                               value={item.quantity}
                               min={1}
                               onChange={(e) => {
@@ -2216,7 +2216,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                             <span className="text-gray-400 font-semibold">x</span>
                             <input
                               type="text"
-                              className="flex-1 font-semibold text-black border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/20 bg-white"
+                              className="flex-1 font-semibold text-black border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-black focus:ring-1 focus:ring-black/20 bg-white"
                               value={item.product.name}
                               onChange={(e) => {
                                 const newItems = [...editItems];
@@ -2229,7 +2229,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                             <span className="text-gray-500">$</span>
                             <input
                               type="number"
-                              className="w-24 text-black font-semibold border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/20 bg-white text-right"
+                              className="w-24 text-black font-semibold border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-black focus:ring-1 focus:ring-black/20 bg-white text-right"
                               value={item.product.price}
                               onChange={(e) => {
                                 const newItems = [...editItems];
@@ -2245,7 +2245,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                             <div key={selIdx} className="flex items-center gap-2">
                               <input
                                 type="text"
-                                className="border border-gray-200 rounded px-2 py-1 text-xs w-24 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/20 bg-white text-gray-600 uppercase tracking-wider"
+                                className="border border-gray-200 rounded px-2 py-1 text-xs w-24 focus:outline-none focus:border-black focus:ring-1 focus:ring-black/20 bg-white text-gray-600 uppercase tracking-wider"
                                 value={k}
                                 placeholder="Propiedad"
                                 onChange={(e) => {
@@ -2260,7 +2260,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                               <span className="text-gray-500 font-medium text-[11px] uppercase tracking-wider">:</span>
                               <input
                                 type="text"
-                                className="border border-gray-200 rounded px-2 py-1 text-xs flex-1 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/20 bg-white"
+                                className="border border-gray-200 rounded px-2 py-1 text-xs flex-1 focus:outline-none focus:border-black focus:ring-1 focus:ring-black/20 bg-white"
                                 value={v}
                                 placeholder="Valor"
                                 onChange={(e) => {
@@ -2273,7 +2273,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                               />
                               <button
                                 type="button"
-                                className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded"
+                                className="text-gray-400 hover:text-black p-1 hover:bg-gray-50 rounded"
                                 onClick={() => {
                                   const newItems = [...editItems];
                                   const entries = Object.entries(newItems[idx].selections || {});
@@ -2325,7 +2325,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   </div>
                   <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t border-gray-200">
                     <span className="text-xs font-bold uppercase tracking-wider text-black">Total</span>
-                    <span className="text-base font-bold text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+                    <span className="text-base font-bold text-black" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                       ${(editItems.reduce((s, i) => s + i.product.price * i.quantity, 0) + (editingOrder.shippingPrice ?? 0)).toLocaleString('es-CO')}
                     </span>
                   </div>
@@ -2370,7 +2370,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 <button
                   onClick={handleSave}
                   disabled={isSaving || isDeleting}
-                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  className="flex-1 bg-black hover:bg-gray-800 disabled:bg-gray-400 text-white py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isSaving ? (
                     <>
@@ -2398,7 +2398,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               {/* Sección de Eliminación */}
               <div className="pt-4 border-t border-gray-200">
                 {confirmDelete ? (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
+                  <div className="bg-gray-50 border border-red-200 rounded-lg p-4 space-y-3">
                     <p className="text-[11px] text-red-800 font-medium leading-relaxed">
                       ⚠️ El pedido se moverá a la papelera. Podrás restaurarlo desde la vista de Papelera.
                     </p>
@@ -2406,7 +2406,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       <button
                         onClick={handleDelete}
                         disabled={isDeleting || isSaving}
-                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                        className="bg-black hover:bg-gray-800 text-white px-3 py-1.5 rounded text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer"
                       >
                         {isDeleting ? 'Moviendo...' : 'Sí, a la papelera'}
                       </button>
@@ -2423,7 +2423,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                   <button
                     onClick={() => setConfirmDelete(true)}
                     disabled={isSaving || isDeleting}
-                    className="text-xs text-red-600 hover:text-red-700 font-semibold flex items-center justify-center gap-1.5 transition-all mx-auto cursor-pointer"
+                    className="text-xs text-black hover:text-black font-semibold flex items-center justify-center gap-1.5 transition-all mx-auto cursor-pointer"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -2491,7 +2491,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       onChange={(e) => setNewOrderShipping(prev => ({ ...prev, name: e.target.value }))}
                       disabled={isCreating}
                       placeholder="Ej. Juan Pérez"
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                     />
                   </div>
                   <div>
@@ -2505,7 +2505,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       onChange={(e) => setNewOrderShipping(prev => ({ ...prev, phone: e.target.value }))}
                       disabled={isCreating}
                       placeholder="Ej. 3001234567"
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                     />
                   </div>
                   <div>
@@ -2518,7 +2518,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       onChange={(e) => setNewOrderShipping(prev => ({ ...prev, email: e.target.value }))}
                       disabled={isCreating}
                       placeholder="Ej. juan@correo.com"
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                     />
                   </div>
                   <div>
@@ -2530,7 +2530,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       value={newOrderShipping.department}
                       onChange={(e) => setNewOrderShipping(prev => ({ ...prev, department: e.target.value, city: '' }))}
                       disabled={isCreating}
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                     >
                       <option value="">Selecciona un departamento</option>
                       {DEPARTMENTS.map(d => (
@@ -2547,7 +2547,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       value={newOrderShipping.city}
                       onChange={(e) => setNewOrderShipping(prev => ({ ...prev, city: e.target.value }))}
                       disabled={isCreating || !newOrderShipping.department}
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black disabled:bg-gray-50 disabled:text-gray-400"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black disabled:bg-gray-50 disabled:text-gray-400"
                     >
                       <option value="">Selecciona una ciudad</option>
                       {newOrderDeptMunicipalities.map(m => (
@@ -2566,7 +2566,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       onChange={(e) => setNewOrderShipping(prev => ({ ...prev, address: e.target.value }))}
                       disabled={isCreating}
                       placeholder="Ej. Calle 123 # 45-67 Apt 101"
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                     />
                   </div>
                 </div>
@@ -2594,7 +2594,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                         onChange={e => { setProductSearch(e.target.value); setSelectedProdId(''); }}
                         disabled={isCreating}
                         placeholder="Buscar por nombre..."
-                        className="block w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                        className="block w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                       />
                     </div>
                     <div className="col-span-2">
@@ -2602,7 +2602,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                         value={productCategoryFilter}
                         onChange={e => { setProductCategoryFilter(e.target.value); setSelectedProdId(''); }}
                         disabled={isCreating}
-                        className="block w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                        className="block w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                       >
                         <option value="">Todas las categorías</option>
                         {uniqueCategories.map(cat => (
@@ -2626,7 +2626,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       value={selectedProdId}
                       onChange={(e) => handleProductChange(e.target.value)}
                       disabled={isCreating}
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                     >
                       <option value="">-- Selecciona un producto --</option>
                       {filteredForSelector.map((p) => (
@@ -2651,7 +2651,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                               setSelectedVariants((prev) => ({ ...prev, [vg.name]: e.target.value }))
                             }
                             disabled={isCreating}
-                            className="block w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                            className="block w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                           >
                             {vg.options.map((opt) => (
                               <option key={opt} value={opt}>
@@ -2673,7 +2673,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                           value={selectedQty}
                           onChange={(e) => setSelectedQty(Math.max(1, parseInt(e.target.value) || 1))}
                           disabled={isCreating}
-                          className="block w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                          className="block w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                         />
                       </div>
 
@@ -2681,7 +2681,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                         <button
                           type="button"
                           onClick={handleAddItem}
-                          className="w-full bg-black hover:bg-red-600 text-white py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                          className="w-full bg-black hover:bg-black text-white py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
                         >
                           Añadir al Pedido
                         </button>
@@ -2740,7 +2740,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                                 type="button"
                                 onClick={() => handleRemoveItem(idx)}
                                 disabled={isCreating}
-                                className="text-red-500 hover:text-red-700 transition-colors p-1 disabled:opacity-50 cursor-pointer"
+                                className="text-red-500 hover:text-black transition-colors p-1 disabled:opacity-50 cursor-pointer"
                                 aria-label="Remover artículo"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2771,7 +2771,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       value={newOrderStatus}
                       onChange={(e) => setNewOrderStatus(e.target.value as OrderStatus)}
                       disabled={isCreating}
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                     >
                       <option value="NUEVO PEDIDO">Nuevo pedido</option>
                       <option value="PAGO PENDIENTE">Pago pendiente</option>
@@ -2790,7 +2790,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       value={newOrderChannel}
                       onChange={(e) => setNewOrderChannel(e.target.value as SalesChannel)}
                       disabled={isCreating}
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                     >
                       <option value="Whatsapp">WhatsApp</option>
                       <option value="Tienda Online">Tienda Online</option>
@@ -2806,7 +2806,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       value={newOrderPaymentMethod}
                       onChange={(e) => setNewOrderPaymentMethod(e.target.value as PaymentMethod)}
                       disabled={isCreating}
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                     >
                       {PAYMENT_METHODS.map(pm => (
                         <option key={pm} value={pm}>{PM_LABELS[pm]}</option>
@@ -2826,14 +2826,14 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                         setManualShippingPrice(true);
                       }}
                       disabled={isCreating}
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black"
                     />
                   </div>
                   <div>
                     <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1.5">
                       Total de la Orden
                     </label>
-                    <div className="h-9 flex items-center text-base font-bold text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+                    <div className="h-9 flex items-center text-base font-bold text-black" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                       ${(newOrderTotal + effectiveShippingPrice).toLocaleString('es-CO')}
                     </div>
                   </div>
@@ -2847,7 +2847,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                       onChange={(e) => setNewOrderNotes(e.target.value)}
                       disabled={isCreating}
                       placeholder="Redacta la transportadora, guía de despacho o comentarios relevantes de la venta..."
-                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-black resize-none"
+                      className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-black resize-none"
                     />
                   </div>
                 </div>
@@ -2860,7 +2860,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
                 type="button"
                 onClick={handleCreateOrder}
                 disabled={isCreating}
-                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 bg-black hover:bg-gray-800 disabled:bg-gray-400 text-white py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isCreating ? (
                   <>
