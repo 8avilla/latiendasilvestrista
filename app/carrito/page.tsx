@@ -50,12 +50,27 @@ export default function CarritoPage() {
   const [shippingRates, setShippingRates] = useState<{ defaultPrice: number; rates: Record<string, number> } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [loadingStep, setLoadingStep] = useState('');
+  const [boldReady, setBoldReady] = useState(false);
 
   useEffect(() => {
     fetch('/api/shipping-rates')
       .then(r => r.json())
       .then(setShippingRates)
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const boldWindow = window as unknown as BoldWindow;
+    if (boldWindow.BoldCheckout) { setBoldReady(true); return; }
+    const interval = setInterval(() => {
+      if ((window as unknown as BoldWindow).BoldCheckout) {
+        setBoldReady(true);
+        clearInterval(interval);
+      }
+    }, 300);
+    const timeout = setTimeout(() => clearInterval(interval), 15000);
+    return () => { clearInterval(interval); clearTimeout(timeout); };
   }, []);
 
   const checkoutTracked = useRef(false);
@@ -91,9 +106,7 @@ export default function CarritoPage() {
   }, [shippingDetails.email, shippingDetails.name, shippingDetails.phone, shippingDetails.city, items, totalPrice]);
 
   const selectedDeptMunicipalities = DEPARTMENTS.find(d => d.name === shippingDetails.department)?.municipalities ?? [];
-  const hasFreeShipping = items.some(item => item.product.freeShipping);
   const shippingPrice: number | null = (() => {
-    if (hasFreeShipping) return 0;
     if (!shippingDetails.city) return null;
     if (!shippingRates) return null;
     return shippingRates.rates[shippingDetails.city] ?? shippingRates.defaultPrice;
@@ -106,15 +119,17 @@ export default function CarritoPage() {
     e.preventDefault();
     setSubmitError('');
     setIsSubmitting(true);
+    setLoadingStep('Verificando...');
 
     try {
       // 1. Validar que BoldCheckout esté cargado en el objeto global window
       const boldWindow = window as unknown as BoldWindow;
       if (!boldWindow.BoldCheckout) {
-        throw new Error('El sistema de pagos de Bold.co está cargando. Por favor, espera unos segundos e intenta de nuevo.');
+        throw new Error('El sistema de pagos está cargando. Espera un momento e intenta de nuevo.');
       }
 
       // 2. Crear pedido pendiente en la base de datos
+      setLoadingStep('Registrando pedido...');
       const orderResponse = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -138,6 +153,7 @@ export default function CarritoPage() {
       const { orderId } = orderData;
 
       // 3. Generar la firma de integridad en el servidor (SHA-256)
+      setLoadingStep('Preparando pago seguro...');
       const signatureResponse = await fetch('/api/checkout/bold/signature', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -156,6 +172,7 @@ export default function CarritoPage() {
       const { signature } = signatureData;
 
       // 4. Instanciar y abrir la pasarela
+      setLoadingStep('Abriendo pasarela...');
       const baseOrigin = window.location.origin.includes('localhost')
         ? 'https://latiendasilvestrista.com'
         : window.location.origin.replace('http://', 'https://');
@@ -180,9 +197,10 @@ export default function CarritoPage() {
       console.error('Error al procesar checkout:', error);
       const message = error instanceof Error ? error.message : 'Error inesperado al iniciar el pago digital.';
       setSubmitError(message);
-      trackEvent('payment_error');
+      trackEvent('payment_error', { error: message, ua: navigator.userAgent });
     } finally {
       setIsSubmitting(false);
+      setLoadingStep('');
     }
   }
 
@@ -426,8 +444,6 @@ export default function CarritoPage() {
                       <span className="text-gray-400 italic">
                         {shippingDetails.city && !shippingRates ? 'Calculando...' : 'Selecciona departamento y ciudad'}
                       </span>
-                    ) : shippingPrice === 0 ? (
-                      <span className="text-green-600 font-semibold">Gratis</span>
                     ) : (
                       <span>${shippingPrice.toLocaleString('es-CO')}</span>
                     )}
@@ -441,19 +457,36 @@ export default function CarritoPage() {
                 </div>
 
                 <div className="flex flex-col gap-2.5">
+                  {submitError && (
+                    <div className="bg-red-50 border-l-2 border-red-600 p-3.5 text-xs text-red-700">
+                      {submitError}
+                    </div>
+                  )}
                   <button
                     type="submit"
                     form="checkout-form"
-                    disabled={isSubmitting}
-                    className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-450 text-white py-4 flex items-center justify-center gap-3 transition-colors active:scale-[0.99] text-xs font-semibold uppercase tracking-[0.1em]"
+                    disabled={isSubmitting || !boldReady}
+                    className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white py-4 flex items-center justify-center gap-3 transition-all active:scale-[0.99] text-xs font-semibold uppercase tracking-[0.1em]"
                   >
                     {isSubmitting ? (
-                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <>
+                        <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                        <span>{loadingStep}</span>
+                      </>
+                    ) : !boldReady ? (
+                      <>
+                        <span className="inline-block w-4 h-4 border-2 border-white/50 border-t-transparent rounded-full animate-spin shrink-0" />
+                        <span>Cargando sistema de pago...</span>
+                      </>
                     ) : (
                       'Pagar con Tarjeta / PSE'
                     )}
                   </button>
-
+                  {!isSubmitting && boldReady && (
+                    <p className="text-center text-[10px] text-gray-400 leading-snug">
+                      Se abrirá la pasarela segura de Bold en esta pantalla — no saldrás de la tienda
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

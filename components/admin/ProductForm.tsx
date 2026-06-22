@@ -160,6 +160,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
     popupImage: initial?.popupImage ?? '',
     stock: initial?.stock ?? null,
     stockTracked: initial?.stockTracked ?? false,
+    lastUnits: initial?.lastUnits ?? false,
   });
 
   const [groupInputs, setGroupInputs] = useState<{ name: string; optionsStr: string }[]>(
@@ -708,6 +709,31 @@ export default function ProductForm({ initial }: ProductFormProps) {
           >
             <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
               form.soldOut ? 'translate-x-6' : 'translate-x-1'
+            }`} />
+          </button>
+        </div>
+
+        <div className={`border rounded-xl px-4 py-3 flex items-center justify-between transition-colors ${
+          form.lastUnits ? 'border-orange-200 bg-orange-50/30' : 'border-gray-200'
+        }`}>
+          <div>
+            <p className="text-sm font-medium text-black">Últimas unidades</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {form.lastUnits
+                ? 'Muestra badge de urgencia "Últimas unidades" en la tarjeta'
+                : 'Sin badge de urgencia'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setField('lastUnits', !form.lastUnits)}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+              form.lastUnits ? 'bg-orange-500' : 'bg-gray-200'
+            }`}
+            aria-label="Toggle últimas unidades"
+          >
+            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+              form.lastUnits ? 'translate-x-6' : 'translate-x-1'
             }`} />
           </button>
         </div>

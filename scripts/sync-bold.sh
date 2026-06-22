@@ -1,10 +1,10 @@
 #!/bin/bash
 # Sincroniza estados y transacciones Bold automáticamente.
-# Agregar al crontab: */15 * * * * /ruta/al/proyecto/scripts/sync-bold.sh
+# Agregar al crontab: */15 * * * * /var/www/latiendasilvestrista/scripts/sync-bold.sh
 
 BASE_URL="http://localhost:3090"
 SECRET="69a2d8697d65d471b2e3218c138bad3da32c948a86ce81993b26776f9e517c0c"
-LOG="/var/log/sync-bold.log"
+LOG="/var/www/latiendasilvestrista/logs/sync-bold.log"
 
 timestamp() { date '+%Y-%m-%d %H:%M:%S'; }
 

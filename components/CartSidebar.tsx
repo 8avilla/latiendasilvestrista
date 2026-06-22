@@ -149,10 +149,26 @@ export default function CartSidebar() {
         {/* Footer */}
         {items.length > 0 && (
           <div className="px-6 py-5 border-t border-gray-100 flex flex-col gap-3">
+            {/* Subtotal */}
             <div className="flex justify-between items-baseline">
+              <span className="text-xs uppercase tracking-widest text-gray-400">Subtotal</span>
+              <span className="text-sm font-semibold text-black">
+                ${totalPrice.toLocaleString('es-CO')}
+              </span>
+            </div>
+
+            {/* Envío estimado */}
+            <div className="flex justify-between items-center">
+              <span className="text-xs uppercase tracking-widest text-gray-400">Envío</span>
+              <span className="text-xs font-semibold text-black">$20.000</span>
+            </div>
+
+            {/* Total estimado */}
+            <div className="flex justify-between items-baseline pt-2 border-t border-gray-100">
               <span className="text-xs uppercase tracking-widest text-gray-400">Total</span>
               <span className="text-2xl text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
-                ${totalPrice.toLocaleString('es-CO')}
+                ${(totalPrice + 20000).toLocaleString('es-CO')}
+                <span className="text-xs text-gray-400 font-sans ml-1">est.</span>
               </span>
             </div>
 

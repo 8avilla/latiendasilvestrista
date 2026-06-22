@@ -31,6 +31,9 @@ async function getProduct(id: string): Promise<Product | null> {
       soldOut: doc.soldOut === true,
       showPopup: doc.showPopup === true,
       popupImage: (doc.popupImage as string) ?? '',
+      stock: (doc.stock as number | null) ?? null,
+      stockTracked: doc.stockTracked === true,
+      lastUnits: doc.lastUnits === true,
     };
   } catch {
     return null;

@@ -386,18 +386,5 @@ export const DEPARTMENTS: DeptInfo[] = [
 
 export function calculateShipping(department: string, subtotal: number): number {
   if (subtotal >= 150000) return 0;
-  if (!department) return 12000;
-
-  const dept = department.toLowerCase();
-  if (dept.includes('cesar')) return 6000;
-  if (
-    dept.includes('amazonas') ||
-    dept.includes('guainía') ||
-    dept.includes('vaupés') ||
-    dept.includes('vichada') ||
-    dept.includes('san andrés')
-  ) {
-    return 18000;
-  }
-  return 12000;
+  return 20000;
 }

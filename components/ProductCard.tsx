@@ -131,10 +131,17 @@ export default function ProductCard({ product, priority = false, delay = 0 }: Pr
           </div>
         )}
 
-        {/* Badge envío gratis */}
-        {product.freeShipping && !product.soldOut && (
-          <div className="absolute top-3 left-3 bg-green-500 text-white text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-full shadow-sm">
-            Envío gratis
+        {/* Badge stock bajo / últimas unidades */}
+        {!product.soldOut && product.stockTracked && product.stock != null && product.stock > 0 && product.stock <= 5 && (
+          <div className={`absolute top-3 right-3 text-white text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-full shadow-sm ${
+            product.stock <= 2 ? 'bg-red-500 animate-pulse' : 'bg-orange-400'
+          }`}>
+            {product.stock <= 2 ? `¡Último${product.stock === 1 ? '' : 's'}! ${product.stock}` : `Solo ${product.stock} disponibles`}
+          </div>
+        )}
+        {!product.soldOut && product.lastUnits && !(product.stockTracked && product.stock != null && product.stock > 0 && product.stock <= 5) && (
+          <div className="absolute top-3 right-3 bg-orange-500 animate-pulse text-white text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-full shadow-sm">
+            Últimas unidades
           </div>
         )}
 

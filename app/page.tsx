@@ -37,6 +37,9 @@ async function getProducts(): Promise<Product[]> {
       soldOut: doc.soldOut === true,
       showPopup: doc.showPopup === true,
       popupImage: (doc.popupImage as string) ?? '',
+      stock: (doc.stock as number | null) ?? null,
+      stockTracked: doc.stockTracked === true,
+      lastUnits: doc.lastUnits === true,
     }));
   } catch {
     return [];

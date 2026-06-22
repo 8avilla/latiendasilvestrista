@@ -29,6 +29,7 @@ async function getProduct(id: string): Promise<AdminProduct | null> {
       popupImage: (doc.popupImage as string) ?? '',
       stock: (doc.stock as number | null) ?? null,
       stockTracked: doc.stockTracked === true,
+      lastUnits: doc.lastUnits === true,
     };
   } catch {
     return null;

@@ -25,6 +25,7 @@ export interface Product {
   popupImage?: string;
   stock?: number | null;
   stockTracked?: boolean;
+  lastUnits?: boolean;
 }
 
 export interface CartItem {
