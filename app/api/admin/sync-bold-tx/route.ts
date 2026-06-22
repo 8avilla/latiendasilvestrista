@@ -12,9 +12,11 @@ const TARGET_STATUSES = ['CONFIRMADO', 'EN PREPARACIÓN'];
 
 export async function POST(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const auth = request.headers.get('x-cron-secret');
-    if (auth !== cronSecret) {
+  const hasCronSecret = cronSecret && request.headers.get('x-cron-secret') === cronSecret;
+  if (!hasCronSecret) {
+    const { checkAuth } = await import('@/lib/crypto');
+    const session = await checkAuth();
+    if (!session) {
       return Response.json({ error: 'No autorizado' }, { status: 401 });
     }
   }

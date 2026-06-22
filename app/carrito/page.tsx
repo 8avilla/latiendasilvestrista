@@ -177,7 +177,7 @@ export default function CarritoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId,
-          amount: grandTotal.toString(),
+          amount: String(Math.round(grandTotal)),
           currency: 'COP',
         }),
       });
@@ -202,7 +202,7 @@ export default function CarritoPage() {
 
       const checkout = new boldWindow.BoldCheckout({
         apiKey: apiKey,
-        amount: grandTotal.toString(),
+        amount: String(Math.round(grandTotal)),
         currency: 'COP',
         orderId: orderId,
         integritySignature: signature,
