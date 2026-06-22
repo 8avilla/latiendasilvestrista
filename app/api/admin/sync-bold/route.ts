@@ -6,7 +6,7 @@ const BOLD_API_URL = 'https://payments.api.bold.co/v2/payment-voucher';
 const BOLD_API_KEY = process.env.NEXT_PUBLIC_BOLD_API_KEY;
 
 interface BoldTransaction {
-  id?: string;
+  transaction_id?: string;
   reference_id?: string;
   amount?: number;
   currency?: string;
@@ -22,7 +22,15 @@ function boldStatusToOrder(status: string): 'CONFIRMADO' | 'CANCELADO' | null {
   return null;
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    const auth = request.headers.get('x-cron-secret');
+    if (auth !== cronSecret) {
+      return Response.json({ error: 'No autorizado' }, { status: 401 });
+    }
+  }
+
   if (!BOLD_API_KEY) {
     return Response.json({ error: 'BOLD_API_KEY no configurada' }, { status: 500 });
   }
@@ -31,7 +39,7 @@ export async function POST() {
 
   const pendingOrders = await db
     .collection('orders')
-    .find({ paymentMethod: 'Bold', status: 'PAGO PENDIENTE', deleted: { $ne: true } })
+    .find({ paymentMethod: { $in: ['Bold', 'BOLD'] }, status: 'PAGO PENDIENTE', deleted: { $ne: true } })
     .toArray();
 
   if (pendingOrders.length === 0) {
@@ -73,7 +81,7 @@ export async function POST() {
           const setFields: Record<string, unknown> = {
             status: newStatus,
             updatedAt: new Date(),
-            ...(data.id ? { 'transactionDetails.paymentId': data.id } : {}),
+            ...(data.transaction_id ? { 'transactionDetails.paymentId': data.transaction_id } : {}),
           };
 
           if (newStatus === 'CONFIRMADO' && !order.stockDecremented) {
@@ -96,7 +104,7 @@ export async function POST() {
           }
 
           updated++;
-          results.push({ orderId: order.orderId, boldStatus, newStatus, ...(data.id ? { paymentId: data.id } : {}) });
+          results.push({ orderId: order.orderId, boldStatus, newStatus, ...(data.transaction_id ? { paymentId: data.transaction_id } : {}) });
         } else {
           results.push({ orderId: order.orderId, boldStatus, newStatus: null });
         }

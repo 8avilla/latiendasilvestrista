@@ -4,13 +4,21 @@ const BOLD_API_URL = 'https://payments.api.bold.co/v2/payment-voucher';
 const BOLD_API_KEY = process.env.NEXT_PUBLIC_BOLD_API_KEY;
 
 interface BoldTransaction {
-  id?: string;
+  transaction_id?: string;
   payment_status?: string;
 }
 
 const TARGET_STATUSES = ['CONFIRMADO', 'EN PREPARACIÓN'];
 
-export async function POST() {
+export async function POST(request: Request) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    const auth = request.headers.get('x-cron-secret');
+    if (auth !== cronSecret) {
+      return Response.json({ error: 'No autorizado' }, { status: 401 });
+    }
+  }
+
   if (!BOLD_API_KEY) {
     return Response.json({ error: 'BOLD_API_KEY no configurada' }, { status: 500 });
   }
@@ -20,7 +28,7 @@ export async function POST() {
   const orders = await db
     .collection('orders')
     .find({
-      paymentMethod: 'Bold',
+      paymentMethod: { $in: ['Bold', 'BOLD'] },
       status: { $in: TARGET_STATUSES },
       deleted: { $ne: true },
       $or: [
@@ -59,13 +67,13 @@ export async function POST() {
         const payload = await res.json();
         const data: BoldTransaction = payload.payment || payload;
 
-        if (data.id) {
+        if (data.transaction_id) {
           await db.collection('orders').updateOne(
             { orderId: order.orderId },
-            { $set: { 'transactionDetails.paymentId': data.id, updatedAt: new Date() } }
+            { $set: { 'transactionDetails.paymentId': data.transaction_id, updatedAt: new Date() } }
           );
           updated++;
-          results.push({ orderId: order.orderId, paymentId: data.id });
+          results.push({ orderId: order.orderId, paymentId: data.transaction_id });
         } else {
           results.push({ orderId: order.orderId, paymentId: null });
         }

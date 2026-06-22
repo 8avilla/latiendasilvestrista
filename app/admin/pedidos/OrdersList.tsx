@@ -2333,6 +2333,37 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
               </div>
             </div>
 
+            {/* Transacción Bold */}
+            {editingOrder.transactionDetails?.paymentId && (
+              <div className="border-t border-blue-100 bg-blue-50/40 px-6 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <div className="flex items-center gap-2 text-xs text-blue-600 font-semibold">
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  Bold
+                </div>
+                <span className="font-mono text-xs text-blue-800 bg-blue-100 px-2 py-0.5 rounded select-all">
+                  {editingOrder.transactionDetails.paymentId}
+                </span>
+                {editingOrder.transactionDetails.payloadType && (
+                  <span className="text-[10px] uppercase tracking-wider text-blue-400 font-semibold">
+                    {editingOrder.transactionDetails.payloadType}
+                  </span>
+                )}
+                <a
+                  href={`https://panel.bold.co/misventas/historial-de-transacciones/${editingOrder.transactionDetails.paymentId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold underline underline-offset-2 transition-colors"
+                >
+                  Ver en Bold
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+            )}
+
             {/* Footer de Acciones */}
             <div className="border-t border-gray-100 p-6 bg-gray-50 space-y-4">
               <div className="flex gap-3">

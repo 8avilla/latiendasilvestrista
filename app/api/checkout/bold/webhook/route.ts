@@ -58,26 +58,25 @@ export async function POST(request: Request) {
       nextStatus = 'CANCELADO';
     }
 
+    const transactionDetails = {
+      paymentId: data.payment_id,
+      subject: payload.subject,
+      time: payload.time,
+      payloadType: type,
+    };
+
     if (nextStatus !== order.status) {
       const setFields: Record<string, unknown> = {
         status: nextStatus,
         updatedAt: new Date(),
-        transactionDetails: {
-          paymentId: data.payment_id,
-          subject: payload.subject,
-          time: payload.time,
-          payloadType: type,
-        },
+        transactionDetails,
       };
 
       if (nextStatus === 'CONFIRMADO' && !order.stockDecremented) {
         setFields.stockDecremented = true;
       }
 
-      await db.collection('orders').updateOne(
-        { orderId },
-        { $set: setFields }
-      );
+      await db.collection('orders').updateOne({ orderId }, { $set: setFields });
       console.log(`Pedido ${orderId} actualizado a estado: ${nextStatus}`);
 
       if (nextStatus === 'CONFIRMADO' && !order.stockDecremented) {
@@ -91,6 +90,14 @@ export async function POST(request: Request) {
           console.error('Error enviando email de confirmación:', err)
         );
       }
+    } else if (data.payment_id && !order.transactionDetails?.paymentId) {
+      // El estado ya era correcto (confirmado manualmente antes del webhook),
+      // solo guardamos el ID de transacción para trazabilidad.
+      await db.collection('orders').updateOne(
+        { orderId },
+        { $set: { transactionDetails, updatedAt: new Date() } }
+      );
+      console.log(`Pedido ${orderId}: guardado paymentId Bold sin cambio de estado`);
     }
 
     return Response.json({ success: true });
