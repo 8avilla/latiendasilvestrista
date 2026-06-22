@@ -7,7 +7,6 @@ export interface CategoryDoc {
 export interface VariantGroup {
   name: string;
   options: string[];
-  imageMap?: Record<string, number>; // option value → image index
 }
 
 export interface Product {

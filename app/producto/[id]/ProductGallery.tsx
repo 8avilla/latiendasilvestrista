@@ -7,26 +7,13 @@ export default function ProductGallery({
   images,
   name,
   freeShipping,
-  activeIndex,
-  onActiveIndexChange,
 }: {
   images: string[];
   name: string;
   freeShipping?: boolean;
-  activeIndex?: number;
-  onActiveIndexChange?: (i: number) => void;
 }) {
-  const [internalCurrent, setInternalCurrent] = useState(0);
-  const current = activeIndex !== undefined ? activeIndex : internalCurrent;
+  const [current, setCurrent] = useState(0);
   const touchStartX = useRef<number | null>(null);
-
-  function setCurrent(i: number) {
-    if (onActiveIndexChange) {
-      onActiveIndexChange(i);
-    } else {
-      setInternalCurrent(i);
-    }
-  }
 
   if (!images.length) {
     return (
@@ -37,11 +24,11 @@ export default function ProductGallery({
   }
 
   function prev() {
-    setCurrent((current - 1 + images.length) % images.length);
+    setCurrent(i => (i - 1 + images.length) % images.length);
   }
 
   function next() {
-    setCurrent((current + 1) % images.length);
+    setCurrent(i => (i + 1) % images.length);
   }
 
   function handleTouchStart(e: React.TouchEvent) {
