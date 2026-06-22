@@ -128,8 +128,8 @@ function FieldError({ msg }: { msg?: string }) {
 function inputClass(hasError: boolean) {
   return `border rounded-lg px-4 py-2.5 text-sm focus:outline-none transition-colors w-full ${
     hasError
-      ? 'border-gray-400 bg-gray-50 focus:border-gray-1000'
-      : 'border-gray-200 focus:border-gray-400'
+      ? 'border-red-400 bg-red-50 focus:border-red-500'
+      : 'border-gray-200 focus:border-red-400'
   }`;
 }
 
@@ -352,7 +352,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6 max-w-2xl">
 
       {apiError && (
-        <p className="bg-gray-50 border border-red-200 text-black text-sm px-4 py-3 rounded-lg">{apiError}</p>
+        <p className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">{apiError}</p>
       )}
 
       {/* Nombre */}
@@ -464,7 +464,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
             )}
           </div>
           <button type="button" onClick={addGroup}
-            className="text-xs text-black hover:text-black font-semibold transition-colors">
+            className="text-xs text-red-600 hover:text-red-700 font-semibold transition-colors">
             + Agregar grupo
           </button>
         </div>
@@ -481,7 +481,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
 
           return (
             <div key={i} className={`border rounded-xl p-4 flex flex-col gap-3 transition-colors ${
-              showGrpErr && err ? 'border-red-300 bg-gray-50/30' : 'border-gray-200'
+              showGrpErr && err ? 'border-red-300 bg-red-50/30' : 'border-gray-200'
             }`}>
               <div className="flex items-start gap-2">
                 <div className="flex-1 flex flex-col gap-1">
@@ -492,8 +492,8 @@ export default function ProductForm({ initial }: ProductFormProps) {
                     placeholder="Ej: Talla, Color, Material..."
                     className={`border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors ${
                       showGrpErr && err?.name
-                        ? 'border-gray-400 bg-gray-50 focus:border-gray-1000'
-                        : 'border-gray-200 focus:border-gray-400'
+                        ? 'border-red-400 bg-red-50 focus:border-red-500'
+                        : 'border-gray-200 focus:border-red-400'
                     }`}
                   />
                   {showGrpErr && <FieldError msg={err?.name} />}
@@ -513,8 +513,8 @@ export default function ProductForm({ initial }: ProductFormProps) {
                   placeholder="Ej: S, M, L, XL, XXL"
                   className={`border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors ${
                     showGrpErr && err?.options
-                      ? 'border-gray-400 bg-gray-50 focus:border-gray-1000'
-                      : 'border-gray-200 focus:border-gray-400'
+                      ? 'border-red-400 bg-red-50 focus:border-red-500'
+                      : 'border-gray-200 focus:border-red-400'
                   }`}
                 />
                 {showGrpErr && <FieldError msg={err?.options} />}
@@ -585,7 +585,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
             >
               <Image src={url} alt={`imagen ${i + 1}`} fill sizes="25vw" className="object-cover pointer-events-none" />
               {i === 0 && (
-                <span className="absolute top-1.5 left-1.5 bg-black text-white text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-semibold pointer-events-none">
+                <span className="absolute top-1.5 left-1.5 bg-red-600 text-white text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-semibold pointer-events-none">
                   Principal
                 </span>
               )}
@@ -597,7 +597,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
                 ) : (
                   <>
                     <button type="button" onClick={() => removeImage(i)} title="Eliminar"
-                      className="absolute top-1 right-1 w-6 h-6 bg-black hover:bg-gray-800 rounded-full flex items-center justify-center text-white transition-colors text-xs shadow z-10">×</button>
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white transition-colors text-xs shadow z-10">×</button>
                     
                     <button type="button" onClick={() => rotateImage(i, 'left')} title="Girar izquierda"
                       className="absolute bottom-1 left-1 w-6 h-6 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-gray-700 transition-colors text-xs shadow z-10">↺</button>
@@ -624,8 +624,8 @@ export default function ProductForm({ initial }: ProductFormProps) {
           <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
             className={`aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50 ${
               showError('images') && formErrors.images
-                ? 'border-red-300 text-gray-400 hover:border-gray-400'
-                : 'border-gray-200 text-gray-400 hover:border-gray-400 hover:text-gray-400'
+                ? 'border-red-300 text-red-400 hover:border-red-400'
+                : 'border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-400'
             }`}>
             {uploading ? <span className="text-xs">Subiendo...</span> : (
               <>
@@ -657,7 +657,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
             type="button"
             onClick={() => setField('active', !form.active)}
             className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-              form.active ? 'bg-black' : 'bg-gray-200'
+              form.active ? 'bg-red-600' : 'bg-gray-200'
             }`}
             aria-label="Toggle visibilidad"
           >
@@ -829,7 +829,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
                     <button
                       type="button"
                       onClick={() => setField('popupImage', '')}
-                      className="text-xs text-red-500 hover:text-black transition-colors"
+                      className="text-xs text-red-500 hover:text-red-700 transition-colors"
                     >
                       Eliminar
                     </button>
@@ -872,7 +872,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
       {/* Botones */}
       <div className="flex items-center gap-3 pt-2">
         <button type="submit" disabled={saving || uploading}
-          className="bg-black hover:bg-gray-800 disabled:opacity-50 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors">
+          className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors">
           {saving ? 'Guardando...' : initial?.id ? 'Guardar cambios' : 'Crear producto'}
         </button>
         <button type="button" onClick={() => router.push('/admin/productos')}

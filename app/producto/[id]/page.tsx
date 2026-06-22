@@ -10,7 +10,7 @@ import ProductTabs from './ProductTabs';
 import StickyAddToCart from './StickyAddToCart';
 import ProductViewTracker from './ProductViewTracker';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://verzus.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://latiendasilvestrista.com';
 
 async function getProduct(id: string): Promise<Product | null> {
   try {
@@ -52,10 +52,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title: product.name,
     description: product.description
       ? `${product.description} — $${product.price.toLocaleString('es-CO')} COP. Envíos a toda Colombia.`
-      : `Compra ${product.name} de Verzus — $${product.price.toLocaleString('es-CO')} COP. Envíos a toda Colombia.`,
+      : `Compra ${product.name} de La Tienda Silvestrista — $${product.price.toLocaleString('es-CO')} COP. Envíos a toda Colombia.`,
     alternates: { canonical: url },
     openGraph: {
-      title: `${product.name} — Verzus`,
+      title: `${product.name} — La Tienda Silvestrista`,
       description: `Compra ${product.name} por $${product.price.toLocaleString('es-CO')} COP. Envíos a toda Colombia.`,
       url,
       images: [{ url: ogImage, alt: product.name }],
@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${product.name} — Verzus`,
+      title: `${product.name} — La Tienda Silvestrista`,
       images: [ogImage],
     },
   };
@@ -78,16 +78,16 @@ export default async function ProductoPage({ params }: { params: Promise<{ id: s
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    description: product.description || `${product.name} de Verzus`,
+    description: product.description || `${product.name} de La Tienda Silvestrista`,
     image: product.images,
-    brand: { '@type': 'Brand', name: 'Verzus' },
+    brand: { '@type': 'Brand', name: 'La Tienda Silvestrista' },
     offers: {
       '@type': 'Offer',
       priceCurrency: 'COP',
       price: product.price,
       availability: 'https://schema.org/InStock',
       url: `${SITE_URL}/producto/${id}`,
-      seller: { '@type': 'Organization', name: 'Verzus' },
+      seller: { '@type': 'Organization', name: 'La Tienda Silvestrista' },
     },
     ...(product.images[0] && { thumbnailUrl: product.images[0] }),
   };
@@ -132,7 +132,7 @@ export default async function ProductoPage({ params }: { params: Promise<{ id: s
             {/* Info */}
             <div className="flex flex-col gap-6 lg:py-4">
               <div>
-                <p className="text-xs uppercase tracking-widest text-black font-semibold mb-2">{product.category}</p>
+                <p className="text-xs uppercase tracking-widest text-red-600 font-semibold mb-2">{product.category}</p>
                 <h1
                   className="text-3xl sm:text-4xl font-bold text-black leading-tight mb-4"
                   style={{ fontFamily: 'var(--font-dm-serif)' }}

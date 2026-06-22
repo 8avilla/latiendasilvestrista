@@ -72,7 +72,7 @@ export default function ConfigForm({ initial }: Props) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-4xl">
       {error && (
-        <p className="bg-gray-50 border border-red-200 text-black text-sm px-4 py-3 rounded-lg">{error}</p>
+        <p className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</p>
       )}
       {saved && (
         <p className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">Configuración guardada correctamente.</p>
@@ -245,7 +245,7 @@ export default function ConfigForm({ initial }: Props) {
                   type="button"
                   onClick={() => updateNested('integrations', 'boldSandbox', !settings.integrations?.boldSandbox)}
                   className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                    !settings.integrations?.boldSandbox ? 'bg-black' : 'bg-blue-500'
+                    !settings.integrations?.boldSandbox ? 'bg-red-600' : 'bg-blue-500'
                   }`}
                 >
                   <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
@@ -272,7 +272,7 @@ export default function ConfigForm({ initial }: Props) {
                   value={settings.integrations?.adminEmail || ''}
                   onChange={e => updateNested('integrations', 'adminEmail', e.target.value)}
                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-black"
-                  placeholder="admin@verzus.com"
+                  placeholder="admin@latiendasilvestrista.com"
                 />
                 <p className="text-[10px] text-gray-400">Recibirá alertas de nuevas ventas (próximamente)</p>
               </div>

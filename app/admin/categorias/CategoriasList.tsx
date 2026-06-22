@@ -83,7 +83,7 @@ export default function CategoriasList({ initial }: { initial: CategoryDoc[] }) 
             dragging === i
               ? 'opacity-40 border-gray-200'
               : dragOver === i && dragging !== null
-              ? 'border-gray-400 bg-gray-50/30'
+              ? 'border-red-400 bg-red-50/30'
               : 'border-gray-100'
           }`}
         >

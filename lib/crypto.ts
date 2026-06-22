@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-const SECRET = process.env.ADMIN_TOKEN || 'verzus-fallback-secret-2026';
+const SECRET = process.env.ADMIN_TOKEN || 'silvestrista-fallback-secret-2026';
 
 /**
  * Generates a PBKDF2 hash of a password with a random salt.

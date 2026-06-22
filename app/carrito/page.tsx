@@ -193,7 +193,7 @@ export default function CarritoPage() {
       // 4. Instanciar y abrir la pasarela
       setLoadingStep('Abriendo pasarela...');
       const baseOrigin = window.location.origin.includes('localhost')
-        ? 'https://verzus.com'
+        ? 'https://latiendasilvestrista.com'
         : window.location.origin.replace('http://', 'https://');
 
       const apiKey = process.env.NEXT_PUBLIC_BOLD_API_KEY;
@@ -236,7 +236,7 @@ export default function CarritoPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
             <p className="text-gray-500 mb-6 text-sm">Aún no has agregado productos a tu carrito.</p>
-            <Link href="/" className="inline-block bg-black hover:bg-gray-800 text-white px-8 py-3 text-xs uppercase tracking-widest font-semibold transition-colors">
+            <Link href="/" className="inline-block bg-red-600 hover:bg-red-700 text-white px-8 py-3 text-xs uppercase tracking-widest font-semibold transition-colors">
               Explorar Colección
             </Link>
           </div>
@@ -249,7 +249,7 @@ export default function CarritoPage() {
                   <h2 className="text-xs uppercase tracking-wide text-gray-400 font-bold">Artículos</h2>
                   <button
                     onClick={clearCart}
-                    className="text-[10px] uppercase tracking-wide text-gray-400 hover:text-gray-800 font-semibold transition-colors"
+                    className="text-[10px] uppercase tracking-wide text-gray-400 hover:text-red-500 font-semibold transition-colors"
                   >
                     Vaciar
                   </button>
@@ -281,7 +281,7 @@ export default function CarritoPage() {
 
                         {/* Detalles de Producto */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-[10px] uppercase tracking-wide text-black font-bold mb-0.5 truncate">
+                          <p className="text-[10px] uppercase tracking-wide text-red-600 font-bold mb-0.5 truncate">
                             {item.product.category}
                           </p>
                           <h3 className="text-sm font-semibold text-black leading-snug truncate">
@@ -318,7 +318,7 @@ export default function CarritoPage() {
                           <button
                             type="button"
                             onClick={() => removeItem(item.product.id, buildSelectionsKey(item.selections))}
-                            className="text-[10px] uppercase tracking-widest text-gray-300 hover:text-black font-bold transition-colors"
+                            className="text-[10px] uppercase tracking-widest text-gray-300 hover:text-red-600 font-bold transition-colors"
                           >
                             Eliminar
                           </button>
@@ -340,7 +340,7 @@ export default function CarritoPage() {
 
                 <form id="checkout-form" onSubmit={handleBoldCheckout} className="flex flex-col gap-4">
                   {submitError && (
-                    <div className="bg-gray-50 border-l-2 border-black p-3.5 text-xs text-black">
+                    <div className="bg-red-50 border-l-2 border-red-600 p-3.5 text-xs text-red-700">
                       {submitError}
                     </div>
                   )}
@@ -355,8 +355,8 @@ export default function CarritoPage() {
                       disabled={isSubmitting}
                       value={shippingDetails.name}
                       onChange={e => setShippingDetails({ ...shippingDetails, name: e.target.value })}
-                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-black transition-colors"
-                      placeholder="Ej: Juan García"
+                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-red-600 transition-colors"
+                      placeholder="Ej: Silvestre Dangond"
                     />
                   </div>
 
@@ -370,7 +370,7 @@ export default function CarritoPage() {
                       disabled={isSubmitting}
                       value={shippingDetails.email}
                       onChange={e => setShippingDetails({ ...shippingDetails, email: e.target.value })}
-                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-black transition-colors"
+                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-red-600 transition-colors"
                       placeholder="ejemplo@correo.com"
                     />
                   </div>
@@ -385,7 +385,7 @@ export default function CarritoPage() {
                       disabled={isSubmitting}
                       value={shippingDetails.phone}
                       onChange={e => setShippingDetails({ ...shippingDetails, phone: e.target.value })}
-                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-black transition-colors"
+                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-red-600 transition-colors"
                       placeholder="Ej: 3004340482"
                     />
                   </div>
@@ -400,7 +400,7 @@ export default function CarritoPage() {
                       disabled={isSubmitting}
                       value={shippingDetails.address}
                       onChange={e => setShippingDetails({ ...shippingDetails, address: e.target.value })}
-                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-black transition-colors"
+                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-red-600 transition-colors"
                       placeholder="Ej: Calle 10 # 5-12, Apto 402"
                     />
                   </div>
@@ -414,7 +414,7 @@ export default function CarritoPage() {
                       disabled={isSubmitting}
                       value={shippingDetails.department}
                       onChange={e => setShippingDetails({ ...shippingDetails, department: e.target.value, city: '' })}
-                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-black transition-colors"
+                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-red-600 transition-colors"
                     >
                       <option value="">Selecciona un departamento</option>
                       {DEPARTMENTS.map(d => (
@@ -432,7 +432,7 @@ export default function CarritoPage() {
                       disabled={isSubmitting || !shippingDetails.department}
                       value={shippingDetails.city}
                       onChange={e => setShippingDetails({ ...shippingDetails, city: e.target.value })}
-                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-black transition-colors disabled:bg-gray-50 disabled:text-gray-400"
+                      className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-red-600 transition-colors disabled:bg-gray-50 disabled:text-gray-400"
                     >
                       <option value="">Selecciona una ciudad</option>
                       {selectedDeptMunicipalities.map(m => (
@@ -469,7 +469,7 @@ export default function CarritoPage() {
                   </div>
                   <div className="flex justify-between items-baseline pt-4 border-t border-gray-150">
                     <span className="text-xs uppercase tracking-widest text-gray-400 font-bold">Total a Pagar</span>
-                    <span className="text-2xl font-bold text-black" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+                    <span className="text-2xl font-bold text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                       ${grandTotal.toLocaleString('es-CO')}
                     </span>
                   </div>
@@ -499,7 +499,7 @@ export default function CarritoPage() {
 
                 <div className="flex flex-col gap-2.5">
                   {submitError && (
-                    <div className="bg-gray-50 border-l-2 border-black p-3.5 text-xs text-black">
+                    <div className="bg-red-50 border-l-2 border-red-600 p-3.5 text-xs text-red-700">
                       {submitError}
                     </div>
                   )}
@@ -507,7 +507,7 @@ export default function CarritoPage() {
                     type="submit"
                     form="checkout-form"
                     disabled={isSubmitting || !boldReady}
-                    className="w-full bg-black hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed text-white py-4 flex items-center justify-center gap-3 transition-all active:scale-[0.99] text-xs font-semibold uppercase tracking-[0.1em]"
+                    className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white py-4 flex items-center justify-center gap-3 transition-all active:scale-[0.99] text-xs font-semibold uppercase tracking-[0.1em]"
                   >
                     {isSubmitting ? (
                       <>

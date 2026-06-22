@@ -51,7 +51,7 @@ export default function StickyAddToCart({
           className={`shrink-0 px-6 py-3 text-xs font-semibold uppercase tracking-widest rounded-xl transition-colors active:scale-[0.97] ${
             soldOut
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-black hover:bg-gray-800 text-white'
+              : 'bg-red-600 hover:bg-red-700 text-white'
           }`}
         >
           {soldOut ? 'Agotado' : '+ Agregar'}

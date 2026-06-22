@@ -39,14 +39,14 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8">
           <Image
-            src="/images/logo_verzus.svg"
-            alt="Verzus"
+            src="/images/logo-la-tienda-silvestrista.png"
+            alt="La Tienda Silvestrista"
             height={46}
             width={230}
             style={{ height: '46px', width: 'auto' }}
             priority
           />
-          <p className="text-xs uppercase tracking-widest text-black font-semibold mt-3">Panel Admin</p>
+          <p className="text-xs uppercase tracking-widest text-red-600 font-semibold mt-3">Panel Admin</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -60,8 +60,8 @@ export default function LoginPage() {
               onChange={e => setEmail(e.target.value)}
               required
               autoFocus
-              className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-400"
-              placeholder="admin@verzus.com"
+              className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-400"
+              placeholder="admin@latiendasilvestrista.com"
             />
           </div>
 
@@ -74,19 +74,19 @@ export default function LoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-400"
+              className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-400"
               placeholder="••••••••"
             />
           </div>
 
           {error && (
-            <p className="text-xs text-black">{error}</p>
+            <p className="text-xs text-red-600">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="bg-black hover:bg-gray-800 disabled:opacity-50 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors mt-2"
+            className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors mt-2"
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>

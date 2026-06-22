@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     if (totalUsers === 0) {
       // Auto-seeding: Si no hay usuarios creados, permitimos crear el primero con ADMIN_PASSWORD
-      const defaultEmail = 'admin@verzus.com';
+      const defaultEmail = 'admin@latiendasilvestrista.com';
       const isDefaultAttempt = !email || email.toLowerCase() === defaultEmail;
       
       if (isDefaultAttempt && password === process.env.ADMIN_PASSWORD) {

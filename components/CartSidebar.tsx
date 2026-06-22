@@ -46,7 +46,7 @@ export default function CartSidebar() {
       )}
 
       <aside
-        className={`fixed top-0 right-0 h-full w-full max-w-sm bg-white z-50 flex flex-col border-l-4 border-black transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-0 right-0 h-full w-full max-w-sm bg-white z-50 flex flex-col border-l-4 border-red-600 transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         aria-label="Carrito de compras"
       >
@@ -112,7 +112,7 @@ export default function CartSidebar() {
                       {selText && (
                         <p className="text-xs text-gray-400 mt-0.5">{selText}</p>
                       )}
-                      <p className="text-sm text-black font-semibold mt-1" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+                      <p className="text-sm text-red-600 font-semibold mt-1" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                         ${(item.product.price * item.quantity).toLocaleString('es-CO')}
                       </p>
                     </div>
@@ -133,7 +133,7 @@ export default function CartSidebar() {
                       </div>
                       <button
                         onClick={() => removeItem(item.product.id, buildSelectionsKey(item.selections))}
-                        className="text-[10px] uppercase tracking-widest text-gray-300 hover:text-white transition-colors"
+                        className="text-[10px] uppercase tracking-widest text-gray-300 hover:text-red-500 transition-colors"
                         aria-label="Eliminar"
                       >
                         Eliminar
@@ -166,7 +166,7 @@ export default function CartSidebar() {
             {/* Total estimado */}
             <div className="flex justify-between items-baseline pt-2 border-t border-gray-100">
               <span className="text-xs uppercase tracking-widest text-gray-400">Total</span>
-              <span className="text-2xl text-black" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+              <span className="text-2xl text-red-600" style={{ fontFamily: 'var(--font-dm-serif)' }}>
                 ${(totalPrice + 20000).toLocaleString('es-CO')}
                 <span className="text-xs text-gray-400 font-sans ml-1">est.</span>
               </span>

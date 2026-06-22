@@ -41,7 +41,7 @@ function Delta({ value, text }: { value: number | null, text: string }) {
   if (value === null) return <span className="text-[10px] text-gray-300">sin datos previos</span>;
   const up = value >= 0;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded-full text-[10px] font-bold w-fit ${up ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-black'}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded-full text-[10px] font-bold w-fit ${up ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
       {up ? '↑' : '↓'} {Math.abs(value)}% <span className="font-normal opacity-70 ml-0.5">{text}</span>
     </span>
   );
@@ -331,8 +331,8 @@ export default async function DashboardPage() {
   const d = await getData();
 
   const metrics = [
-    { label: 'Ventas hoy',      value: `$${d.todaySales.toLocaleString('es-CO')}`,          sub: `${d.todaySales === 0 && d.ydaySales === 0 ? '—' : d.ydaySales > 0 ? `Ayer: $${d.ydaySales.toLocaleString('es-CO')}` : 'Sin ventas ayer'}`, delta: d.deltaToday, deltaText: 'vs ayer', accent: 'text-black' },
-    { label: 'Ventas del mes',  value: `$${d.monthSales.toLocaleString('es-CO')}`,          sub: `${d.monthCount} pedidos`,                delta: d.deltaMonth, deltaText: 'vs mes pasado', accent: 'text-black' },
+    { label: 'Ventas hoy',      value: `$${d.todaySales.toLocaleString('es-CO')}`,          sub: `${d.todaySales === 0 && d.ydaySales === 0 ? '—' : d.ydaySales > 0 ? `Ayer: $${d.ydaySales.toLocaleString('es-CO')}` : 'Sin ventas ayer'}`, delta: d.deltaToday, deltaText: 'vs ayer', accent: 'text-red-600' },
+    { label: 'Ventas del mes',  value: `$${d.monthSales.toLocaleString('es-CO')}`,          sub: `${d.monthCount} pedidos`,                delta: d.deltaMonth, deltaText: 'vs mes pasado', accent: 'text-red-600' },
     { label: 'Ganancia neta',   value: d.monthProfit !== null ? `$${Math.round(d.monthProfit).toLocaleString('es-CO')}` : '—', sub: d.profitMargin !== null ? `Margen ${d.profitMargin}% este mes` : 'Agrega costos a tus productos', delta: d.deltaProfit, deltaText: 'vs mes pasado', accent: 'text-green-600' },
     { label: 'Tiempo despacho', value: d.dispatchAvgHours > 0 ? `${Math.round(d.dispatchAvgHours)}h` : '—', sub: 'promedio (30 días)',      delta: null, deltaText: '',        accent: 'text-indigo-600' },
     { label: 'Pedidos activos', value: String(d.activeOrders),                               sub: 'por gestionar',                          delta: null, deltaText: '',        accent: d.activeOrders > 0 ? 'text-orange-500' : 'text-gray-400' },

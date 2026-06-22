@@ -54,7 +54,7 @@ export default function AbandonosList({ initial }: Props) {
     const phone = a.phone?.replace(/\D/g, '');
     if (!phone) return '#';
     const itemsText = a.items?.slice(0, 3).map(i => `- ${i.product.name} x${i.quantity}`).join('\n') ?? '';
-    const msg = `Hola ${a.name || 'cliente'}, notamos que dejaste productos en tu carrito en Verzus. ¿Puedo ayudarte a completar tu compra?\n\n${itemsText}\n\nTotal: $${(a.total ?? 0).toLocaleString('es-CO')}`;
+    const msg = `Hola ${a.name || 'cliente'}, notamos que dejaste productos en tu carrito en La Tienda Silvestrista. ¿Puedo ayudarte a completar tu compra?\n\n${itemsText}\n\nTotal: $${(a.total ?? 0).toLocaleString('es-CO')}`;
     return `https://wa.me/57${phone}?text=${encodeURIComponent(msg)}`;
   }
 

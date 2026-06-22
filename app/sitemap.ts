@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getDb } from '@/lib/mongodb';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://verzus.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://latiendasilvestrista.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
