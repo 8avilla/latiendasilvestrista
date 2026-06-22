@@ -52,6 +52,9 @@ export default function CarritoPage() {
   const [submitError, setSubmitError] = useState('');
   const [loadingStep, setLoadingStep] = useState('');
   const [boldReady, setBoldReady] = useState(false);
+  // Reutilizar el mismo pedido en reintentos de la misma sesión
+  const pendingOrderId = useRef<string | null>(null);
+  const pendingOrderTotal = useRef<number | null>(null);
 
   useEffect(() => {
     fetch('/api/shipping-rates')
@@ -105,6 +108,13 @@ export default function CarritoPage() {
     return () => clearTimeout(timer);
   }, [shippingDetails.email, shippingDetails.name, shippingDetails.phone, shippingDetails.city, items, totalPrice]);
 
+  // Si el carrito cambia, invalidar el pedido pendiente cacheado
+  const itemsKey = items.map(i => `${i.product.id}:${i.quantity}`).join(',');
+  useEffect(() => {
+    pendingOrderId.current = null;
+    pendingOrderTotal.current = null;
+  }, [itemsKey]);
+
   const selectedDeptMunicipalities = DEPARTMENTS.find(d => d.name === shippingDetails.department)?.municipalities ?? [];
   const shippingPrice: number | null = (() => {
     if (!shippingDetails.city) return null;
@@ -128,29 +138,37 @@ export default function CarritoPage() {
         throw new Error('El sistema de pagos está cargando. Espera un momento e intenta de nuevo.');
       }
 
-      // 2. Crear pedido pendiente en la base de datos
-      setLoadingStep('Registrando pedido...');
-      const orderResponse = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items,
-          totalPrice: grandTotal,
-          shippingPrice: shippingPrice ?? 0,
-          shippingDetails,
-          paymentMethod: 'BOLD',
-          status: 'PAGO PENDIENTE',
-          salesChannel: 'Tienda Online',
-          analyticsSessionId: getSessionId(),
-        }),
-      });
+      // 2. Crear pedido o reutilizar el existente si el total no cambió
+      let orderId: string;
+      const canReuse = pendingOrderId.current && pendingOrderTotal.current === grandTotal;
+      if (canReuse) {
+        orderId = pendingOrderId.current!;
+      } else {
+        setLoadingStep('Registrando pedido...');
+        const orderResponse = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items,
+            totalPrice: grandTotal,
+            shippingPrice: shippingPrice ?? 0,
+            shippingDetails,
+            paymentMethod: 'BOLD',
+            status: 'PAGO PENDIENTE',
+            salesChannel: 'Tienda Online',
+            analyticsSessionId: getSessionId(),
+          }),
+        });
 
-      const orderData = await orderResponse.json();
-      if (!orderResponse.ok) {
-        throw new Error(orderData.error || 'Error al registrar el pedido.');
+        const orderData = await orderResponse.json();
+        if (!orderResponse.ok) {
+          throw new Error(orderData.error || 'Error al registrar el pedido.');
+        }
+
+        orderId = orderData.orderId;
+        pendingOrderId.current = orderId;
+        pendingOrderTotal.current = grandTotal;
       }
-
-      const { orderId } = orderData;
 
       // 3. Generar la firma de integridad en el servidor (SHA-256)
       setLoadingStep('Preparando pago seguro...');

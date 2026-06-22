@@ -30,6 +30,22 @@ export async function POST(request: Request) {
       finalChannel = paymentMethod === 'WHATSAPP' ? 'Whatsapp' : 'Tienda Online';
     }
 
+    // Deduplicar: reutilizar pedido PAGO PENDIENTE reciente del mismo email con el mismo total
+    if (finalStatus === 'PAGO PENDIENTE' && shippingDetails.email) {
+      const cutoff = new Date(Date.now() - 30 * 60 * 1000); // últimos 30 min
+      const existing = await db.collection('orders').findOne({
+        'shippingDetails.email': shippingDetails.email,
+        status: 'PAGO PENDIENTE',
+        totalPrice,
+        createdAt: { $gte: cutoff },
+        deleted: { $ne: true },
+      }, { sort: { createdAt: -1 } });
+
+      if (existing) {
+        return Response.json({ orderId: existing.orderId, order: existing }, { status: 200 });
+      }
+    }
+
     const timestamp = Math.floor(Date.now() / 1000);
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const orderId = `LTS-${timestamp}-${randomSuffix}`;
