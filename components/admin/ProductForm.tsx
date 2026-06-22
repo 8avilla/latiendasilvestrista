@@ -68,7 +68,7 @@ function validateForm(form: FormProduct): FormErrors {
   return e;
 }
 
-function getGroupErrors(inputs: { name: string; optionsStr: string }[]): (GroupError | null)[] {
+function getGroupErrors(inputs: { name: string; optionsStr: string; imageMap: Record<string, number>; colorPick: string; customEntry: string }[]): (GroupError | null)[] {
   const usedNames: Record<string, number[]> = {};
   inputs.forEach((g, i) => {
     const key = g.name.trim().toLowerCase();
@@ -99,6 +99,29 @@ function getGroupErrors(inputs: { name: string; optionsStr: string }[]): (GroupE
 function parseOptions(str: string): string[] {
   return str.split(',').map(o => o.trim()).filter(Boolean);
 }
+
+const BASIC_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Única'];
+
+const BASIC_COLORS = [
+  { hex: '#000000', label: 'Negro' },
+  { hex: '#FFFFFF', label: 'Blanco' },
+  { hex: '#6B7280', label: 'Gris' },
+  { hex: '#D1D5DB', label: 'Gris claro' },
+  { hex: '#EF4444', label: 'Rojo' },
+  { hex: '#F97316', label: 'Naranja' },
+  { hex: '#EAB308', label: 'Amarillo' },
+  { hex: '#22C55E', label: 'Verde' },
+  { hex: '#14B8A6', label: 'Turquesa' },
+  { hex: '#3B82F6', label: 'Azul' },
+  { hex: '#1E3A8A', label: 'Azul marino' },
+  { hex: '#8B5CF6', label: 'Morado' },
+  { hex: '#EC4899', label: 'Rosa' },
+  { hex: '#BE185D', label: 'Fucsia' },
+  { hex: '#7F1D1D', label: 'Vino' },
+  { hex: '#78350F', label: 'Café' },
+  { hex: '#F5F0E8', label: 'Beige' },
+  { hex: '#FCD5B0', label: 'Piel' },
+];
 
 function getDuplicateOptions(str: string): Set<string> {
   const seen = new Set<string>();
@@ -163,8 +186,8 @@ export default function ProductForm({ initial }: ProductFormProps) {
     lastUnits: initial?.lastUnits ?? false,
   });
 
-  const [groupInputs, setGroupInputs] = useState<{ name: string; optionsStr: string }[]>(
-    () => (initial?.variantGroups ?? []).map(g => ({ name: g.name, optionsStr: g.options.join(', ') }))
+  const [groupInputs, setGroupInputs] = useState<{ name: string; optionsStr: string; imageMap: Record<string, number>; colorPick: string; customEntry: string }[]>(
+    () => (initial?.variantGroups ?? []).map(g => ({ name: g.name, optionsStr: g.options.join(', '), imageMap: g.imageMap ?? {}, colorPick: '#000000', customEntry: '' }))
   );
 
   const [touched, setTouched] = useState<Set<string>>(new Set());
@@ -291,15 +314,45 @@ export default function ProductForm({ initial }: ProductFormProps) {
 
   // ── Grupos de variantes ───────────────────────────────────────────────────
   function addGroup() {
-    setGroupInputs(prev => [...prev, { name: '', optionsStr: '' }]);
+    setGroupInputs(prev => [...prev, { name: '', optionsStr: '', imageMap: {}, colorPick: '#000000', customEntry: '' }]);
   }
 
   function removeGroup(index: number) {
     setGroupInputs(prev => prev.filter((_, i) => i !== index));
   }
 
-  function updateGroup(index: number, field: 'name' | 'optionsStr', value: string) {
+  function updateGroup(index: number, field: 'name' | 'optionsStr' | 'colorPick' | 'customEntry', value: string) {
     setGroupInputs(prev => prev.map((g, i) => i === index ? { ...g, [field]: value } : g));
+  }
+
+  function addOption(groupIndex: number, value: string) {
+    setGroupInputs(prev => prev.map((g, i) => {
+      if (i !== groupIndex) return g;
+      const existing = parseOptions(g.optionsStr);
+      if (existing.some(o => o.toLowerCase() === value.toLowerCase())) return g;
+      return { ...g, optionsStr: [...existing, value].join(', ') };
+    }));
+  }
+
+  function removeOption(groupIndex: number, value: string) {
+    setGroupInputs(prev => prev.map((g, i) => {
+      if (i !== groupIndex) return g;
+      const updated = parseOptions(g.optionsStr).filter(o => o.toLowerCase() !== value.toLowerCase());
+      return { ...g, optionsStr: updated.join(', ') };
+    }));
+  }
+
+  function updateGroupImageMap(groupIndex: number, option: string, imageIndex: number | undefined) {
+    setGroupInputs(prev => prev.map((g, i) => {
+      if (i !== groupIndex) return g;
+      const newMap = { ...g.imageMap };
+      if (imageIndex === undefined) {
+        delete newMap[option];
+      } else {
+        newMap[option] = imageIndex;
+      }
+      return { ...g, imageMap: newMap };
+    }));
   }
 
   function parseGroups(): VariantGroup[] {
@@ -313,7 +366,9 @@ export default function ProductForm({ initial }: ProductFormProps) {
           seen.add(key);
           return true;
         });
-        return { name: g.name.trim(), options };
+        const result: VariantGroup = { name: g.name.trim(), options };
+        if (Object.keys(g.imageMap).length > 0) result.imageMap = g.imageMap;
+        return result;
       });
   }
 
@@ -478,6 +533,8 @@ export default function ProductForm({ initial }: ProductFormProps) {
           const dupes = getDuplicateOptions(g.optionsStr);
           const showGrpErr = submitAttempted || g.name.trim() !== '' || g.optionsStr.trim() !== '';
           const opts = parseOptions(g.optionsStr);
+          const isColorGroup = g.name.trim().toLowerCase().includes('color');
+          const isSizeGroup = g.name.trim().toLowerCase().includes('talla');
 
           return (
             <div key={i} className={`border rounded-xl p-4 flex flex-col gap-3 transition-colors ${
@@ -503,45 +560,230 @@ export default function ProductForm({ initial }: ProductFormProps) {
                   title="Eliminar grupo">×</button>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] uppercase tracking-widest text-gray-400">
-                  Opciones <span className="normal-case">(separadas por coma)</span>
-                </label>
-                <input
-                  value={g.optionsStr}
-                  onChange={e => updateGroup(i, 'optionsStr', e.target.value)}
-                  placeholder="Ej: S, M, L, XL, XXL"
-                  className={`border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors ${
-                    showGrpErr && err?.options
-                      ? 'border-gray-400 bg-gray-50 focus:border-gray-1000'
-                      : 'border-gray-200 focus:border-gray-400'
-                  }`}
-                />
-                {showGrpErr && <FieldError msg={err?.options} />}
+              {isColorGroup ? (
+                /* ── Selector de colores ── */
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-widest text-gray-400">Colores</label>
 
-                {opts.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-0.5">
-                    {opts.map((opt, j) => {
-                      const isDupe = dupes.has(opt.toLowerCase());
-                      return (
-                        <span key={j} className={`px-2 py-0.5 text-[10px] rounded flex items-center gap-1 ${
-                          isDupe
-                            ? 'bg-amber-100 text-amber-700 border border-amber-300'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {opt}
-                          {isDupe && <span title="Duplicada — se ignorará">⚠</span>}
-                        </span>
-                      );
-                    })}
-                    {dupes.size > 0 && (
-                      <p className="w-full text-[10px] text-amber-600 mt-0.5">
-                        Las opciones duplicadas se eliminarán al guardar.
-                      </p>
-                    )}
+                  {/* Paleta de colores agregados */}
+                  {opts.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-1">
+                      {opts.map((hex, j) => {
+                        const isDupe = dupes.has(hex.toLowerCase());
+                        return (
+                          <div key={j} className="relative group/swatch flex flex-col items-center gap-0.5">
+                            <div
+                              className={`w-8 h-8 rounded-full border-2 ${isDupe ? 'border-amber-400' : 'border-gray-200'}`}
+                              style={{ backgroundColor: hex }}
+                              title={hex}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeOption(i, hex)}
+                              className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white border border-gray-300 text-gray-400 hover:text-red-500 hover:border-red-400 text-[10px] leading-none flex items-center justify-center opacity-0 group-hover/swatch:opacity-100 transition-opacity"
+                              title="Quitar color"
+                            >×</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Colores básicos */}
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1.5">Colores básicos</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {BASIC_COLORS.map(({ hex, label }) => {
+                        const alreadyAdded = parseOptions(g.optionsStr).some(o => o.toLowerCase() === hex.toLowerCase());
+                        return (
+                          <button
+                            key={hex}
+                            type="button"
+                            title={alreadyAdded ? `${label} (ya agregado)` : `Agregar ${label}`}
+                            onClick={() => alreadyAdded ? removeOption(i, hex) : addOption(i, hex)}
+                            className={`w-7 h-7 rounded-full border-2 transition-all ${
+                              alreadyAdded
+                                ? 'border-black ring-2 ring-black ring-offset-1'
+                                : hex === '#FFFFFF' || hex === '#F5F0E8' || hex === '#FCD5B0' || hex === '#D1D5DB' || hex === '#F5F0E8'
+                                  ? 'border-gray-300 hover:border-gray-500'
+                                  : 'border-transparent hover:border-gray-400'
+                            }`}
+                            style={{ backgroundColor: hex }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Picker personalizado */}
+                  <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
+                    <label className="text-[10px] text-gray-400 shrink-0">Color personalizado:</label>
+                    <input
+                      type="color"
+                      value={g.colorPick}
+                      onChange={e => updateGroup(i, 'colorPick', e.target.value)}
+                      className="w-10 h-8 rounded cursor-pointer border border-gray-200 p-0.5 bg-white"
+                    />
+                    <span className="text-xs text-gray-400 font-mono">{g.colorPick}</span>
+                    <button
+                      type="button"
+                      onClick={() => addOption(i, g.colorPick)}
+                      className="ml-auto text-xs font-semibold text-white bg-black hover:bg-gray-800 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      + Agregar
+                    </button>
+                  </div>
+
+                  {showGrpErr && <FieldError msg={err?.options} />}
+                </div>
+              ) : isSizeGroup ? (
+                /* ── Selector de tallas ── */
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-widest text-gray-400">Tallas</label>
+
+                  {/* Tallas agregadas (no preset) */}
+                  {opts.filter(o => !BASIC_SIZES.some(s => s.toLowerCase() === o.toLowerCase())).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {opts.filter(o => !BASIC_SIZES.some(s => s.toLowerCase() === o.toLowerCase())).map((opt, j) => {
+                        const isDupe = dupes.has(opt.toLowerCase());
+                        return (
+                          <span key={j} className={`px-2.5 py-1 text-xs rounded-lg flex items-center gap-1 ${
+                            isDupe ? 'bg-amber-100 text-amber-700 border border-amber-300' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {opt}
+                            <button type="button" onClick={() => removeOption(i, opt)} className="text-gray-400 hover:text-red-500 ml-0.5">×</button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Tallas preset */}
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1.5">Tallas comunes</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {BASIC_SIZES.map(size => {
+                        const added = opts.some(o => o.toLowerCase() === size.toLowerCase());
+                        return (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => added ? removeOption(i, size) : addOption(i, size)}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                              added
+                                ? 'bg-black text-white border-black'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:text-black'
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Talla personalizada */}
+                  <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
+                    <label className="text-[10px] text-gray-400 shrink-0">Otra talla:</label>
+                    <input
+                      value={g.customEntry}
+                      onChange={e => updateGroup(i, 'customEntry', e.target.value)}
+                      placeholder="Ej: 38, 40, 42..."
+                      className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-gray-400 flex-1"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') { e.preventDefault(); const v = g.customEntry.trim(); if (v) { addOption(i, v); updateGroup(i, 'customEntry', ''); } }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { const v = g.customEntry.trim(); if (v) { addOption(i, v); updateGroup(i, 'customEntry', ''); } }}
+                      className="text-xs font-semibold text-white bg-black hover:bg-gray-800 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      + Agregar
+                    </button>
+                  </div>
+
+                  {showGrpErr && <FieldError msg={err?.options} />}
+                </div>
+              ) : (
+                /* ── Opciones de texto ── */
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] uppercase tracking-widest text-gray-400">
+                    Opciones <span className="normal-case">(separadas por coma)</span>
+                  </label>
+                  <input
+                    value={g.optionsStr}
+                    onChange={e => updateGroup(i, 'optionsStr', e.target.value)}
+                    placeholder="Ej: S, M, L, XL, XXL"
+                    className={`border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors ${
+                      showGrpErr && err?.options
+                        ? 'border-gray-400 bg-gray-50 focus:border-gray-1000'
+                        : 'border-gray-200 focus:border-gray-400'
+                    }`}
+                  />
+                  {showGrpErr && <FieldError msg={err?.options} />}
+
+                  {opts.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      {opts.map((opt, j) => {
+                        const isDupe = dupes.has(opt.toLowerCase());
+                        return (
+                          <span key={j} className={`px-2 py-0.5 text-[10px] rounded flex items-center gap-1 ${
+                            isDupe
+                              ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {opt}
+                            {isDupe && <span title="Duplicada — se ignorará">⚠</span>}
+                          </span>
+                        );
+                      })}
+                      {dupes.size > 0 && (
+                        <p className="w-full text-[10px] text-amber-600 mt-0.5">
+                          Las opciones duplicadas se eliminarán al guardar.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+                {opts.filter(o => !dupes.has(o.toLowerCase())).length > 0 && form.images.length > 1 && (
+                  <div className="border-t border-gray-100 pt-3 mt-1">
+                    <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">Vincular opción → imagen</p>
+                    <div className="flex flex-col gap-2">
+                      {opts.filter(o => !dupes.has(o.toLowerCase())).map(opt => (
+                        <div key={opt} className="flex items-center gap-2">
+                          {isColorGroup ? (
+                            <div
+                              className="w-6 h-6 rounded-full border border-gray-200 shrink-0"
+                              style={{ backgroundColor: opt }}
+                              title={opt}
+                            />
+                          ) : (
+                            <span className="text-xs text-gray-500 w-24 truncate shrink-0">{opt}</span>
+                          )}
+                          <div className="flex gap-1.5 flex-wrap">
+                            {form.images.map((img, imgIdx) => (
+                              <button
+                                key={imgIdx}
+                                type="button"
+                                onClick={() => updateGroupImageMap(i, opt, g.imageMap[opt] === imgIdx ? undefined : imgIdx)}
+                                className={`relative w-9 h-9 rounded-lg overflow-hidden border-2 transition-all ${
+                                  g.imageMap[opt] === imgIdx
+                                    ? 'border-black ring-1 ring-black'
+                                    : 'border-gray-200 opacity-60 hover:opacity-100'
+                                }`}
+                              >
+                                <Image src={img} alt={`imagen ${imgIdx + 1}`} fill sizes="36px" className="object-cover" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </div>
             </div>
           );
         })}

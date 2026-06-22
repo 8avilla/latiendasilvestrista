@@ -2,11 +2,21 @@
 
 import { useState } from 'react';
 import { Product } from '@/types';
+
+function isHexColor(s: string) {
+  return /^#[0-9a-fA-F]{6}$/.test(s);
+}
 import { useCart } from '@/components/CartProvider';
 import { usePopup } from '@/components/PopupProvider';
 import { trackEvent } from '@/lib/sessionId';
 
-export default function AddToCart({ product }: { product: Product }) {
+export default function AddToCart({
+  product,
+  onSelectionChange,
+}: {
+  product: Product;
+  onSelectionChange?: (sel: Record<string, string>) => void;
+}) {
   const { addItem, openSidebar } = useCart();
   const { openPopup } = usePopup();
   const [selections, setSelections] = useState<Record<string, string>>(() => {
@@ -41,20 +51,45 @@ export default function AddToCart({ product }: { product: Product }) {
         <div key={group.name}>
           <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold mb-2">{group.name}</p>
           <div className="flex flex-wrap gap-2">
-            {group.options.map(opt => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => setSelections(prev => ({ ...prev, [group.name]: opt }))}
-                className={`px-4 py-2 text-xs uppercase tracking-wide rounded-full border transition-all duration-150 ${
-                  selections[group.name] === opt
-                    ? 'border-black bg-black text-white'
-                    : 'border-gray-200 text-gray-600 hover:border-black hover:text-black'
-                }`}
-              >
-                {opt}
-              </button>
-            ))}
+            {group.options.map(opt => {
+              const isColor = isHexColor(opt);
+              const selected = selections[group.name] === opt;
+              return isColor ? (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    const next = { ...selections, [group.name]: opt };
+                    setSelections(next);
+                    onSelectionChange?.(next);
+                  }}
+                  title={opt}
+                  className={`w-8 h-8 rounded-full border-2 transition-all duration-150 ${
+                    selected
+                      ? 'border-black ring-2 ring-black ring-offset-1'
+                      : 'border-gray-200 hover:border-gray-400'
+                  }`}
+                  style={{ backgroundColor: opt }}
+                />
+              ) : (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    const next = { ...selections, [group.name]: opt };
+                    setSelections(next);
+                    onSelectionChange?.(next);
+                  }}
+                  className={`px-4 py-2 text-xs uppercase tracking-wide rounded-full border transition-all duration-150 ${
+                    selected
+                      ? 'border-black bg-black text-white'
+                      : 'border-gray-200 text-gray-600 hover:border-black hover:text-black'
+                  }`}
+                >
+                  {opt}
+                </button>
+              );
+            })}
           </div>
         </div>
       ))}
