@@ -80,16 +80,16 @@ export default function SizeGuide() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/30">
-                <th className="text-left px-5 py-3.5 text-[10px] uppercase tracking-[0.18em] text-gray-400 font-semibold">
+                <th className="text-left px-3 sm:px-5 py-3 sm:py-3.5 text-[10px] uppercase tracking-[0.14em] sm:tracking-[0.18em] text-gray-400 font-semibold">
                   Talla
                 </th>
-                <th className="text-left px-5 py-3.5 text-[10px] uppercase tracking-[0.18em] text-gray-400 font-semibold">
+                <th className="text-left px-3 sm:px-5 py-3 sm:py-3.5 text-[10px] uppercase tracking-[0.14em] sm:tracking-[0.18em] text-gray-400 font-semibold">
                   Pecho (cm)
                 </th>
-                <th className="text-left px-5 py-3.5 text-[10px] uppercase tracking-[0.18em] text-gray-400 font-semibold">
+                <th className="text-left px-3 sm:px-5 py-3 sm:py-3.5 text-[10px] uppercase tracking-[0.14em] sm:tracking-[0.18em] text-gray-400 font-semibold">
                   Largo (cm)
                 </th>
-                <th className="text-left px-5 py-3.5 text-[10px] uppercase tracking-[0.18em] text-gray-400 font-semibold">
+                <th className="text-left px-3 sm:px-5 py-3 sm:py-3.5 text-[10px] uppercase tracking-[0.14em] sm:tracking-[0.18em] text-gray-400 font-semibold">
                   Hombros (cm)
                 </th>
               </tr>
@@ -102,12 +102,12 @@ export default function SizeGuide() {
                     i % 2 === 0 ? '' : 'bg-gray-50/25'
                   }`}
                 >
-                  <td className="px-5 py-3.5 font-semibold text-black group-hover/row:text-red-600 transition-colors tracking-wide">
+                  <td className="px-3 sm:px-5 py-3 sm:py-3.5 font-semibold text-black group-hover/row:text-red-600 transition-colors tracking-wide">
                     {row.talla}
                   </td>
-                  <td className="px-5 py-3.5 text-gray-600 group-hover/row:text-gray-900 transition-colors font-light">{row.pecho}</td>
-                  <td className="px-5 py-3.5 text-gray-600 group-hover/row:text-gray-900 transition-colors font-light">{row.largo}</td>
-                  <td className="px-5 py-3.5 text-gray-600 group-hover/row:text-gray-900 transition-colors font-light">{row.hombros}</td>
+                  <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-gray-600 group-hover/row:text-gray-900 transition-colors font-light">{row.pecho}</td>
+                  <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-gray-600 group-hover/row:text-gray-900 transition-colors font-light">{row.largo}</td>
+                  <td className="px-3 sm:px-5 py-3 sm:py-3.5 text-gray-600 group-hover/row:text-gray-900 transition-colors font-light">{row.hombros}</td>
                 </tr>
               ))}
             </tbody>

@@ -69,3 +69,11 @@ h2 {
   animation: marquee 32s linear infinite;
   will-change: transform;
 }
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

@@ -100,10 +100,10 @@ function CheckoutSuccessContent() {
   const isPending = order.status === 'PAGO PENDIENTE';
 
   return (
-    <div className="flex-1 bg-gray-50 py-12 px-6">
+    <div className="flex-1 bg-gray-50 py-8 sm:py-12 px-4 sm:px-6 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
         {/* Status Card */}
-        <div className="bg-white border border-gray-100 p-8 md:p-10 rounded-xl shadow-sm text-center mb-8 relative overflow-hidden">
+        <div className="bg-white border border-gray-100 p-5 sm:p-8 md:p-10 rounded-xl shadow-sm text-center mb-8 relative overflow-hidden">
           {isPaid && (
             <>
               <div className="absolute top-0 left-0 w-full h-1.5 bg-green-500" />
@@ -162,9 +162,9 @@ function CheckoutSuccessContent() {
         </div>
 
         {/* Details Section */}
-        <div className="grid md:grid-cols-5 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8 items-start">
           {/* Column 1: Items */}
-          <div className="md:col-span-3 bg-white border border-gray-100 p-6 md:p-8 rounded-xl shadow-sm">
+          <div className="md:col-span-3 bg-white border border-gray-100 p-4 sm:p-6 md:p-8 rounded-xl shadow-sm">
             <h2 className="text-sm uppercase tracking-wider text-black font-bold mb-6 pb-2 border-b border-gray-100">
               Resumen del Pedido
             </h2>
@@ -200,7 +200,7 @@ function CheckoutSuccessContent() {
           </div>
 
           {/* Column 2: Shipping Details */}
-          <div className="md:col-span-2 bg-white border border-gray-100 p-6 md:p-8 rounded-xl shadow-sm flex flex-col gap-6">
+          <div className="md:col-span-2 bg-white border border-gray-100 p-4 sm:p-6 md:p-8 rounded-xl shadow-sm flex flex-col gap-6">
             <div>
               <h2 className="text-sm uppercase tracking-wider text-black font-bold mb-4 pb-2 border-b border-gray-100">
                 Información de Envío

@@ -224,7 +224,7 @@ export default function CarritoPage() {
   }
 
   return (
-    <main className="flex-1 bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <main className="flex-1 bg-gray-50 py-8 sm:py-12 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-serif text-black italic mb-8 pb-4 border-b border-gray-200" style={{ fontFamily: 'var(--font-dm-serif)' }}>
           Tu Carrito de Compras
@@ -241,17 +241,17 @@ export default function CarritoPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
             {/* Columna Izquierda: Listado de Ítems */}
             <div className="lg:col-span-7 flex flex-col gap-4">
-              <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
-                <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-100">
-                  <h2 className="text-xs uppercase tracking-widest text-gray-400 font-bold">Artículos Seleccionados</h2>
+              <div className="bg-white border border-gray-100 rounded-xl p-4 sm:p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-4 sm:mb-6 pb-2 border-b border-gray-100">
+                  <h2 className="text-xs uppercase tracking-wide text-gray-400 font-bold">Artículos</h2>
                   <button
                     onClick={clearCart}
-                    className="text-[10px] uppercase tracking-widest text-gray-400 hover:text-red-500 font-semibold transition-colors"
+                    className="text-[10px] uppercase tracking-wide text-gray-400 hover:text-red-500 font-semibold transition-colors"
                   >
-                    Vaciar Carrito
+                    Vaciar
                   </button>
                 </div>
 
@@ -281,7 +281,7 @@ export default function CarritoPage() {
 
                         {/* Detalles de Producto */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-[10px] uppercase tracking-widest text-red-600 font-bold mb-0.5">
+                          <p className="text-[10px] uppercase tracking-wide text-red-600 font-bold mb-0.5 truncate">
                             {item.product.category}
                           </p>
                           <h3 className="text-sm font-semibold text-black leading-snug truncate">
@@ -333,7 +333,7 @@ export default function CarritoPage() {
             {/* Columna Derecha: Formulario & Totales */}
             <div className="lg:col-span-5 flex flex-col gap-6">
               {/* Formulario de Envío */}
-              <div className="bg-white border border-gray-100 rounded-xl p-6 md:p-8 shadow-sm">
+              <div className="bg-white border border-gray-100 rounded-xl p-4 sm:p-6 md:p-8 shadow-sm">
                 <h2 className="text-xs uppercase tracking-widest text-gray-400 font-bold mb-6 pb-2 border-b border-gray-100">
                   Datos de Envío
                 </h2>
@@ -444,7 +444,7 @@ export default function CarritoPage() {
               </div>
 
               {/* Caja de Total & CTAs */}
-              <div className="bg-white border border-gray-100 rounded-xl p-6 md:p-8 shadow-sm flex flex-col gap-6">
+              <div className="bg-white border border-gray-100 rounded-xl p-4 sm:p-6 md:p-8 shadow-sm flex flex-col gap-6">
                 <div>
                   <h2 className="text-xs uppercase tracking-widest text-gray-400 font-bold mb-4 pb-2 border-b border-gray-100">
                     Resumen de Compra
@@ -458,10 +458,10 @@ export default function CarritoPage() {
                     <span>${totalPrice.toLocaleString('es-CO')}</span>
                   </div>
                   <div className="flex justify-between items-baseline text-xs text-gray-500 mb-2">
-                    <span>Envío:</span>
+                    <span className="shrink-0">Envío:</span>
                     {shippingPrice === null ? (
-                      <span className="text-gray-400 italic">
-                        {shippingDetails.city && !shippingRates ? 'Calculando...' : 'Selecciona departamento y ciudad'}
+                      <span className="text-gray-400 italic text-right ml-2">
+                        {shippingDetails.city && !shippingRates ? 'Calculando...' : 'Selecciona ciudad'}
                       </span>
                     ) : (
                       <span>${shippingPrice.toLocaleString('es-CO')}</span>
@@ -524,8 +524,8 @@ export default function CarritoPage() {
                     )}
                   </button>
                   {!isSubmitting && boldReady && (
-                    <p className="text-center text-[10px] text-gray-400 leading-snug">
-                      Se abrirá la pasarela segura de Bold en esta pantalla — no saldrás de la tienda
+                    <p className="text-center text-[10px] text-gray-400 leading-snug break-words">
+                      Pasarela segura Bold — no saldrás de la tienda
                     </p>
                   )}
                 </div>

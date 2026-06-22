@@ -52,8 +52,8 @@ function CarrierTrackingBlock({ order }: { order: Order }) {
       {/* Cuerpo: número de guía */}
       <div className="bg-white px-5 py-5">
         <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Número de guía</p>
-        <div className="flex items-center gap-3 mb-4">
-          <span className="font-mono text-2xl font-bold text-black tracking-widest">{order.trackingNumber}</span>
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <span className="font-mono text-lg sm:text-2xl font-bold text-black tracking-wide break-all">{order.trackingNumber}</span>
           <button
             onClick={copyTracking}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${

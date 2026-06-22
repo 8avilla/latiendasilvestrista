@@ -51,6 +51,7 @@ export default async function AnaliticasPage({
     revenueAgg,
     paymentErrorAgg,
     hourlyAgg,
+    marginAgg,
   ] = await Promise.all([
 
     // Sesiones únicas por evento (eventos con sessionId)
@@ -142,6 +143,22 @@ export default async function AnaliticasPage({
       }},
       { $sort: { _id: 1 } },
     ]).toArray(),
+
+    // Margen bruto: costo vs ingresos para ítems con purchaseCost registrado
+    db.collection('orders').aggregate([
+      { $match: {
+        ...matchOrderDate,
+        status: { $in: ['CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO'] },
+        deleted: { $ne: true },
+      }},
+      { $unwind: '$items' },
+      { $match: { 'items.product.purchaseCost': { $exists: true, $gt: 0 } } },
+      { $group: {
+        _id: null,
+        totalCost: { $sum: { $multiply: ['$items.product.purchaseCost', '$items.quantity'] } },
+        revenueWithCost: { $sum: { $multiply: ['$items.product.price', '$items.quantity'] } },
+      }},
+    ]).toArray(),
   ]);
 
   // Combinar sesiones únicas con raw counts (usar sesiones donde existan, si no raw)
@@ -222,6 +239,13 @@ export default async function AnaliticasPage({
   const confirmedCount = revenueData?.count ?? 0;
   const avgTicket = confirmedCount > 0 ? Math.round(revenue / confirmedCount) : 0;
 
+  // Margen bruto
+  const marginData = (marginAgg as { _id: null; totalCost: number; revenueWithCost: number }[])[0];
+  const totalCost = marginData?.totalCost ?? 0;
+  const revenueWithCost = marginData?.revenueWithCost ?? 0;
+  const grossMargin = revenueWithCost > 0 ? revenueWithCost - totalCost : 0;
+  const grossMarginPct = revenueWithCost > 0 ? Math.round((grossMargin / revenueWithCost) * 100) : null;
+
   // Errores de pago
   const paymentErrors = (paymentErrorAgg as { _id: null; count: number }[])[0]?.count ?? 0;
   const checkoutStarts = getValue('checkout_start');
@@ -254,6 +278,9 @@ export default async function AnaliticasPage({
       paymentErrors={paymentErrors}
       paymentErrorRate={paymentErrorRate}
       hourlyData={hourlyData}
+      totalCost={totalCost}
+      grossMargin={grossMargin}
+      grossMarginPct={grossMarginPct}
     />
   );
 }

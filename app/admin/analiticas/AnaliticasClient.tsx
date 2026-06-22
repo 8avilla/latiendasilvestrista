@@ -53,6 +53,9 @@ interface Props {
   paymentErrors: number;
   paymentErrorRate: number | null;
   hourlyData: HourData[];
+  totalCost: number;
+  grossMargin: number;
+  grossMarginPct: number | null;
 }
 
 const PERIODOS = [
@@ -72,6 +75,7 @@ export default function AnaliticasClient({
   periodo, periodoLabel, funnel, daily, topProducts,
   abandonadosTotal, abandonadosCount, convDrop, hasUniqueData,
   revenue, avgTicket, confirmedCount, paymentErrors, paymentErrorRate, hourlyData,
+  totalCost, grossMargin, grossMarginPct,
 }: Props) {
   const top = funnel[0].value;
   const hasData = funnel.some(s => s.value > 0);
@@ -117,8 +121,8 @@ export default function AnaliticasClient({
 
       {/* Ingresos reales */}
       {(revenue > 0 || confirmedCount > 0) && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-white border border-gray-100 rounded-xl px-4 py-4 flex flex-col gap-1 md:col-span-1">
+        <div className={`grid gap-3 ${grossMarginPct !== null ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 md:grid-cols-4'}`}>
+          <div className="bg-white border border-gray-100 rounded-xl px-4 py-4 flex flex-col gap-1">
             <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Ingresos</p>
             <p className="text-2xl font-bold text-green-600">${revenue.toLocaleString('es-CO')}</p>
             <p className="text-[10px] text-gray-400">{confirmedCount} pedido{confirmedCount !== 1 ? 's' : ''} confirmado{confirmedCount !== 1 ? 's' : ''}</p>
@@ -128,6 +132,20 @@ export default function AnaliticasClient({
             <p className="text-2xl font-bold text-black">${avgTicket.toLocaleString('es-CO')}</p>
             <p className="text-[10px] text-gray-400">por pedido confirmado</p>
           </div>
+          {grossMarginPct !== null && (
+            <>
+              <div className="bg-white border border-gray-100 rounded-xl px-4 py-4 flex flex-col gap-1">
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Costo mercancía</p>
+                <p className="text-2xl font-bold text-orange-500">${totalCost.toLocaleString('es-CO')}</p>
+                <p className="text-[10px] text-gray-400">ítems con costo registrado</p>
+              </div>
+              <div className="bg-white border border-emerald-100 rounded-xl px-4 py-4 flex flex-col gap-1">
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Ganancia bruta</p>
+                <p className="text-2xl font-bold text-emerald-600">${grossMargin.toLocaleString('es-CO')}</p>
+                <p className="text-[10px] text-gray-400">margen {grossMarginPct}%</p>
+              </div>
+            </>
+          )}
           <div className={`bg-white border rounded-xl px-4 py-4 flex flex-col gap-1 ${
             paymentErrorRate !== null && paymentErrorRate >= 10 ? 'border-red-200' : 'border-gray-100'
           }`}>
