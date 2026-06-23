@@ -76,13 +76,13 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
       .filter(o => {
         if (!matchesSearch(o, search)) return false;
         if (dateFrom) {
-          const from = new Date(dateFrom);
-          from.setHours(0, 0, 0, 0);
+          const [fy, fm, fd] = dateFrom.split('-').map(Number);
+          const from = new Date(fy, fm - 1, fd, 0, 0, 0, 0);
           if (new Date(o.createdAt) < from) return false;
         }
         if (dateTo) {
-          const to = new Date(dateTo);
-          to.setHours(23, 59, 59, 999);
+          const [ty, tm, td] = dateTo.split('-').map(Number);
+          const to = new Date(ty, tm - 1, td, 23, 59, 59, 999);
           if (new Date(o.createdAt) > to) return false;
         }
         return true;
@@ -90,10 +90,6 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [orders, search, dateFrom, dateTo]);
 
-  const totalPagado = useMemo(
-    () => pagados.reduce((s, o) => s + o.totalPrice, 0),
-    [pagados]
-  );
 
   function matchesSearch(order: Order, q: string): boolean {
     if (!q.trim()) return true;
@@ -338,6 +334,138 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
     XLSX.writeFile(wb, `Empaque_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
+  function handlePrintGuides() {
+    if (pagados.length === 0) {
+      showError('No hay pedidos para imprimir con los filtros actuales.');
+      return;
+    }
+
+    const guidesHtml = pagados.map(order => {
+      const items = order.items.map(i => {
+        const vars = i.selections ? ` (${Object.values(i.selections).join(' / ')})` : '';
+        return `<li>${i.quantity}× ${i.product.name}${vars}</li>`;
+      }).join('');
+      const subtotal = order.items.reduce((s, i) => s + i.product.price * i.quantity, 0);
+      const shipping = order.shippingPrice ?? 0;
+      const date = new Date(order.createdAt).toLocaleDateString('es-CO', {
+        timeZone: 'America/Bogota', day: '2-digit', month: 'short', year: 'numeric',
+      });
+      return `
+        <div class="guide">
+          <div class="guide-head">
+            <div>
+              <div class="store">La Tienda Silvestrista</div>
+              <div class="date">${date}</div>
+            </div>
+            <div class="order-id">${order.orderId}</div>
+          </div>
+          <div class="section">
+            <div class="lbl">Destinatario</div>
+            <div class="name">${order.shippingDetails.name}</div>
+            <div class="phone">${order.shippingDetails.phone}</div>
+            <div>${order.shippingDetails.address}</div>
+            <div>${order.shippingDetails.city}${order.shippingDetails.department ? ', ' + order.shippingDetails.department : ''}</div>
+            ${order.shippingDetails.email ? `<div class="email">${order.shippingDetails.email}</div>` : ''}
+          </div>
+          <div class="section">
+            <div class="lbl">Productos</div>
+            <ul class="items">${items}</ul>
+          </div>
+          <div class="totals">
+            <div class="totals-row"><span>Subtotal</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>
+            <div class="totals-row"><span>Domicilio</span><span>${shipping === 0 ? 'Gratis' : '$' + shipping.toLocaleString('es-CO')}</span></div>
+            <div class="totals-row total-row"><span>Total</span><span>$${order.totalPrice.toLocaleString('es-CO')} COP</span></div>
+          </div>
+          ${order.trackingNumber ? `<div class="tracking"><span class="tracking-label">${order.carrier ? order.carrier + ' · ' : ''}Guía:</span> <span class="tracking-num">${order.trackingNumber}</span></div>` : ''}
+          ${order.notes ? `<div class="notes"><strong>Notas:</strong> ${order.notes}</div>` : ''}
+        </div>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Guías de envío — La Tienda Silvestrista</title>
+  <style>
+    @page { margin: 8mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #000; background: #fff; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+    .guide { border: 1.5px solid #000; border-radius: 3px; padding: 4mm; page-break-inside: avoid; break-inside: avoid; display: flex; flex-direction: column; gap: 3mm; }
+    .guide-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #ddd; padding-bottom: 3mm; }
+    .store { font-size: 12px; font-weight: bold; }
+    .date { font-size: 9px; color: #666; margin-top: 1mm; }
+    .order-id { font-family: monospace; font-size: 9px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
+    .section { display: flex; flex-direction: column; gap: 1mm; }
+    .lbl { font-size: 8px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; font-weight: bold; }
+    .name { font-size: 16px; font-weight: bold; }
+    .phone { font-size: 14px; font-weight: 600; }
+    .email { color: #666; font-size: 10px; }
+    .items { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5mm; }
+    .items li::before { content: "• "; }
+    .totals { border-top: 1px solid #ddd; padding-top: 2mm; display: flex; flex-direction: column; gap: 1mm; }
+    .totals-row { display: flex; justify-content: space-between; font-size: 10px; color: #555; }
+    .total-row { font-size: 12px; font-weight: bold; color: #000; border-top: 1px solid #ddd; padding-top: 1.5mm; margin-top: 0.5mm; }
+    .tracking { font-size: 10px; background: #f3f0ff; border: 1px solid #c4b5fd; border-radius: 3px; padding: 2mm 3mm; }
+    .tracking-label { color: #6d28d9; font-weight: bold; }
+    .tracking-num { font-family: monospace; font-size: 12px; font-weight: bold; letter-spacing: 0.05em; }
+    .notes { font-size: 9px; color: #555; border-top: 1px dashed #ddd; padding-top: 2mm; }
+  </style>
+</head>
+<body>
+  <div class="grid">${guidesHtml}</div>
+  <script>window.onload = () => { window.print(); }</script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    }
+  }
+
+  function handleExportPedidosExcel() {
+    if (pagados.length === 0) {
+      showError('No hay pedidos para exportar con los filtros actuales.');
+      return;
+    }
+    const data = pagados.map(order => {
+      const productsSummary = order.items
+        .map(item => {
+          const vars = item.selections ? ` (${Object.values(item.selections).join(' / ')})` : '';
+          return `${item.quantity}× ${item.product.name}${vars}`;
+        })
+        .join(' | ');
+      return {
+        'ID Pedido': order.orderId,
+        Fecha: new Date(order.createdAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' }),
+        Canal: order.salesChannel || '',
+        Pago: order.paymentMethod || '',
+        Cliente: order.shippingDetails?.name || '',
+        Celular: order.shippingDetails?.phone || '',
+        Email: order.shippingDetails?.email || '',
+        Departamento: order.shippingDetails?.department || '',
+        Ciudad: order.shippingDetails?.city || '',
+        Dirección: order.shippingDetails?.address || '',
+        Productos: productsSummary,
+        Subtotal: order.items.reduce((s, i) => s + i.product.price * i.quantity, 0),
+        Domicilio: order.shippingPrice ?? 0,
+        Total: order.totalPrice,
+        Notas: order.notes || '',
+      };
+    });
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws['!cols'] = [
+      { wch: 18 }, { wch: 12 }, { wch: 14 }, { wch: 12 },
+      { wch: 25 }, { wch: 13 }, { wch: 28 }, { wch: 16 }, { wch: 18 },
+      { wch: 35 }, { wch: 50 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 30 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'Pedidos');
+    XLSX.writeFile(wb, `Pedidos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape' && isDrawerOpen && !isSaving && !isDeleting) closeDrawer();
@@ -349,8 +477,8 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
   return (
     <div>
       {/* Métricas */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+      <div className="mb-6">
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 inline-block">
           <p className="text-[10px] uppercase tracking-widest text-green-600 font-semibold mb-1">
             Pedidos pagados
           </p>
@@ -363,18 +491,6 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
           <p className="text-xs text-green-500 mt-1">
             pedido{orders.length !== 1 ? 's' : ''} por despachar
           </p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1">
-            Total en cola
-          </p>
-          <p
-            className="text-3xl font-bold text-black"
-            style={{ fontFamily: 'var(--font-dm-serif)' }}
-          >
-            ${totalPagado.toLocaleString('es-CO')}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">suma de todos los pagados</p>
         </div>
       </div>
 
@@ -408,6 +524,24 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
             {lastRefresh && (
               <span className="text-[10px] text-gray-400">actualizado {lastRefresh}</span>
             )}
+          <button
+            onClick={handlePrintGuides}
+            className="flex items-center gap-1.5 border border-gray-300 hover:border-black text-gray-600 hover:text-black px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer active:scale-95"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Imprimir guías
+          </button>
+          <button
+            onClick={handleExportPedidosExcel}
+            className="flex items-center gap-1.5 border border-green-600 hover:bg-green-600 text-green-700 hover:text-white px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer active:scale-95"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Excel pedidos
+          </button>
           <button
             onClick={handleExportExcel}
             className="flex items-center gap-1.5 border border-emerald-600 hover:bg-emerald-600 text-emerald-700 hover:text-white px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer active:scale-95"
