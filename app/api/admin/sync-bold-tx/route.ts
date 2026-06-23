@@ -8,7 +8,7 @@ interface BoldTransaction {
   payment_status?: string;
 }
 
-const TARGET_STATUSES = ['CONFIRMADO', 'EN PREPARACIÓN'];
+const TARGET_STATUSES = ['NUEVO PEDIDO', 'PAGO PENDIENTE', 'CONFIRMADO', 'EN PREPARACIÓN', 'ENVIADO', 'ENTREGADO'];
 
 export async function POST(request: Request) {
   const cronSecret = process.env.CRON_SECRET;

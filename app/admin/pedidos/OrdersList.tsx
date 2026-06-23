@@ -66,7 +66,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   }
 
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '');
-  const [statusFilter, setStatusFilter] = useState<Set<OrderStatus>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<Set<OrderStatus>>(new Set(['CONFIRMADO', 'EN PREPARACIÓN'] as OrderStatus[]));
   const [channelFilter, setChannelFilter] = useState<'ALL' | SalesChannel>('ALL');
   const [paymentFilter, setPaymentFilter] = useState<'ALL' | PaymentMethod>('ALL');
   const [sortBy, setSortBy] = useState<'NEWEST' | 'OLDEST' | 'PRICE_DESC' | 'PRICE_ASC'>('NEWEST');
