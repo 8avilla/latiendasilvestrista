@@ -48,9 +48,9 @@ export default function Header() {
           <Image
             src="/images/logo-la-tienda-silvestrista.png"
             alt="La Tienda Silvestrista"
-            height={38}
-            width={190}
-            style={{ height: '38px', width: 'auto' }}
+            height={24}
+            width={255}
+            className="h-4 sm:h-5 lg:h-6 w-auto"
             priority
           />
         </Link>

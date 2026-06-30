@@ -202,9 +202,9 @@ export default function AdminNav() {
         <Image
           src="/images/logo-la-tienda-silvestrista.png"
           alt="La Tienda Silvestrista"
-          height={30}
-          width={150}
-          style={{ height: '30px', width: 'auto', filter: 'brightness(0) invert(1)' }}
+          height={13}
+          width={138}
+          style={{ height: '13px', width: 'auto', filter: 'brightness(0) invert(1)' }}
         />
       </div>
 
@@ -307,9 +307,9 @@ export default function AdminNav() {
           <Image
             src="/images/logo-la-tienda-silvestrista.png"
             alt="La Tienda Silvestrista"
-            height={26}
-            width={130}
-            style={{ height: '26px', width: 'auto', filter: 'brightness(0) invert(1)' }}
+            height={13}
+            width={138}
+            style={{ height: '13px', width: 'auto', filter: 'brightness(0) invert(1)' }}
           />
         </div>
 

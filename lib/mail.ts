@@ -30,7 +30,7 @@ function formatPrice(n: number) {
 }
 
 function logoHtml() {
-  return `<img src="${SITE_URL}/images/logo-la-tienda-silvestrista.png" alt="La Tienda Silvestrista" width="220" height="57" style="display:block;height:57px;width:auto;max-width:220px;border:0;" />`;
+  return `<img src="${SITE_URL}/images/logo-la-tienda-silvestrista.png" alt="La Tienda Silvestrista" width="213" height="20" style="display:block;height:20px;width:auto;max-width:213px;border:0;" />`;
 }
 
 function itemsHtml(order: Order) {

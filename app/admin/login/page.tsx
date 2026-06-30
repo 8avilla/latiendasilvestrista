@@ -41,9 +41,9 @@ export default function LoginPage() {
           <Image
             src="/images/logo-la-tienda-silvestrista.png"
             alt="La Tienda Silvestrista"
-            height={46}
-            width={230}
-            style={{ height: '46px', width: 'auto' }}
+            height={22}
+            width={234}
+            style={{ height: '22px', width: 'auto' }}
             priority
           />
           <p className="text-xs uppercase tracking-widest text-red-600 font-semibold mt-3">Panel Admin</p>
