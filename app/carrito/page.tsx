@@ -356,7 +356,7 @@ export default function CarritoPage() {
                       value={shippingDetails.name}
                       onChange={e => setShippingDetails({ ...shippingDetails, name: e.target.value })}
                       className="w-full border border-gray-200 px-3 py-2.5 text-xs text-black focus:outline-none focus:border-red-600 transition-colors"
-                      placeholder="Ej: Silvestre Dangond"
+                      placeholder="Ej: Juan Pérez"
                     />
                   </div>
 

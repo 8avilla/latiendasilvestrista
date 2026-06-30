@@ -2,7 +2,7 @@
 import Image from 'next/image';
 
 const CHIPS = [
-  'Movimiento Silvestrista',
+  'Moda Silvestrista',
   'Colección oficial',
   'Envíos a Colombia',
   'Pago seguro en línea',
@@ -30,14 +30,14 @@ export default function Hero() {
           className="text-5xl sm:text-6xl lg:text-7xl leading-[1.02] tracking-tight"
           style={{ fontFamily: 'var(--font-dm-serif)' }}
         >
-          <span className="text-black block">Silvestre,</span>
+          <span className="text-black block">Silvestrista,</span>
           <span className="italic text-red-600 block">hecho moda.</span>
         </h1>
 
         {/* Descripción */}
         <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
-          Viste los colores del rey del vallenato. Camisetas, gorras, sombreros,
-          manillas y vasos con el sello inconfundible del movimiento silvestrista.
+          Viste el estilo silvestrista. Camisetas, gorras, sombreros,
+          manillas y vasos con el sello inconfundible de la marca.
         </p>
 
         {/* Botón */}

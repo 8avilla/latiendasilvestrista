@@ -41,7 +41,11 @@ export async function POST(request: Request) {
 
   const pendingOrders = await db
     .collection('orders')
-    .find({ paymentMethod: { $in: ['Bold', 'BOLD'] }, status: 'PAGO PENDIENTE', deleted: { $ne: true } })
+    .find({
+      paymentMethod: { $in: ['Bold', 'BOLD'] },
+      status: { $in: ['PAGO PENDIENTE', 'PENDING', 'PAGO SIN CONFIRMAR'] },
+      deleted: { $ne: true },
+    })
     .toArray();
 
   if (pendingOrders.length === 0) {

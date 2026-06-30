@@ -35,7 +35,35 @@ function normalizePM(raw: string | undefined): PaymentMethod {
   return 'Otros';
 }
 
-const ACTIVE_STATUSES: OrderStatus[] = ['CONFIRMADO', 'EN PREPARACIÓN'];
+const ALL_STATUSES: OrderStatus[] = [
+  'NUEVO PEDIDO',
+  'PAGO PENDIENTE',
+  'CONFIRMADO',
+  'EN PREPARACIÓN',
+  'ENVIADO',
+  'ENTREGADO',
+  'CANCELADO',
+];
+
+const STATUS_LABELS: Record<OrderStatus, string> = {
+  'NUEVO PEDIDO': 'Nuevo',
+  'PAGO PENDIENTE': 'Pago pendiente',
+  'CONFIRMADO': 'Pagado',
+  'EN PREPARACIÓN': 'En preparación',
+  'ENVIADO': 'Enviado',
+  'ENTREGADO': 'Entregado',
+  'CANCELADO': 'Cancelado',
+};
+
+const STATUS_COLORS: Record<OrderStatus, { chip: string; badge: string }> = {
+  'NUEVO PEDIDO':    { chip: 'border-gray-300 text-gray-600',   badge: 'bg-gray-100 text-gray-700 border-gray-200' },
+  'PAGO PENDIENTE':  { chip: 'border-amber-400 text-amber-700', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
+  'CONFIRMADO':      { chip: 'border-green-500 text-green-700', badge: 'bg-green-100 text-green-700 border-green-200' },
+  'EN PREPARACIÓN':  { chip: 'border-green-500 text-green-700', badge: 'bg-green-100 text-green-700 border-green-200' },
+  'ENVIADO':         { chip: 'border-blue-500 text-blue-700',   badge: 'bg-blue-50 text-blue-700 border-blue-200' },
+  'ENTREGADO':       { chip: 'border-indigo-500 text-indigo-700', badge: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  'CANCELADO':       { chip: 'border-red-400 text-red-600',     badge: 'bg-red-50 text-red-700 border-red-200' },
+};
 
 interface GestorV2Props {
   initialOrders: Order[];
@@ -52,6 +80,9 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [statusFilter, setStatusFilter] = useState<Set<OrderStatus>>(
+    new Set(['CONFIRMADO', 'EN PREPARACIÓN'] as OrderStatus[])
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<string | null>(null);
 
@@ -71,9 +102,10 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
-  const pagados = useMemo(() => {
+  const filtered = useMemo(() => {
     return orders
       .filter(o => {
+        if (statusFilter.size > 0 && !statusFilter.has(o.status)) return false;
         if (!matchesSearch(o, search)) return false;
         if (dateFrom) {
           const [fy, fm, fd] = dateFrom.split('-').map(Number);
@@ -88,7 +120,27 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
         return true;
       })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [orders, search, dateFrom, dateTo]);
+  }, [orders, search, dateFrom, dateTo, statusFilter]);
+
+  const countByStatus = useMemo(() => {
+    const map: Partial<Record<OrderStatus, number>> = {};
+    for (const o of orders) {
+      map[o.status] = (map[o.status] ?? 0) + 1;
+    }
+    return map;
+  }, [orders]);
+
+  function toggleStatus(s: OrderStatus) {
+    setStatusFilter(prev => {
+      const next = new Set(prev);
+      if (next.has(s)) {
+        next.delete(s);
+      } else {
+        next.add(s);
+      }
+      return next;
+    });
+  }
 
 
   function matchesSearch(order: Order, q: string): boolean {
@@ -147,25 +199,23 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
       });
       if (!res.ok) throw new Error();
       setOrders(prev =>
-        prev
-          .map(o =>
-            o.orderId === editingOrder.orderId
-              ? {
-                  ...o,
-                  status: editStatus,
-                  salesChannel: editChannel,
-                  paymentMethod: editPaymentMethod,
-                  notes: editNotes,
-                  trackingNumber: editTrackingNumber,
-                  carrier: editCarrier,
-                  shippingDetails: editShipping!,
-                  items: editItems,
-                  totalPrice: newTotalPrice,
-                  updatedAt: new Date().toISOString(),
-                }
-              : o
-          )
-          .filter(o => ACTIVE_STATUSES.includes(o.status))
+        prev.map(o =>
+          o.orderId === editingOrder.orderId
+            ? {
+                ...o,
+                status: editStatus,
+                salesChannel: editChannel,
+                paymentMethod: editPaymentMethod,
+                notes: editNotes,
+                trackingNumber: editTrackingNumber,
+                carrier: editCarrier,
+                shippingDetails: editShipping!,
+                items: editItems,
+                totalPrice: newTotalPrice,
+                updatedAt: new Date().toISOString(),
+              }
+            : o
+        )
       );
       closeDrawer();
     } catch {
@@ -226,26 +276,28 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
   async function handleRefresh() {
     setIsRefreshing(true);
     try {
+      const REFRESH_STATUS_MAP: Record<string, OrderStatus> = {
+        PAID: 'CONFIRMADO',
+        PAGADO: 'CONFIRMADO',
+        'PEDIDO TOMADO': 'EN PREPARACIÓN',
+        PENDING: 'PAGO PENDIENTE',
+        'PAGO SIN CONFIRMAR': 'PAGO PENDIENTE',
+      };
+
+      // 1. Sync Bold first so DB is up to date
+      const syncRes = await fetch('/api/admin/sync-bold', { method: 'POST' });
+      const syncData = syncRes.ok ? await syncRes.json() : { updated: 0, results: [] };
+
+      // 2. Fetch all fresh orders
       const res = await fetch('/api/orders');
       if (!res.ok) throw new Error();
       const raw = (await res.json()) as Record<string, unknown>[];
+
       const fresh = raw
-        .filter(doc => {
-          const s = doc.status as string;
-          return (
-            (ACTIVE_STATUSES.includes(s as OrderStatus) ||
-              s === 'PAID' ||
-              s === 'PAGADO' ||
-              s === 'PEDIDO TOMADO') &&
-            doc.deleted !== true
-          );
-        })
+        .filter(doc => doc.deleted !== true)
         .map(doc => {
           const rawStatus = doc.status as string;
-          const mappedStatus: OrderStatus =
-            rawStatus === 'PEDIDO TOMADO' || rawStatus === 'EN PREPARACIÓN'
-              ? 'EN PREPARACIÓN'
-              : 'CONFIRMADO';
+          const mappedStatus: OrderStatus = REFRESH_STATUS_MAP[rawStatus] ?? (rawStatus as OrderStatus);
           return {
             _id: String(doc._id),
             orderId: doc.orderId as string,
@@ -265,10 +317,15 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
             deleted: false,
           };
         });
+
       setOrders(fresh);
       setLastRefresh(
         new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
       );
+
+      if ((syncData.updated ?? 0) > 0) {
+        showSuccess(`${syncData.updated} pedido(s) actualizados desde Bold.`);
+      }
     } catch {
       showError('Error al actualizar los pedidos.');
     } finally {
@@ -277,7 +334,7 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
   }
 
   function handleExportExcel() {
-    if (pagados.length === 0) {
+    if (filtered.length === 0) {
       showError('No hay pedidos para exportar.');
       return;
     }
@@ -286,7 +343,7 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
       string,
       { Producto: string; Variantes: string; 'Cantidad Total': number }
     >();
-    pagados.forEach(order => {
+    filtered.forEach(order => {
       order.items.forEach(item => {
         const variantsStr = item.selections
           ? Object.entries(item.selections)
@@ -335,12 +392,12 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
   }
 
   function handlePrintGuides() {
-    if (pagados.length === 0) {
+    if (filtered.length === 0) {
       showError('No hay pedidos para imprimir con los filtros actuales.');
       return;
     }
 
-    const guidesHtml = pagados.map(order => {
+    const guidesHtml = filtered.map(order => {
       const items = order.items.map(i => {
         const vars = i.selections ? ` (${Object.values(i.selections).join(' / ')})` : '';
         return `<li>${i.quantity}× ${i.product.name}${vars}</li>`;
@@ -426,11 +483,11 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
   }
 
   function handleExportPedidosExcel() {
-    if (pagados.length === 0) {
+    if (filtered.length === 0) {
       showError('No hay pedidos para exportar con los filtros actuales.');
       return;
     }
-    const data = pagados.map(order => {
+    const data = filtered.map(order => {
       const productsSummary = order.items
         .map(item => {
           const vars = item.selections ? ` (${Object.values(item.selections).join(' / ')})` : '';
@@ -477,21 +534,25 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
   return (
     <div>
       {/* Métricas */}
-      <div className="mb-6">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 inline-block">
-          <p className="text-[10px] uppercase tracking-widest text-green-600 font-semibold mb-1">
-            Pedidos pagados
-          </p>
-          <p
-            className="text-3xl font-bold text-green-700"
-            style={{ fontFamily: 'var(--font-dm-serif)' }}
-          >
-            {orders.length}
-          </p>
-          <p className="text-xs text-green-500 mt-1">
-            pedido{orders.length !== 1 ? 's' : ''} por despachar
-          </p>
-        </div>
+      <div className="mb-6 flex flex-wrap gap-3">
+        {(
+          [
+            { statuses: ['CONFIRMADO', 'EN PREPARACIÓN'] as OrderStatus[], label: 'Pagados' },
+            { statuses: ['PAGO PENDIENTE'] as OrderStatus[], label: 'Pago pendiente' },
+            { statuses: ['ENVIADO'] as OrderStatus[], label: 'Enviados' },
+            { statuses: ['NUEVO PEDIDO'] as OrderStatus[], label: 'Nuevos' },
+          ]
+        ).map(({ statuses, label }) => {
+          const count = statuses.reduce((s, st) => s + (countByStatus[st] ?? 0), 0);
+          if (count === 0) return null;
+          const colors = STATUS_COLORS[statuses[0]];
+          return (
+            <div key={label} className={`border rounded-xl p-4 ${colors.badge}`}>
+              <p className="text-[10px] uppercase tracking-widest font-semibold mb-1 opacity-70">{label}</p>
+              <p className="text-3xl font-bold" style={{ fontFamily: 'var(--font-dm-serif)' }}>{count}</p>
+            </div>
+          );
+        })}
       </div>
 
       {/* Barra de herramientas */}
@@ -579,7 +640,39 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
         </div>
         </div>
 
-        {/* Fila 2: filtro por fechas */}
+        {/* Fila 2: filtro por estado */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-gray-100">
+          <span className="text-xs text-gray-400 font-medium mr-1">Estado:</span>
+          {ALL_STATUSES.map(s => {
+            const active = statusFilter.has(s);
+            const count = countByStatus[s] ?? 0;
+            const colors = STATUS_COLORS[s];
+            return (
+              <button
+                key={s}
+                onClick={() => toggleStatus(s)}
+                className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+                  active
+                    ? `${colors.badge} border-current`
+                    : 'bg-white border-gray-200 text-gray-400 hover:border-gray-400 hover:text-gray-600'
+                }`}
+              >
+                {STATUS_LABELS[s]}
+                {count > 0 && <span className="ml-1 opacity-70">({count})</span>}
+              </button>
+            );
+          })}
+          {statusFilter.size > 0 && (
+            <button
+              onClick={() => setStatusFilter(new Set())}
+              className="text-[11px] text-gray-400 hover:text-red-600 transition-colors ml-1"
+            >
+              Ver todos
+            </button>
+          )}
+        </div>
+
+        {/* Fila 3: filtro por fechas */}
         <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100">
           <span className="text-xs text-gray-400 font-medium">Periodo:</span>
           <input
@@ -612,18 +705,18 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
 
       {/* Encabezado de lista */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0" />
-        <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Pagados</h2>
-        <span className="ml-auto text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-          {pagados.length}
+        <span className="w-2.5 h-2.5 rounded-full bg-gray-400 shrink-0" />
+        <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Pedidos</h2>
+        <span className="ml-auto text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full">
+          {filtered.length}
         </span>
       </div>
 
       {/* Lista */}
-      {pagados.length === 0 ? (
-        <div className="border-2 border-dashed border-green-100 rounded-xl py-20 text-center bg-green-50/30">
+      {filtered.length === 0 ? (
+        <div className="border-2 border-dashed border-gray-100 rounded-xl py-20 text-center bg-gray-50/30">
           <svg
-            className="w-12 h-12 text-green-200 mx-auto mb-4"
+            className="w-12 h-12 text-gray-200 mx-auto mb-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -635,12 +728,12 @@ export default function GestorV2({ initialOrders }: GestorV2Props) {
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <p className="text-green-600 font-medium">Sin pedidos pagados pendientes</p>
-          <p className="text-green-400 text-xs mt-1">¡Todo al día!</p>
+          <p className="text-gray-500 font-medium">Sin pedidos con los filtros aplicados</p>
+          <p className="text-gray-400 text-xs mt-1">Ajusta los filtros de estado o fecha.</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {pagados.map(order => (
+          {filtered.map(order => (
             <OrderCard key={order._id} order={order} onOpen={() => openDrawer(order)} />
           ))}
         </div>
@@ -1035,17 +1128,19 @@ function OrderCard({ order, onOpen }: OrderCardProps) {
   const pm = normalizePM(order.paymentMethod as string | undefined);
   const txId = order.transactionDetails?.paymentId;
   const isBold = pm === 'Bold';
+  const statusColors = STATUS_COLORS[order.status] ?? STATUS_COLORS['NUEVO PEDIDO'];
+  const statusLabel = STATUS_LABELS[order.status] ?? order.status;
 
   return (
-    <div className="bg-white rounded-xl border border-green-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="bg-green-50 px-4 py-3 flex items-center justify-between gap-3">
+      <div className="bg-gray-50 px-4 py-3 flex items-center justify-between gap-3">
         <span className="text-[10px] font-mono text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded">
           {order.orderId}
         </span>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold text-green-700 bg-green-100 border border-green-200 px-2 py-0.5 rounded-full uppercase tracking-wide">
-            Pagado
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border uppercase tracking-wide ${statusColors.badge}`}>
+            {statusLabel}
           </span>
           <span className="text-[10px] text-gray-400 shrink-0">
             <ClientDateTime date={order.createdAt} />

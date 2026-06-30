@@ -5,23 +5,25 @@ import GestorV2 from './GestorV2';
 
 export const dynamic = 'force-dynamic';
 
-async function getActiveOrders(): Promise<Order[]> {
+const STATUS_MAP: Record<string, OrderStatus> = {
+  PAID: 'CONFIRMADO',
+  PAGADO: 'CONFIRMADO',
+  'PEDIDO TOMADO': 'EN PREPARACIÓN',
+  PENDING: 'PAGO PENDIENTE',
+  'PAGO SIN CONFIRMAR': 'PAGO PENDIENTE',
+};
+
+async function getAllOrders(): Promise<Order[]> {
   const db = await getDb();
   const docs = await db
     .collection('orders')
-    .find({
-      status: { $in: ['CONFIRMADO', 'EN PREPARACIÓN', 'PAID', 'PAGADO', 'PEDIDO TOMADO'] },
-      deleted: { $ne: true },
-    })
+    .find({ deleted: { $ne: true } })
     .sort({ createdAt: -1 })
     .toArray();
 
   return docs.map(doc => {
     const rawStatus = doc.status as string;
-    let mappedStatus: OrderStatus = 'CONFIRMADO';
-    if (rawStatus === 'PEDIDO TOMADO' || rawStatus === 'EN PREPARACIÓN') {
-      mappedStatus = 'EN PREPARACIÓN';
-    }
+    const mappedStatus: OrderStatus = STATUS_MAP[rawStatus] ?? (rawStatus as OrderStatus);
 
     let mappedChannel: SalesChannel = 'Tienda Online';
     if (doc.salesChannel) {
@@ -60,7 +62,7 @@ async function getActiveOrders(): Promise<Order[]> {
 }
 
 export default async function PedidosV2Page() {
-  const orders = await getActiveOrders();
+  const orders = await getAllOrders();
 
   return (
     <div>
@@ -73,7 +75,7 @@ export default async function PedidosV2Page() {
             Gestor de Pedidos
           </h1>
           <p className="text-xs text-gray-400 mt-0.5">
-            Pedidos confirmados y en preparación
+            Gestión completa de pedidos
           </p>
         </div>
       </div>

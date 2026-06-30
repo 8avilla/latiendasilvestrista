@@ -626,65 +626,50 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
   async function handleRefresh() {
     setIsRefreshing(true);
     try {
-      // 1. Re-fetch todos los pedidos de la DB
+      // 1. Sincronizar primero con Bold para que la DB quede actualizada
+      const syncRes = await fetch('/api/admin/sync-bold', { method: 'POST' });
+      const syncData = syncRes.ok ? await syncRes.json() : { updated: 0, results: [] };
+
+      // 2. Descargar pedidos frescos (ya reflejan el resultado del sync)
       const ordersRes = await fetch('/api/orders');
       if (!ordersRes.ok) throw new Error('Error al cargar pedidos');
       const raw = await ordersRes.json();
 
-      // Mapear igual que el server component de la página
-      const fresh = (raw as Record<string, unknown>[]).map((doc) => ({
-        _id: String(doc._id),
-        orderId: doc.orderId as string,
-        items: doc.items as Order['items'],
-        totalPrice: doc.totalPrice as number,
-        shippingPrice: (doc.shippingPrice as number) ?? 0,
-        shippingDetails: doc.shippingDetails as Order['shippingDetails'],
-        paymentMethod: doc.paymentMethod as Order['paymentMethod'],
-        status: doc.status as Order['status'],
-        salesChannel: (doc.salesChannel as Order['salesChannel']) ?? 'Tienda Online',
-        notes: (doc.notes as string) ?? '',
-        trackingNumber: (doc.trackingNumber as string) ?? '',
-        carrier: (doc.carrier as string) ?? '',
-        transactionDetails: doc.transactionDetails as Order['transactionDetails'],
-        createdAt: doc.createdAt as string,
-        updatedAt: doc.updatedAt as string,
-        deleted: doc.deleted === true,
-      }));
+      const STATUS_MAP: Record<string, Order['status']> = {
+        'PAID': 'CONFIRMADO',
+        'PAGADO': 'CONFIRMADO',
+        'PEDIDO TOMADO': 'EN PREPARACIÓN',
+        'PENDING': 'PAGO PENDIENTE',
+        'PAGO SIN CONFIRMAR': 'PAGO PENDIENTE',
+      };
 
-      // 2. Sincronizar PAGO SIN CONFIRMAR con Bold (en paralelo)
-      const syncRes = await fetch('/api/admin/sync-bold', { method: 'POST' });
-      const syncData = syncRes.ok ? await syncRes.json() : { updated: 0, results: [] };
-
-      // Aplicar cambios de Bold sobre los pedidos frescos
-      const syncMap = new Map<string, string>(
-        (syncData.results ?? [])
-          .filter((r: { orderId: string; newStatus: string | null }) => r.newStatus)
-          .map((r: { orderId: string; newStatus: string }) => [r.orderId, r.newStatus])
-      );
-
-      const txMap = new Map<string, string>(
-        (syncData.results ?? [])
-          .filter((r: { orderId: string; paymentId?: string }) => r.paymentId)
-          .map((r: { orderId: string; paymentId: string }) => [r.orderId, r.paymentId])
-      );
-
-      const merged = fresh.map((o) => {
-        let result = syncMap.has(o.orderId) ? { ...o, status: syncMap.get(o.orderId) as Order['status'] } : o;
-        if (txMap.has(o.orderId)) {
-          result = {
-            ...result,
-            transactionDetails: {
-              ...result.transactionDetails,
-              paymentId: txMap.get(o.orderId) as string,
-            } as Order['transactionDetails'],
-          };
-        }
-        return result;
+      const fresh = (raw as Record<string, unknown>[]).map((doc) => {
+        const rawStatus = doc.status as string;
+        const mappedStatus: Order['status'] = STATUS_MAP[rawStatus] ?? (rawStatus as Order['status']);
+        return {
+          _id: String(doc._id),
+          orderId: doc.orderId as string,
+          items: doc.items as Order['items'],
+          totalPrice: doc.totalPrice as number,
+          shippingPrice: (doc.shippingPrice as number) ?? 0,
+          shippingDetails: doc.shippingDetails as Order['shippingDetails'],
+          paymentMethod: doc.paymentMethod as Order['paymentMethod'],
+          status: mappedStatus,
+          salesChannel: (doc.salesChannel as Order['salesChannel']) ?? 'Tienda Online',
+          notes: (doc.notes as string) ?? '',
+          trackingNumber: (doc.trackingNumber as string) ?? '',
+          carrier: (doc.carrier as string) ?? '',
+          transactionDetails: doc.transactionDetails as Order['transactionDetails'],
+          createdAt: doc.createdAt as string,
+          updatedAt: doc.updatedAt as string,
+          deleted: doc.deleted === true,
+        };
       });
 
+      // 3. Auto-cancelar pedidos PAGO PENDIENTE con más de 24h
       let canceledCount = 0;
       const nowMs = Date.now();
-      const finalMerged = await Promise.all(merged.map(async (o) => {
+      const finalMerged = await Promise.all(fresh.map(async (o) => {
         if (o.status === 'PAGO PENDIENTE') {
           const createdMs = new Date(o.createdAt).getTime();
           const hoursPassed = (nowMs - createdMs) / (1000 * 60 * 60);
@@ -711,7 +696,7 @@ export default function OrdersList({ orders, products }: OrdersListProps) {
       let msg = '';
       if (syncData.updated > 0) msg += `${syncData.updated} pedido(s) actualizados desde Bold. `;
       if (canceledCount > 0) msg += `${canceledCount} pedido(s) cancelados automáticamente (>24h sin pago).`;
-      
+
       if (msg) {
         showSuccessToast(`Actualización completa. ${msg}`);
       }

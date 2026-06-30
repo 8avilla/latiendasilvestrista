@@ -24,15 +24,15 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://latiendasilvestris
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'La Tienda Silvestrista — Silvestre Dangond',
+    default: 'La Tienda Silvestrista',
     template: '%s | La Tienda Silvestrista',
   },
   description:
-    'Tienda oficial del movimiento silvestrista. Camisetas, gorras, sombreros, manillas y vasos de Silvestre Dangond. Envíos a toda Colombia.',
+    'Tienda oficial de moda silvestrista. Camisetas, gorras, sombreros, manillas y vasos con diseños exclusivos. Envíos a toda Colombia.',
   keywords: [
-    'Silvestre Dangond', 'tienda silvestrista', 'camisetas Silvestre Dangond',
-    'movimiento silvestrista', 'ropa vallenato', 'gorras Silvestre Dangond',
-    'merchandise Silvestre Dangond', 'tienda oficial Silvestre', 'el rey del vallenato',
+    'tienda silvestrista', 'la tienda silvestrista', 'camisetas silvestristas',
+    'moda silvestrista', 'ropa vallenato', 'gorras silvestristas',
+    'merchandise silvestrista', 'tienda oficial silvestrista', 'moda vallenata',
   ],
   authors: [{ name: 'La Tienda Silvestrista' }],
   creator: 'La Tienda Silvestrista',
@@ -41,14 +41,14 @@ export const metadata: Metadata = {
     locale: 'es_CO',
     url: SITE_URL,
     siteName: 'La Tienda Silvestrista',
-    title: 'La Tienda Silvestrista — Silvestre Dangond',
-    description: 'Tienda oficial del movimiento silvestrista. Camisetas, gorras, sombreros y más. Envíos a toda Colombia.',
+    title: 'La Tienda Silvestrista',
+    description: 'Tienda oficial de moda silvestrista. Camisetas, gorras, sombreros y más. Envíos a toda Colombia.',
     images: [{ url: '/images/hero_colombia.jpg', width: 1200, height: 630, alt: 'La Tienda Silvestrista' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'La Tienda Silvestrista — Silvestre Dangond',
-    description: 'Tienda oficial del movimiento silvestrista. Envíos a toda Colombia.',
+    title: 'La Tienda Silvestrista',
+    description: 'Tienda oficial de moda silvestrista. Envíos a toda Colombia.',
     images: ['/images/hero_colombia.jpg'],
   },
   robots: { index: true, follow: true },
@@ -61,7 +61,7 @@ const organizationJsonLd = {
   name: 'La Tienda Silvestrista',
   url: SITE_URL,
   logo: `${SITE_URL}/images/hero_colombia.jpg`,
-  description: 'Tienda oficial del movimiento silvestrista de Silvestre Dangond.',
+  description: 'Tienda oficial de moda silvestrista.',
   contactPoint: {
     '@type': 'ContactPoint',
     telephone: '+57-300-434-0482',

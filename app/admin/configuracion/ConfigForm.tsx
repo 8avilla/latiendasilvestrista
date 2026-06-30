@@ -304,7 +304,7 @@ export default function ConfigForm({ initial }: Props) {
                   value={settings.instagram || ''}
                   onChange={e => setSettings(prev => ({ ...prev, instagram: e.target.value }))}
                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-black"
-                  placeholder="https://instagram.com/silvestredangond"
+                  placeholder="https://instagram.com/latiendasilvestrista"
                 />
               </div>
 
@@ -315,7 +315,7 @@ export default function ConfigForm({ initial }: Props) {
                   value={settings.tiktok || ''}
                   onChange={e => setSettings(prev => ({ ...prev, tiktok: e.target.value }))}
                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-black"
-                  placeholder="https://tiktok.com/@silvestredangond"
+                  placeholder="https://tiktok.com/@latiendasilvestrista"
                 />
               </div>
 
@@ -326,7 +326,7 @@ export default function ConfigForm({ initial }: Props) {
                   value={settings.facebook || ''}
                   onChange={e => setSettings(prev => ({ ...prev, facebook: e.target.value }))}
                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-black"
-                  placeholder="https://facebook.com/silvestredangond"
+                  placeholder="https://facebook.com/latiendasilvestrista"
                 />
               </div>
             </div>

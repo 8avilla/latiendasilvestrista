@@ -118,7 +118,7 @@ function baseTemplate(content: string) {
         <!-- Footer -->
         <tr><td style="padding:28px 0;text-align:center;">
           <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;font-family:Arial,Helvetica,sans-serif;">
-            &copy; ${new Date().getFullYear()} La Tienda Silvestrista &middot; Silvestre Dangond
+            &copy; ${new Date().getFullYear()} La Tienda Silvestrista
           </p>
           <p style="margin:0;font-size:11px;font-family:Arial,Helvetica,sans-serif;">
             <a href="${SITE_URL}" style="color:#dc2626;text-decoration:none;font-weight:700;">latiendasilvestrista.com</a>

@@ -34,7 +34,7 @@ const FAQS = [
   },
   {
     q: '¿Los productos son oficiales?',
-    a: 'Sí. Todos los artículos de La Tienda Silvestrista son de colección oficial del movimiento silvestrista de Silvestre Dangond. Camisetas, gorras, sombreros y accesorios con diseños exclusivos.',
+    a: 'Sí. Todos los artículos de La Tienda Silvestrista son de colección oficial con diseños exclusivos. Camisetas, gorras, sombreros y accesorios.',
   },
   {
     q: '¿Puedo cambiar la talla o devolver un producto?',
